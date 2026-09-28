@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+.vercel/
+sources/
+AGENTS.md
+.env*
+!.env.example
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.tsbuildinfo
+desktop.ini
