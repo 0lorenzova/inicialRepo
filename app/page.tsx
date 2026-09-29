@@ -7,6 +7,7 @@ import { createClient as createSupabaseClient, isSupabaseConfigured } from "@/li
 type Envelope = { id: string; name: string; icon: string; balance: number; color: string };
 type Movement = { id: string; type: "Ingreso" | "Gasto" | "Transferencia"; name: string; amount: number; date: string; category: string; allocations: { name: string; amount: number }[]; products?: { name: string; amount: number }[] };
 type Data = { envelopes: Envelope[]; bank: number; movements: Movement[]; hidden: boolean; fields: string[]; customNames: boolean };
+type SyncStatus = "local" | "loading" | "synced" | "syncing" | "error";
 const initial: Data = { envelopes: [{ id:"home",name:"Hogar",icon:"🏠",balance:0,color:"peach" },{ id:"food",name:"Alimentación",icon:"🛒",balance:0,color:"green" },{ id:"transport",name:"Transporte",icon:"🚙",balance:0,color:"blue" },{ id:"savings",name:"Ahorro",icon:"🐷",balance:0,color:"amber" },{ id:"emergency",name:"Emergencia",icon:"🛡️",balance:0,color:"lilac" }], bank:0, movements:[], hidden:false, fields:["Fecha","Monto"], customNames:false };
 const money = (n:number) => `₡${Math.round(n).toLocaleString("es-CR")}`;
 const today = () => new Date().toISOString().slice(0,16);
@@ -17,23 +18,25 @@ export default function HomePage() {
   const cloudEnabled=isSupabaseConfigured();
   const supabase=useMemo(()=>cloudEnabled?createSupabaseClient():null,[cloudEnabled]);
   const [authUser,setAuthUser]=useState<{id:string;email?:string} | null>(null),[authLoading,setAuthLoading]=useState(cloudEnabled),[authBusy,setAuthBusy]=useState(false),[authEmail,setAuthEmail]=useState(""),[authPassword,setAuthPassword]=useState(""),[authError,setAuthError]=useState(""),[authMode,setAuthMode]=useState<"login"|"signup">("login"),[cloudReady,setCloudReady]=useState(false);
+  const [syncStatus,setSyncStatus]=useState<SyncStatus>(cloudEnabled?"loading":"local");
   useEffect(()=>{try{const raw=localStorage.getItem("claro-finanzas-v2");if(raw)setData({...initial,...JSON.parse(raw)});}catch{}setReady(true);},[]);
   useEffect(()=>{if(ready)localStorage.setItem("claro-finanzas-v2",JSON.stringify(data));},[data,ready]);
   useEffect(()=>{
     if(!supabase){setAuthLoading(false);return;}
     let alive=true;
     const load=async(userId:string)=>{
-      setCloudReady(false);
+      setCloudReady(false);setSyncStatus("loading");
       const {data:row,error}=await supabase.from("user_finance_data").select("data").eq("user_id",userId).maybeSingle();
       if(!alive)return;
-      if(error){setAuthError(`No se pudieron cargar tus datos: ${error.message}`);setCloudReady(true);return;}
-      if(row?.data)setData({...initial,...row.data as Partial<Data>});
+      if(error){setAuthError(`No se pudieron cargar tus datos: ${error.message}`);setSyncStatus("error");setCloudReady(true);return;}
+      if(row?.data){setData({...initial,...row.data as Partial<Data>});setSyncStatus("synced");}
       else {
         let cached:Data=initial;
         try{const raw=localStorage.getItem("claro-finanzas-v2");if(raw)cached={...initial,...JSON.parse(raw)};}catch{}
         setData(cached);
         const {error:saveError}=await supabase.from("user_finance_data").upsert({user_id:userId,data:cached,updated_at:new Date().toISOString()});
-        if(saveError&&alive)setAuthError(`No se pudieron guardar los datos iniciales: ${saveError.message}`);
+        if(saveError&&alive){setAuthError(`No se pudieron guardar los datos iniciales: ${saveError.message}`);setSyncStatus("error");}
+        else if(alive)setSyncStatus("synced");
       }
       if(alive)setCloudReady(true);
     };
@@ -43,15 +46,17 @@ export default function HomePage() {
       const user=session?.user;
       setAuthUser(user?{id:user.id,email:user.email}:null);
       setAuthLoading(false);
-      if(user)void load(user.id);else setCloudReady(false);
+      if(user)void load(user.id);else {setCloudReady(false);setSyncStatus(cloudEnabled?"loading":"local");}
     });
     return()=>{alive=false;subscription.unsubscribe();};
   },[supabase]);
   useEffect(()=>{
     if(!supabase||!authUser||!cloudReady)return;
+    setSyncStatus("syncing");
     const timer=window.setTimeout(async()=>{
       const {error}=await supabase.from("user_finance_data").upsert({user_id:authUser.id,data,updated_at:new Date().toISOString()});
-      if(error)setNotice(`Error al sincronizar: ${error.message}`);
+      if(error){setSyncStatus("error");setAuthError(`Error al sincronizar con Supabase: ${error.message}`);setNotice("No se pudo guardar en Supabase. La copia local conserva los cambios.");}
+      else setSyncStatus("synced");
     },450);
     return()=>window.clearTimeout(timer);
   },[data,supabase,authUser,cloudReady]);
@@ -74,13 +79,15 @@ export default function HomePage() {
   };
   const filtered=useMemo(()=>data.movements.filter(m=>(filter==="Todos"||m.type===filter)&&(`${m.name} ${m.category} ${m.allocations.map(a=>a.name).join(" ")}`).toLowerCase().includes(search.toLowerCase())),[data.movements,filter,search]);
   const toggleField=(field:string)=>setData(d=>({...d,fields:d.fields.includes(field)?d.fields.filter(f=>f!==field):[...d.fields,field]}));
+  const syncLabel:Record<SyncStatus,string>={local:"Solo navegador",loading:"Cargando datos…",synced:"Datos de Supabase · copia local",syncing:"Guardando en Supabase…",error:"Sin sincronizar · copia local"};
+  const syncIcon:Record<SyncStatus,string>={local:"◷",loading:"◌",synced:"☁",syncing:"↻",error:"⚠"};
 
   if(cloudEnabled&&(authLoading||(authUser&&!cloudReady)))return <div className="auth-screen"><section className="auth-card"><div className="logo"><span>c</span> claro</div><div className="auth-spinner"/><h1>{authLoading?"Conectando con tu cuenta":"Cargando tus datos"}</h1><p>Un momento, estamos preparando tu espacio financiero.</p></section></div>;
   if(cloudEnabled&&!authUser)return <div className="auth-screen"><form className="auth-card" onSubmit={submitAuth}><div className="logo"><span>c</span> claro</div><div className="overline">TUS FINANZAS, A TU MANERA</div><h1>{authMode==="login"?"Bienvenido de nuevo":"Crea tu cuenta"}</h1><p>{authMode==="login"?"Inicia sesión para sincronizar tus sobres y movimientos.":"Tus datos se guardarán de forma privada en tu cuenta."}</p><label>Correo electrónico</label><input type="email" autoComplete="email" required value={authEmail} onChange={e=>setAuthEmail(e.target.value)} placeholder="tu@correo.com"/><label>Contraseña</label><input type="password" minLength={6} autoComplete={authMode==="login"?"current-password":"new-password"} required value={authPassword} onChange={e=>setAuthPassword(e.target.value)} placeholder="Al menos 6 caracteres"/>{authError&&<div className="auth-error">{authError}</div>}<button className="primary wide" disabled={authBusy}>{authBusy?"Un momento…":authMode==="login"?"Iniciar sesión":"Crear cuenta"}</button><button type="button" className="auth-switch" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setAuthError("")}}>{authMode==="login"?"¿Primera vez? Crea una cuenta":"Ya tienes cuenta? Inicia sesión"}</button></form></div>;
 
   return <div className={`finance-app ${mode==="dark"?"dark-mode":""}`}>
-    <aside className="side-nav"><a className="logo" onClick={()=>setView("Inicio")}><span>c</span> claro</a><div className="side-caption">TU DINERO</div>{["Inicio","Movimientos","Sobres","Reportes","Configuración"].map((v,i)=><button key={v} className={`nav-item ${view===v?"selected":""}`} onClick={()=>setView(v)}><span>{["⌂","⇄","▣","▥","⚙"][i]}</span>{v}</button>)}<div className="side-bottom"><div className="side-tip">✦ <strong>Un paso a la vez.</strong><br/>Tu dinero, con intención.</div><div className="user-chip"><span>M</span><div><b>{authUser?.email||"Mi espacio"}</b><small>{cloudEnabled?"Sincronizado con Supabase":"Solo este navegador"}</small></div>{authUser&&<button className="logout" onClick={()=>void supabase?.auth.signOut()}>Salir</button>}</div></div></aside>
-    <main className="workspace"><header className="app-header"><div className="crumb">Mi espacio <span>/</span> <b>{view}</b></div><div className="header-tools"><span>{new Date().toLocaleDateString("es-CR",{weekday:"long",day:"numeric",month:"long"})}</span><button aria-label="Alternar tema" onClick={toggleMode}>◐</button><button aria-label="Privacidad" onClick={()=>setData(d=>({...d,hidden:!d.hidden}))}>{data.hidden?"◉":"◎"}</button><button className="avatar">M</button></div></header>
+    <aside className="side-nav"><a className="logo" onClick={()=>setView("Inicio")}><span>c</span> claro</a><div className="side-caption">TU DINERO</div>{["Inicio","Movimientos","Sobres","Reportes","Configuración"].map((v,i)=><button key={v} className={`nav-item ${view===v?"selected":""}`} onClick={()=>setView(v)}><span>{["⌂","⇄","▣","▥","⚙"][i]}</span>{v}</button>)}<div className="side-bottom"><div className="side-tip">✦ <strong>Un paso a la vez.</strong><br/>Tu dinero, con intención.</div><div className="user-chip"><span>M</span><div><b>{authUser?.email||"Mi espacio"}</b><small>{syncLabel[syncStatus]}</small></div>{authUser&&<button className="logout" onClick={()=>void supabase?.auth.signOut()}>Salir</button>}</div></div></aside>
+    <main className="workspace"><header className="app-header"><div className="crumb">Mi espacio <span>/</span> <b>{view}</b></div><div className="header-tools"><span>{new Date().toLocaleDateString("es-CR",{weekday:"long",day:"numeric",month:"long"})}</span><span className={`sync-indicator ${syncStatus}`} role="status" title={syncLabel[syncStatus]}><i>{syncIcon[syncStatus]}</i>{syncLabel[syncStatus]}</span><button aria-label="Alternar tema" onClick={toggleMode}>◐</button><button aria-label="Privacidad" onClick={()=>setData(d=>({...d,hidden:!d.hidden}))}>{data.hidden?"◉":"◎"}</button><button className="avatar">M</button></div></header>
     <div className="page-content"><div className="page-title"><div><div className="overline">✦ TU DINERO, CON INTENCIÓN</div><h1>{view==="Inicio"?"Mis Sobres":view}</h1><p>{view==="Inicio"?"Cada peso tiene un lugar. Aquí puedes ver el tuyo.":view==="Movimientos"?"Todo lo que entra y sale, en un solo lugar.":view==="Sobres"?"Organiza tu dinero para lo que más importa.":view==="Reportes"?"Una mirada sencilla a tu dinero este mes.":"Haz que la app funcione a tu manera."}</p></div><button className="primary" onClick={()=>openFlow("Ingreso")}>＋ <span>Nuevo movimiento</span></button></div>
     {view==="Inicio"&&<>
       <div className="summary-row"><Summary icon="▣" label="Fondos actuales" value={display(data.bank)} foot="En tus cuentas"/><Summary icon="◈" label="Comprometido" value={display(assigned)} foot="Asignado a tus sobres"/><Summary icon="✳" label="Disponible" value={display(available)} foot="Listo para asignar" accent/></div>
@@ -92,7 +99,7 @@ export default function HomePage() {
     {view==="Sobres"&&<section className="section page-panel"><div className="money-banner"><span>Dinero disponible en sobres</span><b>{display(assigned)}</b></div><div className="envelope-list">{data.envelopes.map(e=><div className="envelope-row static" key={e.id}><span className={`emoji ${e.color}`}>{e.icon}</span><span className="envelope-name">{e.name}<small>Saldo actual</small></span><b>{display(e.balance)}</b></div>)}</div></section>}
     {view==="Reportes"&&<section className="section page-panel"><div className="report-cards"><Summary label="Ingresos" value={display(data.movements.filter(m=>m.type==="Ingreso").reduce((s,m)=>s+m.amount,0))} foot="Total registrado"/><Summary label="Gastos" value={display(data.movements.filter(m=>m.type==="Gasto").reduce((s,m)=>s+m.amount,0))} foot="Total registrado"/><Summary label="Ahorro en sobres" value={display(data.envelopes.find(e=>e.name==="Ahorro")?.balance||0)} foot="Saldo actual" accent/></div><h2 className="subhead">Gasto por categoría</h2>{[...new Set(data.movements.filter(m=>m.type==="Gasto").map(m=>m.category))].map(c=><div className="category-line" key={c}><span>{c}</span><b>{display(data.movements.filter(m=>m.type==="Gasto"&&m.category===c).reduce((s,m)=>s+m.amount,0))}</b></div>)}</section>}
     {view==="Configuración"&&<section className="section page-panel settings"><h2>Preferencias</h2><div className="setting-row"><div><b>Vista privada</b><small>Oculta los montos en la pantalla.</small></div><button className={`switch ${data.hidden?"on":""}`} onClick={()=>setData(d=>({...d,hidden:!d.hidden}))}>{data.hidden?"Sí":"No"}</button></div><div className="setting-row"><div><b>Nombre automático de ingresos</b><small>Elige qué datos forman el nombre sugerido.</small></div><button className={`switch ${!data.customNames?"on":""}`} onClick={()=>setData(d=>({...d,customNames:!d.customNames}))}>{data.customNames?"Manual":"Auto"}</button></div><div className="field-options">{["Fecha","Hora","Monto","Tipo de ingreso","Categoría","Semana","Número"].map(f=><label key={f}><input type="checkbox" checked={data.fields.includes(f)} onChange={()=>toggleField(f)}/>{f}<span>⠿</span></label>)}</div><div className="setting-row"><div><b>Nombre de gastos</b><small>También puedes escribir nombres al registrar un gasto.</small></div></div><button className="danger-link" onClick={()=>{if(confirm("¿Borrar los movimientos y saldos guardados en este navegador?")){setData(initial);setNotice("Datos reiniciados.");}}}>Reiniciar datos locales</button></section>}
-    <footer className="footer"><span>Con calma, un día a la vez ♥</span><span>Los datos se guardan en este navegador.</span></footer></div></main>
+    <footer className="footer"><span>Con calma, un día a la vez ♥</span><span>{syncLabel[syncStatus]}</span></footer></div></main>
     {flow&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setFlow(null)}}><section className="flow-modal"><header><button onClick={()=>step?setStep(step-1):setFlow(null)}>‹</button><div><small>PASO {step+1} DE {flow==="Ingreso"?2:3}</small><h2>{flow==="Ingreso"?(step===0?"Registrar ingreso":"¿Qué quieres hacer con este dinero?"):(step===0?"Registrar gasto":step===1?"Asignar a sobres":"Productos y detalles")}</h2></div><button onClick={()=>setFlow(null)}>×</button></header>
       {flow==="Ingreso"&&step===0&&<div className="flow-body"><label>Monto</label><div className="currency-input"><span>₡</span><input autoFocus type="number" min="0" placeholder="0" value={draft.amount} onChange={e=>setDraft({...draft,amount:e.target.value})}/></div><label>Moneda</label><select defaultValue="CRC"><option value="CRC">Costa Rica · CRC (₡)</option><option value="USD">Dólar · USD ($)</option></select><label>Nombre del ingreso</label><input value={draft.name||(!data.customNames?suggestedName():"")} onChange={e=>setDraft({...draft,name:e.target.value})} placeholder="Ej. Salario semanal"/><label>Fecha y hora</label><input type="datetime-local" value={draft.date} onChange={e=>setDraft({...draft,date:e.target.value})}/><label>Referencia (opcional)</label><input value={draft.reference} onChange={e=>setDraft({...draft,reference:e.target.value})} placeholder="Semana, factura…"/><label>Descripción (opcional)</label><textarea value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})} placeholder="Añade un detalle"/><button className="primary wide" disabled={!amount} onClick={()=>setStep(1)}>Continuar →</button></div>}
       {flow==="Ingreso"&&step===1&&<div className="flow-body"><p className="flow-intro">Elige cómo manejar {money(amount)}.</p><button className={`choice ${!draft.unassigned?"chosen":""}`} onClick={()=>setDraft({...draft,unassigned:false})}><span>▤</span><b>Distribuir ahora<small>Asignar este ingreso a tus sobres</small></b><input type="radio" readOnly checked={!draft.unassigned}/></button><button className={`choice ${draft.unassigned?"chosen":""}`} onClick={()=>setDraft({...draft,unassigned:true,allocations:{}})}><span>▱</span><b>Dejar sin asignar<small>Guardar como dinero disponible</small></b><input type="radio" readOnly checked={draft.unassigned}/></button>{!draft.unassigned&&<div className="allocation-list">{data.envelopes.map(e=><label key={e.id}><span>{e.icon} {e.name}</span><div className="alloc-input">₡<input type="number" min="0" max={amount} placeholder="0" value={draft.allocations[e.id]||""} onChange={ev=>setDraft({...draft,allocations:{...draft.allocations,[e.id]:ev.target.value}})}/></div></label>)}<div className="allocation-total">Asignado <b>{money(totalAlloc)} / {money(amount)}</b></div></div>}<button className="primary wide" disabled={!amount||(!draft.unassigned&&totalAlloc>amount)} onClick={finish}>Guardar ingreso ✓</button></div>}
