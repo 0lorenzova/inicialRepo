@@ -4,8 +4,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mis Sobres | Finanzas personales",
-  description: "Una forma clara y tranquila de saber dónde está tu dinero.",
+  applicationName: "Finanzas",
+  title: "Finanzas | Tu dinero, con intención",
+  description: "Organiza ingresos, gastos y sobres desde un solo lugar.",
+  appleWebApp: { capable: true, title: "Finanzas", statusBarStyle: "default" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

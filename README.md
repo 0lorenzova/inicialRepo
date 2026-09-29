@@ -1,4 +1,4 @@
-# Claro — Finanzas personales
+# Finanzas — Finanzas personales
 
 Aplicación web de finanzas personales con presupuesto por sobres, autenticación Supabase y sincronización privada de datos por cuenta.
 

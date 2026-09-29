@@ -25,7 +25,7 @@ export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode
   const theme = useMemo(() => createTheme({
     palette: {
       mode,
-      primary: { main: "#70aa82", dark: "#174531", light: "#e6efe9" },
+      primary: { main: "#0b969f", dark: "#087f88", light: "#e2f4f3" },
       secondary: { main: "#d29c58" },
       background: mode === "dark" ? { default: "#121916", paper: "#1c2520" } : { default: "#f7f7f3", paper: "#ffffff" },
       text: mode === "dark" ? { primary: "#edf2ed", secondary: "#aab4ac" } : { primary: "#202c25", secondary: "#7b837d" },
