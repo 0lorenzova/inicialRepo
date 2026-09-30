@@ -14,8 +14,11 @@ export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode
   const [mode, setMode] = useState<ColorMode>("light");
 
   useEffect(() => {
-    const savedMode = window.localStorage.getItem("color-mode");
-    if (savedMode === "light" || savedMode === "dark") setMode(savedMode);
+    const timer = window.setTimeout(() => {
+      const savedMode = window.localStorage.getItem("color-mode");
+      if (savedMode === "light" || savedMode === "dark") setMode(savedMode);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
