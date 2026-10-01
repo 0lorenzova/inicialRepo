@@ -12,18 +12,20 @@ export function useThemeMode() {
 
 export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [mode, setMode] = useState<ColorMode>("light");
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const savedMode = window.localStorage.getItem("color-mode");
       if (savedMode === "light" || savedMode === "dark") setMode(savedMode);
+      setPreferencesLoaded(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("color-mode", mode);
-  }, [mode]);
+    if (preferencesLoaded) window.localStorage.setItem("color-mode", mode);
+  }, [mode, preferencesLoaded]);
 
   const theme = useMemo(() => createTheme({
     palette: {
