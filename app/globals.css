@@ -137,3 +137,9 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
 }
+
+.sync-warning { margin-bottom: 20px; padding: 16px; border: 1px solid var(--green); border-radius: 12px; background: var(--paper); color: var(--ink); overflow-wrap: anywhere; font-size: 13px; }
+.sync-warning p { line-height: 1.5; }
+.sync-warning > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.sync-warning button { min-height: 44px; height: auto; max-width: 100%; white-space: normal; }
+.danger-link:disabled { color: var(--muted); cursor: not-allowed; }

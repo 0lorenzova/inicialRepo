@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { assign, lend, migrateLegacyBank, postMovement, repay, totals, transfer, unassign } from "../lib/finance-ledger.ts";
+import { archiveLedgerEnvelope, setAccountActive, assign, lend, migrateEnvelopeReferences, migrateLegacyBank, movementHasEnvelope, postMovement, repay, totals, transfer, unassign } from "../lib/finance-ledger.ts";
 
 const seed = () => ({
   accounts: [{ id: "checking", name: "Corriente", type: "Banco", balance: 0, active: true }],
@@ -69,4 +69,69 @@ const migrated = migrateLegacyBank(750, [{ id: "old-recurring", type: "Ingreso",
 assert.equal(migrated.accounts[0].balance, 1_000);
 assert.equal(migrated.movements[0].type, "Asignación");
 
-console.log("OK: 10 escenarios del libro financiero verificados.");
+// 11: todas las operaciones conservan el ID del sobre y el nombre histórico.
+for (const movement of [...ledger.movements, ...fullyAssigned.movements]) {
+  for (const allocation of movement.allocations) {
+    assert.ok(allocation.envelopeId, `Falta ID en ${movement.type}`);
+    assert.equal(allocation.name, seed().envelopes.find((envelope) => envelope.id === allocation.envelopeId).name);
+  }
+}
+assert.deepEqual(ledger.movements.find((movement) => movement.id === "repay-1").allocations.map((allocation) => allocation.envelopeId), ["food", "savings"]);
+assert.deepEqual(ledger.movements.find((movement) => movement.id === "transfer-1").allocations.map((allocation) => allocation.envelopeId), ["savings", "food"]);
+
+// 12: renombrar, archivar, repetir un nombre y reabrir no cambia el historial.
+const beforeRenameIds = ledger.movements.filter((movement) => movementHasEnvelope(movement, "savings")).map((movement) => movement.id);
+const renamed = JSON.parse(JSON.stringify({ ...ledger, envelopes: [
+  ...ledger.envelopes.map((envelope) => envelope.id === "savings" ? { ...envelope, name: "Reserva familiar", archived: true } : envelope),
+  { id: "another-savings", name: "Ahorro", balance: 0 },
+] }));
+assert.deepEqual(renamed.movements.filter((movement) => movementHasEnvelope(movement, "savings")).map((movement) => movement.id), beforeRenameIds);
+assert.equal(renamed.movements.filter((movement) => movementHasEnvelope(movement, "another-savings")).length, 0);
+assert.equal(renamed.movements.find((movement) => movement.id === "assign-1").allocations[0].name, "Ahorro");
+assert.equal(migrateEnvelopeReferences(renamed.movements, renamed.envelopes, renamed.loans), renamed.movements);
+
+// 13: migración conservadora, inmutable e idempotente; no se adivinan nombres.
+const legacyMovement = (id, name, extra = {}) => ({ id, type: "Asignación", name: `Asignación histórica ${name}`, amount: 100, date: "2026-09-29T12:00", allocations: [{ name, amount: 100 }], ...extra });
+const legacyMovements = [legacyMovement("unique", "Comida"), legacyMovement("duplicate", "Ahorro"), legacyMovement("missing", "Nombre desaparecido")];
+const migrationEnvelopes = [...seed().envelopes, { id: "old-savings", name: "Ahorro", balance: 0, archived: true }];
+const legacySnapshot = JSON.stringify(legacyMovements);
+const withIds = migrateEnvelopeReferences(legacyMovements, migrationEnvelopes);
+assert.equal(withIds[0].allocations[0].envelopeId, "food");
+assert.equal(withIds[1].allocations[0].envelopeId, undefined);
+assert.equal(withIds[2].allocations[0].envelopeId, undefined);
+assert.equal(JSON.stringify(legacyMovements), legacySnapshot);
+assert.equal(migrateEnvelopeReferences(withIds, migrationEnvelopes), withIds);
+assert.deepEqual(withIds.map((movement) => movement.allocations[0].name), legacyMovements.map((movement) => movement.allocations[0].name));
+const historicalAlias = [legacyMovement("known-alias", "Reserva", { allocations: [{ envelopeId: "savings", name: "Reserva", amount: 100 }] }), legacyMovement("old-alias", "Reserva")];
+assert.equal(migrateEnvelopeReferences(historicalAlias, seed().envelopes)[1].allocations[0].envelopeId, "savings");
+assert.equal(migrateEnvelopeReferences(historicalAlias, [...seed().envelopes, { id: "new-reserve", name: "Reserva", balance: 0 }])[1].allocations[0].envelopeId, undefined);
+
+// 14: un préstamo relacionado permite recuperar referencias anteriores al cambio de nombre.
+const legacyLoan = { id: "legacy-loan", sourceId: "savings", sourceName: "Fondo anterior", targetId: "food", targetName: "Comida", amount: 100, outstanding: 100, status: "Pendiente", date: "2026-09-29T12:00" };
+const loanMovements = [legacyMovement("legacy-lend", "Fondo anterior", { type: "Préstamo", loanId: "legacy-loan" }), legacyMovement("legacy-unlinked", "Fondo anterior")];
+const reusedNameEnvelopes = [...seed().envelopes, { id: "new-fund", name: "Fondo anterior", balance: 0 }];
+const migratedLoanMovements = migrateEnvelopeReferences(loanMovements, reusedNameEnvelopes, [legacyLoan]);
+assert.equal(migratedLoanMovements[0].allocations[0].envelopeId, "savings");
+assert.equal(migratedLoanMovements[1].allocations[0].envelopeId, undefined);
+const ambiguousLoan = { ...legacyLoan, sourceName: "Comida" };
+assert.equal(migrateEnvelopeReferences([legacyMovement("ambiguous-loan", "Comida", { type: "Préstamo", loanId: "legacy-loan" })], seed().envelopes, [ambiguousLoan])[0].allocations[0].envelopeId, undefined);
+
+// 15: un mismo sobre no puede repetirse en una distribución ni producir débitos desiguales.
+const beforeInvalid = JSON.stringify(ledger);
+for (const type of ["Ingreso", "Gasto"]) {
+  assert.throws(() => postMovement(ledger, { id: `duplicate-${type}`, type, amount: 1_000, accountId: "checking", envelopeAllocations: [{ id: "savings", amount: 500 }, { id: "savings", amount: 500 }], date: "2026-09-29T12:11", name: "Distribución inválida" }), /una sola vez/);
+  assert.equal(JSON.stringify(ledger), beforeInvalid);
+}
+checkInvariant(ledger);
+
+console.log("OK: 15 escenarios del libro financiero verificados.");
+
+// Archivar/desactivar valida el estado vigente, no el saldo de un formulario abierto.
+assert.throws(() => archiveLedgerEnvelope(ledger, "savings"), /saldo/);
+const emptyLedger = seed();
+assert.equal(archiveLedgerEnvelope(emptyLedger, "savings").envelopes[0].archived, true);
+const loanOnly = { ...emptyLedger, loans: [{ sourceId: "savings", targetId: "food", outstanding: 1 }] };
+assert.throws(() => archiveLedgerEnvelope(loanOnly, "savings"), /préstamos/);
+assert.throws(() => setAccountActive(ledger, "checking", false), /saldo cero/);
+assert.equal(setAccountActive(emptyLedger, "checking", false).accounts[0].active, false);
+console.log("OK: archivado y estado de cuentas validan el saldo vigente.");

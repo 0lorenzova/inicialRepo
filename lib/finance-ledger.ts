@@ -1,9 +1,72 @@
 export type Account = { id: string; name: string; type: string; balance: number; active: boolean };
 export type LedgerEnvelope = { id: string; name: string; balance: number; archived?: boolean; goal?: number };
 export type Loan = { id: string; sourceId: string; sourceName: string; targetId: string; targetName: string; amount: number; outstanding: number; status: "Pendiente" | "Parcial" | "Devuelto"; date: string };
-export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; reference?: string; allocations: { name: string; amount: number }[]; loanId?: string; products?:{name:string;amount:number}[] };
+export type LedgerAllocation = { envelopeId?: string; name: string; amount: number };
+export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; reference?: string; allocations: LedgerAllocation[]; loanId?: string; products?:{name:string;amount:number}[] };
 export type Ledger = { accounts: Account[]; envelopes: LedgerEnvelope[]; loans: Loan[]; movements: LedgerMovement[] };
 const validAmount=(amount:number)=>Number.isSafeInteger(amount)&&amount>0;
+
+export function archiveLedgerEnvelope(ledger: Ledger, envelopeId: string): Ledger {
+  const current = ledger.envelopes.find(e => e.id === envelopeId && !e.archived);
+  if (!current) throw new Error("El sobre ya no está activo.");
+  if (current.balance !== 0) throw new Error("Desasigna o transfiere todo el saldo antes de archivar el sobre.");
+  if (ledger.loans.some(l => l.outstanding > 0 && (l.sourceId === envelopeId || l.targetId === envelopeId))) throw new Error("Cierra los préstamos pendientes antes de archivar el sobre.");
+  return { ...ledger, envelopes: ledger.envelopes.map(e => e.id === envelopeId ? { ...e, archived: true } : e) };
+}
+
+export function setAccountActive(ledger: Ledger, accountId: string, active: boolean): Ledger {
+  const current = ledger.accounts.find(a => a.id === accountId);
+  if (!current) throw new Error("La cuenta ya no existe.");
+  if (current.balance !== 0) throw new Error("La cuenta debe tener saldo cero para cambiar su estado.");
+  return { ...ledger, accounts: ledger.accounts.map(a => a.id === accountId ? { ...a, active } : a) };
+}
+
+// Los nombres son una instantánea del movimiento. El ID conserva su relación
+// con el sobre aunque después se cambie de nombre o se archive.
+export function movementHasEnvelope(movement: LedgerMovement, envelopeId: string) {
+  return movement.allocations.some((allocation) => allocation.envelopeId === envelopeId);
+}
+
+export function migrateEnvelopeReferences<T extends LedgerMovement>(movements: T[], envelopes: LedgerEnvelope[], loans: Loan[] = []): T[] {
+  const names = new Map<string, Set<string>>();
+  const remember = (name: string, envelopeId: string) => {
+    const ids = names.get(name) ?? new Set<string>();
+    ids.add(envelopeId);
+    names.set(name, ids);
+  };
+  for (const envelope of envelopes) remember(envelope.name, envelope.id);
+  for (const movement of movements) {
+    for (const allocation of movement.allocations) {
+      if (allocation.envelopeId) remember(allocation.name, allocation.envelopeId);
+    }
+  }
+  for (const loan of loans) {
+    remember(loan.sourceName, loan.sourceId);
+    remember(loan.targetName, loan.targetId);
+  }
+  const loanById = new Map(loans.map((loan) => [loan.id, loan]));
+  let changed = false;
+  const migrated = movements.map((movement) => {
+    const loan = movement.loanId && (movement.type === "Préstamo" || movement.type === "Devolución") ? loanById.get(movement.loanId) : undefined;
+    let movementChanged = false;
+    const allocations = movement.allocations.map((allocation) => {
+      if (allocation.envelopeId) return allocation;
+      // Un préstamo enlazado explícitamente es evidencia más precisa que un
+      // nombre reutilizado por otro sobre. Los nombres ambiguos no se adivinan.
+      const loanCandidates = new Set<string>();
+      if (loan?.sourceName === allocation.name) loanCandidates.add(loan.sourceId);
+      if (loan?.targetName === allocation.name) loanCandidates.add(loan.targetId);
+      const candidates = loanCandidates.size ? loanCandidates : names.get(allocation.name);
+      if (candidates?.size !== 1) return allocation;
+      movementChanged = true;
+      return { ...allocation, envelopeId: [...candidates][0] };
+    });
+    if (!movementChanged) return movement;
+    changed = true;
+    return { ...movement, allocations };
+  });
+  return changed ? migrated : movements;
+}
 
 export function migrateLegacyBank(bank: number, movements: LedgerMovement[], accounts?: Account[]) {
   if (accounts?.length) return { accounts, movements };
@@ -33,26 +96,26 @@ export function commit(ledger: Ledger, movement: LedgerMovement, accounts = ledg
 export function assign(ledger: Ledger, envelopeId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {
   const envelope = ledger.envelopes.find((item) => item.id === envelopeId && !item.archived);
   if (!envelope || !validAmount(amount) || amount > totals(ledger).unassigned) throw new Error("No hay dinero sin asignar suficiente o el monto no es válido.");
-  return commit(ledger, { id, type: "Asignación", name: `Asignación a ${envelope.name}`, amount, date, allocations: [{ name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance + amount } : item));
+  return commit(ledger, { id, type: "Asignación", name: `Asignación a ${envelope.name}`, amount, date, allocations: [{ envelopeId: envelope.id, name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance + amount } : item));
 }
 
 export function unassign(ledger: Ledger, envelopeId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {
   const envelope = ledger.envelopes.find((item) => item.id === envelopeId && !item.archived);
   if (!envelope || !validAmount(amount) || amount > envelope.balance) throw new Error("El sobre no tiene saldo suficiente para desasignar o el monto no es válido.");
-  return commit(ledger, { id, type: "Desasignación", name: `Dinero devuelto desde ${envelope.name}`, amount, date, allocations: [{ name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance - amount } : item));
+  return commit(ledger, { id, type: "Desasignación", name: `Dinero devuelto desde ${envelope.name}`, amount, date, allocations: [{ envelopeId: envelope.id, name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance - amount } : item));
 }
 
 export function transfer(ledger: Ledger, sourceId: string, targetId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {
   const source = ledger.envelopes.find((item) => item.id === sourceId && !item.archived), target = ledger.envelopes.find((item) => item.id === targetId && !item.archived);
   if (!source || !target || sourceId === targetId || !validAmount(amount) || source.balance < amount) throw new Error("Revisa los sobres y el saldo disponible para transferir.");
-  return commit(ledger, { id, type: "Transferencia", name: `${source.name} → ${target.name}`, amount, date, allocations: [{ name: source.name, amount }, { name: target.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === sourceId ? { ...item, balance: item.balance - amount } : item.id === targetId ? { ...item, balance: item.balance + amount } : item));
+  return commit(ledger, { id, type: "Transferencia", name: `${source.name} → ${target.name}`, amount, date, allocations: [{ envelopeId: source.id, name: source.name, amount }, { envelopeId: target.id, name: target.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === sourceId ? { ...item, balance: item.balance - amount } : item.id === targetId ? { ...item, balance: item.balance + amount } : item));
 }
 
 export function lend(ledger: Ledger, sourceId: string, targetId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {
   const source = ledger.envelopes.find((item) => item.id === sourceId && !item.archived), target = ledger.envelopes.find((item) => item.id === targetId && !item.archived);
   if (!source || !target || sourceId === targetId || !validAmount(amount) || source.balance < amount) throw new Error("Revisa los sobres y el saldo disponible para prestar.");
   const loanId = crypto.randomUUID(), loan: Loan = { id: loanId, sourceId, sourceName: source.name, targetId, targetName: target.name, amount, outstanding: amount, status: "Pendiente", date };
-  return commit(ledger, { id, type: "Préstamo", name: `${source.name} prestó a ${target.name}`, amount, date, allocations: [{ name: source.name, amount }, { name: target.name, amount }], loanId }, ledger.accounts, ledger.envelopes.map((item) => item.id === sourceId ? { ...item, balance: item.balance - amount } : item.id === targetId ? { ...item, balance: item.balance + amount } : item), [loan, ...ledger.loans]);
+  return commit(ledger, { id, type: "Préstamo", name: `${source.name} prestó a ${target.name}`, amount, date, allocations: [{ envelopeId: source.id, name: source.name, amount }, { envelopeId: target.id, name: target.name, amount }], loanId }, ledger.accounts, ledger.envelopes.map((item) => item.id === sourceId ? { ...item, balance: item.balance - amount } : item.id === targetId ? { ...item, balance: item.balance + amount } : item), [loan, ...ledger.loans]);
 }
 
 export function repay(ledger: Ledger, loanId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {
@@ -60,12 +123,13 @@ export function repay(ledger: Ledger, loanId: string, amount: number, date: stri
   if (!loan || !target || !source || !validAmount(amount) || amount > loan.outstanding || amount > target.balance) throw new Error("El saldo del sobre no alcanza o el monto supera el préstamo pendiente.");
   const outstanding = loan.outstanding - amount, status: Loan["status"] = outstanding === 0 ? "Devuelto" : "Parcial";
   const nextLoans = ledger.loans.map((item) => item.id === loanId ? { ...item, outstanding, status } : item);
-  return commit(ledger, { id, type: "Devolución", name: `Devolución de ${target.name} a ${source.name}`, amount, date, allocations: [{ name: target.name, amount }, { name: source.name, amount }], loanId }, ledger.accounts, ledger.envelopes.map((item) => item.id === target.id ? { ...item, balance: item.balance - amount } : item.id === source.id ? { ...item, balance: item.balance + amount } : item), nextLoans);
+  return commit(ledger, { id, type: "Devolución", name: `Devolución de ${target.name} a ${source.name}`, amount, date, allocations: [{ envelopeId: target.id, name: target.name, amount }, { envelopeId: source.id, name: source.name, amount }], loanId }, ledger.accounts, ledger.envelopes.map((item) => item.id === target.id ? { ...item, balance: item.balance - amount } : item.id === source.id ? { ...item, balance: item.balance + amount } : item), nextLoans);
 }
 
 export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingreso" | "Gasto"; amount: number; accountId: string; envelopeAllocations: { id: string; amount: number }[]; date: string; name: string; category?: string; description?: string; reference?: string; products?:{name:string;amount:number}[] }): Ledger {
   const account = ledger.accounts.find((item) => item.id === input.accountId && item.active);
   if (!account || !validAmount(input.amount)) throw new Error("Selecciona una cuenta activa y un monto entero válido.");
+  if (new Set(input.envelopeAllocations.map((allocation) => allocation.id)).size !== input.envelopeAllocations.length) throw new Error("Cada sobre debe aparecer una sola vez en la distribución.");
   const allocated = input.envelopeAllocations.reduce((sum, item) => sum + item.amount, 0);
   if (input.envelopeAllocations.some((allocation) => !ledger.envelopes.some((item) => item.id === allocation.id && !item.archived) || !Number.isSafeInteger(allocation.amount) || allocation.amount < 0)) throw new Error("Hay un sobre o monto inválido en la distribución.");
   const delta = input.type === "Ingreso" ? input.amount : -input.amount;
@@ -83,6 +147,6 @@ export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingres
     return { ...item, balance: item.balance + (input.type === "Ingreso" ? allocation : -allocation) };
   });
   const accountName = account.name;
-  const movement: LedgerMovement = { id: input.id || crypto.randomUUID(), type: input.type, name: input.name, amount: input.amount, date: input.date, accountId: account.id, accountName, category: input.category, description: input.description, reference: input.reference, products:input.products, allocations: input.envelopeAllocations.map((allocation) => ({ name: ledger.envelopes.find((item) => item.id === allocation.id)!.name, amount: allocation.amount })) };
+  const movement: LedgerMovement = { id: input.id || crypto.randomUUID(), type: input.type, name: input.name, amount: input.amount, date: input.date, accountId: account.id, accountName, category: input.category, description: input.description, reference: input.reference, products:input.products, allocations: input.envelopeAllocations.map((allocation) => ({ envelopeId: allocation.id, name: ledger.envelopes.find((item) => item.id === allocation.id)!.name, amount: allocation.amount })) };
   return commit(ledger, movement, ledger.accounts.map((item) => item.id === account.id ? { ...item, balance: item.balance + delta } : item), envelopes);
 }
