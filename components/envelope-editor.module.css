@@ -1,0 +1,13 @@
+.form { min-width: 0; }
+.suggestions { display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); gap: 5px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.suggestions legend { margin-bottom: 9px; padding: 0; font-size: 12px; color: var(--ink); }
+.iconButton { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 5px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink); font-size: 24px; }
+.iconButton[aria-pressed="true"] { border: 2px solid var(--green); background: var(--pale); }
+.hint { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.preview { display: flex; gap: 10px; align-items: center; min-width: 0; margin: 4px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.previewIcon { flex: none; font-size: 24px; }
+.previewName { min-width: 0; overflow-wrap: anywhere; color: var(--ink); font-size: 13px; }
+.error { margin: 0; padding: 10px; border: 1px solid var(--red); border-radius: 8px; color: var(--ink); font-size: 12px; line-height: 1.5; }
+.actions { display: grid; gap: 8px; margin-top: 8px; }
+.actions button { min-height: 44px; height: auto; padding: 10px; }
+@media (max-width: 310px) { .suggestions { grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); } }

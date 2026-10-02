@@ -2,9 +2,19 @@ export type Account = { id: string; name: string; type: string; balance: number;
 export type LedgerEnvelope = { id: string; name: string; balance: number; archived?: boolean; goal?: number };
 export type Loan = { id: string; sourceId: string; sourceName: string; targetId: string; targetName: string; amount: number; outstanding: number; status: "Pendiente" | "Parcial" | "Devuelto"; date: string };
 export type LedgerAllocation = { envelopeId?: string; name: string; amount: number };
-export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; reference?: string; allocations: LedgerAllocation[]; loanId?: string; products?:{name:string;amount:number}[] };
+export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; merchant?: string; reference?: string; allocations: LedgerAllocation[]; loanId?: string; products?:{name:string;amount:number}[] };
 export type Ledger = { accounts: Account[]; envelopes: LedgerEnvelope[]; loans: Loan[]; movements: LedgerMovement[] };
 const validAmount=(amount:number)=>Number.isSafeInteger(amount)&&amount>0;
+
+function validMovementDate(value: string): boolean {
+  const match = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,3})?)?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?$/.exec(value);
+  if (!match || value.startsWith("0000")) return false;
+  // Validate the civil day separately: Date otherwise normalizes February 30.
+  const civil = new Date(`${match[1]}T12:00:00Z`);
+  if (!Number.isFinite(civil.getTime()) || civil.toISOString().slice(0, 10) !== match[1]) return false;
+  // A datetime-local input represents Costa Rica time; never use the host zone.
+  return Number.isFinite(new Date(match[2] ? value : `${value}-06:00`).getTime());
+}
 
 export function archiveLedgerEnvelope(ledger: Ledger, envelopeId: string): Ledger {
   const current = ledger.envelopes.find(e => e.id === envelopeId && !e.archived);
@@ -126,12 +136,16 @@ export function repay(ledger: Ledger, loanId: string, amount: number, date: stri
   return commit(ledger, { id, type: "Devolución", name: `Devolución de ${target.name} a ${source.name}`, amount, date, allocations: [{ envelopeId: target.id, name: target.name, amount }, { envelopeId: source.id, name: source.name, amount }], loanId }, ledger.accounts, ledger.envelopes.map((item) => item.id === target.id ? { ...item, balance: item.balance - amount } : item.id === source.id ? { ...item, balance: item.balance + amount } : item), nextLoans);
 }
 
-export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingreso" | "Gasto"; amount: number; accountId: string; envelopeAllocations: { id: string; amount: number }[]; date: string; name: string; category?: string; description?: string; reference?: string; products?:{name:string;amount:number}[] }): Ledger {
+export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingreso" | "Gasto"; amount: number; accountId: string; envelopeAllocations: { id: string; amount: number }[]; date: string; name: string; category?: string; description?: string; merchant?: string; reference?: string; products?:{name:string;amount:number}[] }): Ledger {
   const account = ledger.accounts.find((item) => item.id === input.accountId && item.active);
   if (!account || !validAmount(input.amount)) throw new Error("Selecciona una cuenta activa y un monto entero válido.");
+  if (!validMovementDate(input.date)) throw new Error("Selecciona una fecha y hora válidas para el movimiento.");
   if (new Set(input.envelopeAllocations.map((allocation) => allocation.id)).size !== input.envelopeAllocations.length) throw new Error("Cada sobre debe aparecer una sola vez en la distribución.");
   const allocated = input.envelopeAllocations.reduce((sum, item) => sum + item.amount, 0);
   if (input.envelopeAllocations.some((allocation) => !ledger.envelopes.some((item) => item.id === allocation.id && !item.archived) || !Number.isSafeInteger(allocation.amount) || allocation.amount < 0)) throw new Error("Hay un sobre o monto inválido en la distribución.");
+  if (input.products?.some((product) => !Number.isSafeInteger(product.amount) || product.amount < 0)) throw new Error("El monto de cada producto debe ser un entero mayor o igual que cero.");
+  if (input.products?.some((product) => product.amount > 0 && !product.name.trim())) throw new Error("Escribe el nombre del producto que tiene un monto registrado.");
+  if (input.type === "Gasto" && (input.products?.reduce((sum, product) => sum + product.amount, 0) ?? 0) > input.amount) throw new Error("El total de productos no puede superar el monto del gasto.");
   const delta = input.type === "Ingreso" ? input.amount : -input.amount;
   if (input.type === "Gasto") {
     if (account.balance < input.amount) throw new Error("La cuenta no tiene saldo suficiente para este gasto.");
@@ -147,6 +161,6 @@ export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingres
     return { ...item, balance: item.balance + (input.type === "Ingreso" ? allocation : -allocation) };
   });
   const accountName = account.name;
-  const movement: LedgerMovement = { id: input.id || crypto.randomUUID(), type: input.type, name: input.name, amount: input.amount, date: input.date, accountId: account.id, accountName, category: input.category, description: input.description, reference: input.reference, products:input.products, allocations: input.envelopeAllocations.map((allocation) => ({ envelopeId: allocation.id, name: ledger.envelopes.find((item) => item.id === allocation.id)!.name, amount: allocation.amount })) };
+  const movement: LedgerMovement = { id: input.id || crypto.randomUUID(), type: input.type, name: input.name, amount: input.amount, date: input.date, accountId: account.id, accountName, category: input.category, description: input.description, reference: input.reference, merchant: input.merchant?.trim() || undefined, products:input.products, allocations: input.envelopeAllocations.map((allocation) => ({ envelopeId: allocation.id, name: ledger.envelopes.find((item) => item.id === allocation.id)!.name, amount: allocation.amount })) };
   return commit(ledger, movement, ledger.accounts.map((item) => item.id === account.id ? { ...item, balance: item.balance + delta } : item), envelopes);
 }

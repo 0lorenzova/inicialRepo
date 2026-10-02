@@ -1,0 +1,32 @@
+.bell { position:relative; display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; flex:none; border:1px solid var(--line); border-radius:12px; background:var(--paper); color:var(--ink); }
+.bell svg { width:25px; height:25px; }
+.badge { position:absolute; top:1px; right:0; min-width:19px; height:19px; padding:0 4px; display:grid; place-items:center; border-radius:12px; background:#b62d41; color:#fff; font-size:10px; font-weight:700; }
+.body { display:grid; gap:12px; padding:16px; }
+.body p { margin:0; font-size:12px; line-height:1.6; color:var(--muted); }
+.actions { display:flex; flex-wrap:wrap; gap:8px; }
+.actions button { min-height:44px; padding:8px 12px; }
+.list { display:grid; gap:8px; list-style:none; padding:0; margin:0; }
+.item { min-width:0; border:1px solid var(--line); border-radius:11px; background:var(--paper); padding:10px; }
+.unread { border-left:3px solid var(--green); }
+.item button { color:var(--ink); }
+.open { display:grid; gap:5px; width:100%; min-height:44px; padding:4px; border:0; background:transparent; text-align:left; }
+.open strong { font-size:13px; }
+.open span { font-size:12px; overflow-wrap:anywhere; }
+.open small { font-size:11px; color:var(--muted); }
+.itemActions { display:flex; gap:5px; flex-wrap:wrap; margin-top:5px; }
+.itemActions button { min-height:44px; border:0; padding:6px 9px; border-radius:8px; background:transparent; font-size:11px; }
+.itemActions button:hover { background:var(--canvas); }
+.settings { display:grid; gap:10px; }
+.settings h3 { margin:14px 0 0; font-size:14px; }
+.setting { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
+.setting > span { min-width:0; }
+.setting b { display:block; font-size:12px; }
+.setting small { display:block; margin-top:4px; line-height:1.5; font-size:11px; color:var(--muted); }
+.toggle { flex:none; min-width:74px; min-height:44px; padding:7px 10px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); font-size:11px; }
+.toggle[aria-pressed="true"] { border-color:var(--green); box-shadow:inset 0 0 0 1px var(--green); }
+.toggle:disabled { opacity:.6; cursor:not-allowed; }
+.toneRow { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.toneRow label { font-size:12px; }
+.toneRow select { flex:1; min-width:110px; min-height:44px; padding:8px; border:1px solid var(--line); border-radius:9px; background:var(--paper); color:var(--ink); }
+.hint { margin:0; color:var(--muted); font-size:11px; line-height:1.6; }
+.status { margin:0; font-size:12px; line-height:1.5; color:var(--ink); }

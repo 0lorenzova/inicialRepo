@@ -2,7 +2,8 @@ import { assign, type Ledger, type LedgerEnvelope } from "./finance-ledger";
 
 export type Recurrence = {
   amount: number;
-  frequency: "Semanal" | "Quincenal" | "Mensual";
+  frequency: "Semanal" | "Quincenal" | "Mensual" | "Personalizado";
+  intervalDays?: number;
   nextDate: string;
   snoozedUntil?: string;
 };
@@ -32,10 +33,36 @@ export function validateRecurrence(recurrence: Recurrence): void {
   if (!Number.isSafeInteger(recurrence.amount) || recurrence.amount <= 0) {
     throw new Error("El aporte recurrente debe ser un monto entero mayor que cero.");
   }
-  if (!["Semanal", "Quincenal", "Mensual"].includes(recurrence.frequency)) {
+  if (!["Semanal", "Quincenal", "Mensual", "Personalizado"].includes(recurrence.frequency)) {
     throw new Error("Selecciona una frecuencia válida para el aporte.");
   }
+  if (recurrence.frequency === "Personalizado") validateDayInterval(recurrence.intervalDays);
   civilDate(recurrence.nextDate);
+}
+
+function validateDayInterval(days: number | undefined): asserts days is number {
+  if (!Number.isSafeInteger(days) || (days ?? 0) <= 0) {
+    throw new Error("Ingresa una cantidad de días entera mayor que cero.");
+  }
+}
+
+export type PostponeOption = { unit: "days" | "months"; amount: number };
+
+export function previewPostponement(todayDate: string, option: PostponeOption): string {
+  validateDayInterval(option.amount);
+  if (option.unit !== "days" && option.unit !== "months") throw new Error("Selecciona cómo quieres posponer el aporte.");
+  const next = civilDate(todayDate);
+  if (option.unit === "months") {
+    const day = next.getUTCDate();
+    next.setUTCDate(1);
+    next.setUTCMonth(next.getUTCMonth() + option.amount);
+    const endOfMonth = new Date(next);
+    endOfMonth.setUTCMonth(endOfMonth.getUTCMonth() + 1);
+    endOfMonth.setUTCDate(0);
+    next.setUTCDate(Math.min(day, endOfMonth.getUTCDate()));
+  } else next.setUTCDate(next.getUTCDate() + option.amount);
+  if (!Number.isFinite(next.getTime()) || next.getUTCFullYear() > 9999) throw new Error("La nueva fecha queda fuera del rango permitido. Usa un intervalo menor.");
+  return formatCivilDate(next);
 }
 
 export function isRecurrenceDue(envelope: RecurringEnvelope, todayDate: string): boolean {
@@ -62,20 +89,13 @@ function currentRecurrence(ledger: Ledger, envelopeId: string, expectedNextDate:
   return envelope.recurrence;
 }
 
-function nextContributionDate(todayDate: string, frequency: Recurrence["frequency"]): string {
-  const next = civilDate(todayDate);
-  if (frequency === "Mensual") {
-    const day = next.getUTCDate();
-    next.setUTCDate(1);
-    next.setUTCMonth(next.getUTCMonth() + 1);
-    const endOfMonth = new Date(next);
-    endOfMonth.setUTCMonth(endOfMonth.getUTCMonth() + 1);
-    endOfMonth.setUTCDate(0);
-    next.setUTCDate(Math.min(day, endOfMonth.getUTCDate()));
-  } else {
-    next.setUTCDate(next.getUTCDate() + (frequency === "Semanal" ? 7 : 14));
-  }
-  return formatCivilDate(next);
+export function nextContributionDate(referenceDate: string, frequency: Recurrence["frequency"], intervalDays?: number): string {
+  if (frequency === "Mensual") return previewPostponement(referenceDate, { unit: "months", amount: 1 });
+  if (frequency === "Semanal") return previewPostponement(referenceDate, { unit: "days", amount: 7 });
+  if (frequency === "Quincenal") return previewPostponement(referenceDate, { unit: "days", amount: 15 });
+  if (frequency !== "Personalizado") throw new Error("Selecciona una frecuencia válida para el aporte.");
+  validateDayInterval(intervalDays);
+  return previewPostponement(referenceDate, { unit: "days", amount: intervalDays });
 }
 
 export function confirmRecurringContribution(
@@ -91,7 +111,9 @@ export function confirmRecurringContribution(
   civilDate(todayDate);
   const recurrence = currentRecurrence(ledger, envelopeId, expectedNextDate);
   if (recurrence.nextDate > todayDate) throw new Error("Este aporte todavía no vence.");
-  const nextDate = nextContributionDate(todayDate, recurrence.frequency);
+  // Advance from the scheduled contribution, so late confirmation does not
+  // silently shift the plan. An overdue next period still needs confirmation.
+  const nextDate = nextContributionDate(recurrence.nextDate, recurrence.frequency, recurrence.intervalDays);
   // One ID per envelope and due date also protects retries after reloading.
   const movementId = `recurrence:${encodeURIComponent(envelopeId)}:${expectedNextDate}`;
   const next = assign(ledger, envelopeId, recurrence.amount, dateTime, movementId);
@@ -113,12 +135,15 @@ export function postponeRecurringContribution(
   envelopeId: string,
   expectedNextDate: string,
   todayDate: string,
+  option?: PostponeOption,
 ): Ledger {
   civilDate(todayDate);
   const recurrence = currentRecurrence(ledger, envelopeId, expectedNextDate);
-  const next = civilDate(recurrence.nextDate > todayDate ? recurrence.nextDate : todayDate);
-  next.setUTCDate(next.getUTCDate() + 1);
-  const nextDate = formatCivilDate(next);
+  // Explicit choices are measured from today and shown before confirmation.
+  // Keep the old four-argument call compatible with previously opened forms.
+  const nextDate = option
+    ? previewPostponement(todayDate, option)
+    : previewPostponement(recurrence.nextDate > todayDate ? recurrence.nextDate : todayDate, { unit: "days", amount: 1 });
   return {
     ...ledger,
     envelopes: ledger.envelopes.map((envelope) => envelope.id === envelopeId ? {

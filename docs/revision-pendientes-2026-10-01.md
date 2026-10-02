@@ -1,5 +1,7 @@
 # Revisión de pendientes — 1 de octubre de 2026
 
+> Actualización del 2 de octubre: la confirmación visual del aporte ficticio mencionada en el punto 3 de pendientes ya se completó, junto con posposición y devolución parcial/final. Véase `revision-integral-2026-10-02.md`. La autorización SQL y las pruebas con Supabase real siguen pendientes.
+
 ## Completado en esta revisión
 
 - Vercel confirmó `Deployment has completed` para el despliegue anterior, commit `3f83681`.

@@ -124,7 +124,50 @@ for (const type of ["Ingreso", "Gasto"]) {
 }
 checkInvariant(ledger);
 
-console.log("OK: 15 escenarios del libro financiero verificados.");
+// 16: comercio y productos sobreviven al guardado y reapertura sin reescribir el historial.
+const expenseInput = { id: "merchant-expense", type: "Gasto", amount: 5_000, accountId: "checking", envelopeAllocations: [], date: "2026-10-02T10:45", name: "Compra de prueba", merchant: "  Soda de prueba  ", products: [{ name: "Almuerzo", amount: 3_000 }, { name: "Producto sin precio", amount: 0 }] };
+const sourceSnapshot = JSON.stringify(ledger);
+const merchantLedger = postMovement(ledger, expenseInput);
+assert.equal(merchantLedger.movements[0].merchant, "Soda de prueba");
+assert.deepEqual(merchantLedger.movements[0].products, expenseInput.products);
+const reopenedMerchant = JSON.parse(JSON.stringify(merchantLedger));
+assert.equal(reopenedMerchant.movements[0].merchant, "Soda de prueba");
+assert.deepEqual(reopenedMerchant.movements[0].products, expenseInput.products);
+assert.deepEqual(reopenedMerchant.movements.slice(1), JSON.parse(sourceSnapshot).movements);
+assert.equal(JSON.stringify(ledger), sourceSnapshot);
+checkInvariant(reopenedMerchant);
+
+// 17: productos opcionales en cero son compatibles; cantidades inválidas no cambian saldos.
+for (const amount of [-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+  assert.throws(() => postMovement(ledger, { ...expenseInput, products: [{ name: "Inválido", amount }] }), /entero/);
+}
+assert.throws(() => postMovement(ledger, { ...expenseInput, products: [{ name: "  ", amount: 1 }] }), /nombre/);
+assert.throws(() => postMovement(ledger, { ...expenseInput, products: [{ name: "Uno", amount: 3_000 }, { name: "Dos", amount: 2_001 }] }), /total de productos/);
+for (const products of [undefined, [], [{ name: "", amount: 0 }], [{ name: "Compra completa", amount: 5_000 }]]) {
+  const validExpense = postMovement(ledger, { ...expenseInput, products });
+  assert.equal(totals(validExpense).accounts, totals(ledger).accounts - 5_000);
+  checkInvariant(validExpense);
+}
+assert.equal(JSON.stringify(ledger), sourceSnapshot);
+
+// 18: nuevos registros requieren fecha/hora real, sea local, UTC o con offset.
+const invalidDates = ["", "fecha", "2026-10-02", "2026-02-30T12:00", "2025-02-29T12:00", "2026-13-01T12:00", "2026-00-01T12:00", "2026-01-00T12:00", "2026-10-02T24:00", "2026-10-02T12:60", "2026-10-02T12:00:60", "2026-10-02T12:00+24:00", "2026-10-02T12:00+06:60", "0000-01-01T12:00"];
+for (const type of ["Ingreso", "Gasto"]) {
+  for (const date of invalidDates) {
+    assert.throws(() => postMovement(ledger, { ...expenseInput, type, date }), /fecha y hora/);
+    assert.equal(JSON.stringify(ledger), sourceSnapshot);
+  }
+}
+for (const date of ["2026-10-02T12:00", "2026-10-02T12:00:30.125", "2024-02-29T23:59", "2026-10-02T12:00Z", "2026-10-02T12:00:30.125Z", "2026-10-02T12:00-06:00", "2026-10-02T12:00:30+05:30"]) {
+  const withDate = postMovement(ledger, { ...expenseInput, date });
+  assert.equal(withDate.movements.find(movement => movement.id === expenseInput.id).date, date);
+  checkInvariant(withDate);
+}
+// Existing malformed historical dates stay untouched when a new valid record is saved.
+const historicalDates = { ...ledger, movements: [{ ...ledger.movements[0], id: "legacy-without-date", date: "" }, ...ledger.movements] };
+assert.equal(postMovement(historicalDates, expenseInput).movements.find(movement => movement.id === "legacy-without-date").date, "");
+
+console.log("OK: 18 escenarios del libro financiero verificados.");
 
 // Archivar/desactivar valida el estado vigente, no el saldo de un formulario abierto.
 assert.throws(() => archiveLedgerEnvelope(ledger, "savings"), /saldo/);
