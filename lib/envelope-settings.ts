@@ -2,7 +2,7 @@ import { validateRecurrence, type Recurrence } from "./finance-recurrence";
 import { validateGoalSettings, type GoalSettings, type GoalThresholds } from "./envelope-goals";
 
 type EditableEnvelope = { id: string; name: string; icon: string; balance: number; archived?: boolean; recurrence?: Recurrence } & GoalSettings;
-const goalFields = ["goal", "goalEnabled", "goalDate", "goalTimingEnabled", "goalProgressVisible", "goalDisplay", "goalThresholds", "recurrence"] as const;
+const goalFields = ["goalName", "goal", "goalEnabled", "goalDate", "goalTimingEnabled", "goalProgressVisible", "goalDisplay", "goalThresholds", "recurrence"] as const;
 const editableFields = ["name", "icon", ...goalFields] as const;
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const comparable = (field: typeof editableFields[number], value: unknown) => {

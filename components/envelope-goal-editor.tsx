@@ -1,12 +1,13 @@
 "use client";
 
 import { useId, useRef, useState, type FormEvent } from "react";
+import { TemporalDot, TemporalThresholdFields } from "@/components/temporal-indicator";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { DEFAULT_GOAL_THRESHOLDS, getEnvelopeGoal, validateGoalSettings, type GoalSettings } from "@/lib/envelope-goals";
 import { nextContributionDate, validateRecurrence, type Recurrence } from "@/lib/finance-recurrence";
 import styles from "./envelope-goal-editor.module.css";
 
-type GoalEnvelope = GoalSettings & { id: string; name: string; balance: number; recurrence?: Recurrence };
+type GoalEnvelope = GoalSettings & { id: string; name: string; balance: number; balanceHidden?: boolean; recurrence?: Recurrence };
 type GoalPatch = GoalSettings & { recurrence?: Recurrence };
 const money = (amount: number) => new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 }).format(amount);
 const dateLabel = (date: string) => new Intl.DateTimeFormat("es-CR", { dateStyle: "long", timeZone: "America/Costa_Rica" }).format(new Date(`${date}T12:00:00Z`));
@@ -19,6 +20,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
 }) {
   const id = useId();
   const [enabled, setEnabled] = useState(envelope.goalEnabled ?? Boolean(envelope.goal && envelope.goal > 0));
+  const [goalName, setGoalName] = useState(envelope.goalName ?? "");
   const [amount, setAmount] = useState(envelope.goal?.toString() ?? "");
   const [date, setDate] = useState(envelope.goalDate ?? "");
   const [display, setDisplay] = useState<NonNullable<GoalSettings["goalDisplay"]>>(envelope.goalDisplay ?? "percentage");
@@ -38,6 +40,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
 
   const numeric = (value: string) => value.trim() === "" ? NaN : Number(value);
   const goal: GoalSettings = {
+    goalName: goalName.trim() || undefined,
     goalEnabled: enabled,
     goal: amount.trim() ? numeric(amount) : undefined,
     goalDate: date || undefined,
@@ -89,6 +92,8 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
       <form className={`flow-body ${styles.form}`} onSubmit={submit} noValidate onChange={() => setError("")}>
         <label className={`check-label ${styles.toggle}`}><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} />Activar meta</label>
         {enabled && <>
+          <label htmlFor={`${id}-name`}>Nombre de la meta (opcional)</label>
+          <input id={`${id}-name`} value={goalName} onChange={event => setGoalName(event.target.value)} placeholder={`Meta de ${envelope.name}`} />
           <label htmlFor={`${id}-amount`}>Monto objetivo</label>
           <div className="currency-input"><span aria-hidden="true">₡</span><input id={`${id}-amount`} inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="100000" /></div>
           <label htmlFor={`${id}-date`}>Fecha límite (opcional)</label>
@@ -98,16 +103,12 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
           <p className={styles.hint}>La barra representa el dinero acumulado. El porcentaje puede superar 100%.</p>
           <label className={`check-label ${styles.toggle}`}><input type="checkbox" checked={progressVisible} onChange={event => setProgressVisible(event.target.checked)} />Mostrar barra y progreso en la tarjeta</label>
           <p className={styles.hint}>Puedes ocultarlos sin desactivar la meta ni modificar el saldo.</p>
-          {date && <>
-            <label className={`check-label ${styles.toggle}`}><input type="checkbox" checked={timing} onChange={event => setTiming(event.target.checked)} />Mostrar indicador de tiempo</label>
-            {timing && <fieldset className={styles.thresholds}><legend>Días antes de la fecha límite</legend>
-              <label>Verde<input type="number" inputMode="numeric" min="0" step="1" value={green} onChange={event => setGreen(event.target.value)} /></label>
-              <label>Amarillo<input type="number" inputMode="numeric" min="0" step="1" value={yellow} onChange={event => setYellow(event.target.value)} /></label>
-              <label>Rojo<input type="number" inputMode="numeric" min="0" step="1" value={red} onChange={event => setRed(event.target.value)} /></label>
-              <p className={styles.hint}>Verde debe ser mayor que amarillo, y amarillo mayor que rojo. El indicador aparece al entrar en el plazo verde.</p>
-            </fieldset>}
+          <label className={`check-label ${styles.toggle}`}><input type="checkbox" checked={Boolean(date) && timing} disabled={!date} aria-describedby={`${id}-timing-hint`} onChange={event => setTiming(event.target.checked)} />Mostrar indicador de tiempo</label>
+          <p id={`${id}-timing-hint`} className={styles.hint}>{!date ? "Selecciona una fecha límite para activar el punto verde, amarillo o rojo." : timing ? "El punto muestra la proximidad de la fecha. Puedes tocarlo en la tarjeta para consultar las metas e importes del sobre." : "El punto está oculto. Esto no cambia el saldo ni la meta."}</p>
+          {date && timing && <>
+            <TemporalThresholdFields values={{green, yellow, red}} onChange={(tone, value) => ({green:setGreen, yellow:setYellow, red:setRed})[tone](value)} />
           </>}
-          {progress.active && <div className={styles.preview} aria-live="polite"><strong>{progressLabel}</strong><span>{money(envelope.balance)} de {money(progress.amount)}</span>{progress.temporal && <span>{progress.temporal.label}. {progress.temporal.explanation}</span>}</div>}
+          {progress.active && <div className={styles.preview} aria-live="polite"><strong>{progressLabel}</strong><span>{envelope.balanceHidden ? "••••••" : money(envelope.balance)} de {money(progress.amount)}</span>{progress.temporal && <span className={styles.temporalPreview}><TemporalDot tone={progress.temporal.tone} /><span>{progress.temporal.label}. {progress.temporal.explanation}</span></span>}{progress.daysRemaining !== null && !progress.temporal && <span>El punto aparecerá {green} días antes de la fecha límite.</span>}</div>}
         </>}
         <section className={styles.recurrence} aria-labelledby={`${id}-recurrence`}>
           <h3 id={`${id}-recurrence`}>Aporte recurrente</h3>

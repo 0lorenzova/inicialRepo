@@ -2,7 +2,7 @@
 
 ## Estado
 
-Cambios implementados y comprobados localmente, conservando la aplicación existente. Esta revisión no se ha publicado en Vercel. No se ejecutó SQL ni se escribieron datos ficticios en Supabase.
+Cambios implementados y comprobados localmente, conservando la aplicación existente. El commit `0faad11` se envió a `origin/main`; la confirmación final de Vercel quedó pendiente porque la revisión automática de permisos alcanzó su límite de uso. No se afirma que ese despliegue haya terminado. No se ejecutó SQL ni se escribieron datos ficticios en Supabase.
 
 Las pruebas del navegador utilizaron `http://localhost:3101`, con la conexión a Supabase desactivada solamente para esa compilación local. No se cambiaron las credenciales ni las variables de Vercel. Por petición del propietario, se conservaron los resultados de pruebas anteriores y en la continuación se probaron los casos pendientes o afectados por cambios nuevos.
 
@@ -103,7 +103,7 @@ No se borraron movimientos, no se resetearon saldos y no se limpió almacenamien
 
 **Pendientes que requieren decisión del propietario:**
 
-1. Autorizar cuándo publicar esta revisión en Vercel.
+1. Confirmar el resultado de Vercel para `0faad11`. Los ajustes posteriores del 3 de octubre permanecen locales y requieren una nueva indicación de despliegue.
 2. Autorizar y coordinar la migración anterior de revisión/RPC, su cliente compatible y pruebas en una base de prueba. Véase `docs/sync-migration.md`; no ejecutar el SQL aislado del cambio de cliente.
 3. Decidir en una etapa posterior si se necesitan notificaciones con la aplicación cerrada; requieren infraestructura adicional.
 
@@ -113,4 +113,8 @@ La prueba visual de confirmación recurrente que figuraba pendiente en el inform
 
 La cuadrícula ahora deriva sus columnas del ancho disponible, con densidades cómoda y compacta. Conserva las preferencias móviles de dos/tres columnas y las utiliza como densidad en áreas amplias. Inicio y Sobres admiten un contenido de hasta 1440 px con márgenes limitados. Las tarjetas compactas mantienen al menos 156 px; no se impone un máximo artificial de seis. El contador, las indicaciones y el desplazamiento por teclado utilizan las columnas efectivamente mostradas.
 
-Comprobación puntual: seis columnas a 1440 px, ocho a 1920 px y tres al volver a 390 px, sin desbordamiento horizontal. Probada alternancia cómoda/compacta; script nuevo `scripts/verify-envelope-desktop.mjs`, compilación/TypeScript y lint de archivos afectados correctos. No se repitieron las pruebas financieras. No requiere SQL ni modifica saldos. Pendiente de publicación.
+Comprobación puntual: seis columnas a 1440 px, ocho a 1920 px y tres al volver a 390 px, sin desbordamiento horizontal. Probada alternancia cómoda/compacta; script nuevo `scripts/verify-envelope-desktop.mjs`, compilación/TypeScript y lint de archivos afectados correctos. No se repitieron las pruebas financieras. No requiere SQL ni modifica saldos. Incluida en el commit `0faad11` enviado a Git; resultado final de Vercel sin confirmar.
+
+## Continuación del 3 de octubre
+
+Los requisitos posteriores amplían metas/importes, contadores filtrables, pagos, privacidad por sobre, temas y trazabilidad. Véase `docs/metas-importes-2026-10-03.md`. La presentación con contadores sustituye el punto único para los importes programados.

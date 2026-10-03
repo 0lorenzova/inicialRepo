@@ -1,0 +1,50 @@
+import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
+const hooks = registerHooks({ resolve(specifier, context, next) { return next(["./envelope-goals", "./finance-recurrence", "./finance-ledger"].includes(specifier) ? `${specifier}.ts` : specifier, context); } });
+const { planningItems, mostUrgent, saveScheduledAmount, validateScheduledAmount } = await import("../lib/envelope-planning.ts");
+const { saveGoalSettings } = await import("../lib/envelope-settings.ts");
+const { getEnvelopeGoal } = await import("../lib/envelope-goals.ts");
+const { baseNavigation, nextNavigation, restoreNavigation } = await import("../lib/app-navigation.ts");
+hooks.deregister();
+
+const today = "2026-10-02";
+const envelope = { id: "test", name: "Ahorro", icon: "🐷", balance: 25000, goal: 100000, goalDate: "2026-11-01", recurrence: { amount: 500, frequency: "Mensual", nextDate: "2026-11-01" } };
+const planned = { id: "bonus", name: "Bono anual", amount: 50000, deadline: "2026-10-20", active: true, timingEnabled: true, thresholds: { green: 60, yellow: 20, red: 5 } };
+const before = JSON.stringify(envelope);
+let saved = saveScheduledAmount([envelope], envelope.id, planned, null)[0];
+assert.equal(JSON.stringify(envelope), before);
+assert.equal(saved.balance, envelope.balance);
+assert.deepEqual(saved.recurrence, envelope.recurrence);
+assert.equal(saved.goal, envelope.goal);
+assert.equal(mostUrgent(planningItems(saved, today)).tone, "yellow");
+for (const [deadline, label] of [["2026-10-04", "Tiempo crítico"], [today, "Fecha límite alcanzada"], ["2026-10-01", "Fecha límite vencida"]]) {
+  const urgent = { ...planned, id: "urgent", deadline };
+  const result = saveScheduledAmount([saved], envelope.id, urgent, null)[0];
+  const state = mostUrgent(planningItems(result, today));
+  assert.equal(state.tone, "red"); assert.equal(state.label, label);
+}
+assert.deepEqual(planningItems(saved, today).map(item => item.temporal.tone), ["yellow", "green"]);
+assert.equal(mostUrgent(planningItems({ ...saved, goalEnabled: false, scheduledAmounts: [{ ...planned, active: false }] }, today)), null);
+assert.equal(mostUrgent(planningItems({ ...saved, goalTimingEnabled: false, scheduledAmounts: [{ ...planned, timingEnabled: false }] }, today)), null);
+assert.equal(mostUrgent(planningItems({ ...saved, goalDate: "2027-12-01", scheduledAmounts: [] }, today)), null);
+assert.equal(getEnvelopeGoal({ id: "scheduled-only", balance: 100, scheduledAmounts: [planned] }, today).active, false, "Scheduled amounts do not create a progress bar");
+assert.equal(planningItems({ ...saved, scheduledAmounts: [{ ...planned, deadline: "bad" }] }, today).length, 2, "Bad optional dates preserve the financial screen");
+assert.deepEqual(JSON.parse(JSON.stringify(saved)), saved, "JSON persistence needs no schema change");
+const fresh = { ...saved, balance: 27000, goal: 200000, scheduledAmounts: [...saved.scheduledAmounts, { ...planned, id: "other" }] };
+const edited = saveScheduledAmount([fresh], saved.id, { ...planned, amount: 60000 }, planned)[0];
+assert.equal(edited.balance, 27000); assert.equal(edited.goal, 200000); assert.equal(edited.scheduledAmounts.length, 2);
+assert.throws(() => saveScheduledAmount([edited], saved.id, { ...planned, name: "Changed" }, planned), /cambió/);
+assert.throws(() => saveScheduledAmount([saved], saved.id, planned, null), /cambió/);
+assert.throws(() => saveScheduledAmount([{ ...saved, archived: true }], saved.id, planned, planned), /activo/);
+const reordered = { ...planned, thresholds: { red: 5, yellow: 20, green: 60 } };
+assert.equal(saveScheduledAmount([saved], saved.id, { ...planned, amount: 60000 }, reordered)[0].scheduledAmounts[0].amount, 60000);
+for (const patch of [{ name: " " }, { amount: 0 }, { amount: -1 }, { amount: 1.5 }, { deadline: "2026-02-30" }, { thresholds: { green: 5, yellow: 5, red: 0 } }]) assert.throws(() => validateScheduledAmount({ ...planned, ...patch }));
+const named = saveGoalSettings([fresh], { ...saved, goalName: "Vacaciones 2026" }, saved)[0];
+assert.equal(named.goalName, "Vacaciones 2026"); assert.equal(named.name, "Ahorro"); assert.equal(named.balance, fresh.balance); assert.deepEqual(named.scheduledAmounts, fresh.scheduledAmounts);
+const base = baseNavigation("test", "session", "Sobres");
+const list = nextNavigation(base, { overlay: "planning", context: { envelopeId: saved.id } });
+const detail = nextNavigation(list, { overlay: "planningDetail", context: { envelopeId: saved.id, kind: "scheduled", itemId: planned.id } });
+const editor = nextNavigation(detail, { overlay: "scheduled", context: { envelopeId: saved.id, original: planned } });
+assert.equal(editor.index - detail.index, 1); assert.equal(detail.index - list.index, 1);
+for (const entry of [list, detail, editor]) { const restored = restoreNavigation(entry, "test", "session"); assert.equal(restored.replace, false); assert.deepEqual(restored.entry.value.context, entry.value.context); }
+console.log("OK: planning priority, shared deadline states, independent money/progress, validation, non-destructive persistence, conflicts and contextual navigation.");

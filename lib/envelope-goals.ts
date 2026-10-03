@@ -1,5 +1,6 @@
 export type GoalThresholds = { green: number; yellow: number; red: number };
 export type GoalSettings = {
+  goalName?: string;
   goal?: number;
   goalEnabled?: boolean;
   goalDate?: string;
@@ -23,6 +24,18 @@ function civilDate(value: string): number {
   return date.getTime();
 }
 
+export function validateTemporalSettings(date: string, thresholds: GoalThresholds = DEFAULT_GOAL_THRESHOLDS): void {
+  civilDate(date);
+  validateThresholds(thresholds);
+}
+
+function validateThresholds(thresholds: GoalThresholds): void {
+  if (!Object.values(thresholds).every(value => Number.isSafeInteger(value) && value >= 0)
+    || !(thresholds.green > thresholds.yellow && thresholds.yellow > thresholds.red)) {
+    throw new Error("Los días deben seguir este orden: verde mayor que amarillo, amarillo mayor que rojo; rojo puede ser cero.");
+  }
+}
+
 export function validateGoalSettings(settings: GoalSettings): void {
   const enabled = settings.goalEnabled ?? Boolean(settings.goal && settings.goal > 0);
   if (enabled && (!Number.isSafeInteger(settings.goal) || (settings.goal ?? 0) <= 0)) {
@@ -32,11 +45,7 @@ export function validateGoalSettings(settings: GoalSettings): void {
   if (settings.goalDisplay && !["percentage", "reached", "surplus"].includes(settings.goalDisplay)) {
     throw new Error("Selecciona cómo quieres mostrar la meta alcanzada.");
   }
-  const thresholds = settings.goalThresholds;
-  if (thresholds && (!Object.values(thresholds).every(value => Number.isSafeInteger(value) && value >= 0)
-    || !(thresholds.green > thresholds.yellow && thresholds.yellow > thresholds.red))) {
-    throw new Error("Los días deben seguir este orden: verde mayor que amarillo, amarillo mayor que rojo; rojo puede ser cero.");
-  }
+  if (settings.goalThresholds) validateThresholds(settings.goalThresholds);
 }
 
 export type GoalTemporalState = {
@@ -44,6 +53,19 @@ export type GoalTemporalState = {
   label: string;
   explanation: string;
 };
+
+// Shared by goals and scheduled amounts; money never enters this calculation.
+export function getTemporalState(date: string, today: string, thresholds: GoalThresholds = DEFAULT_GOAL_THRESHOLDS): { daysRemaining: number; temporal: GoalTemporalState | null } {
+  validateTemporalSettings(date, thresholds);
+  const days = Math.round((civilDate(date) - civilDate(today)) / 86_400_000);
+  let temporal: GoalTemporalState | null = null;
+  if (days < 0) temporal = { tone: "red", label: "Fecha límite vencida", explanation: `La fecha límite pasó hace ${Math.abs(days)} ${Math.abs(days) === 1 ? "día" : "días"}.` };
+  else if (days === 0) temporal = { tone: "red", label: "Fecha límite alcanzada", explanation: "La fecha límite es hoy." };
+  else if (days <= thresholds.red) temporal = { tone: "red", label: "Tiempo crítico", explanation: `${days === 1 ? "Falta" : "Faltan"} ${days} ${days === 1 ? "día" : "días"} para la fecha límite.` };
+  else if (days <= thresholds.yellow) temporal = { tone: "yellow", label: "Queda poco tiempo", explanation: `Faltan ${days} días para la fecha límite.` };
+  else if (days <= thresholds.green) temporal = { tone: "green", label: "Estás a tiempo", explanation: `Faltan ${days} días para la fecha límite.` };
+  return { daysRemaining: days, temporal };
+}
 
 export type EnvelopeGoal = {
   active: boolean;
@@ -71,16 +93,9 @@ export function getEnvelopeGoal(envelope: GoalSettings & { balance: number }, to
   if (!envelope.goalDate || envelope.goalTimingEnabled === false) return result;
   try {
     validateGoalSettings(envelope);
-    const days = Math.round((civilDate(envelope.goalDate) - civilDate(todayDate)) / 86_400_000);
-    result.daysRemaining = days;
-    const thresholds = envelope.goalThresholds ?? DEFAULT_GOAL_THRESHOLDS;
     // Time and money are intentionally independent: reaching the amount does
     // not hide a deadline, and a deadline never modifies the financial balance.
-    if (days < 0) result.temporal = { tone: "red", label: "Fecha límite vencida", explanation: `La fecha límite pasó hace ${Math.abs(days)} ${Math.abs(days) === 1 ? "día" : "días"}.` };
-    else if (days === 0) result.temporal = { tone: "red", label: "Fecha límite alcanzada", explanation: "La fecha límite de esta meta es hoy." };
-    else if (days <= thresholds.red) result.temporal = { tone: "red", label: "Tiempo crítico", explanation: `Faltan ${days} ${days === 1 ? "día" : "días"} para la fecha límite.` };
-    else if (days <= thresholds.yellow) result.temporal = { tone: "yellow", label: "Queda poco tiempo", explanation: `Faltan ${days} días para la fecha límite.` };
-    else if (days <= thresholds.green) result.temporal = { tone: "green", label: "Estás a tiempo", explanation: `Faltan ${days} días para la fecha límite.` };
+    Object.assign(result, getTemporalState(envelope.goalDate, todayDate, envelope.goalThresholds));
   } catch {
     // Old or malformed optional planning settings must never hide the balance
     // or break financial screens. Saving the form gives a specific error.

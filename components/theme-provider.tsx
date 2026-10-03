@@ -3,8 +3,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { createTheme, CssBaseline, ThemeProvider as MuiThemeProvider } from "@mui/material";
 
-type ColorMode = "light" | "dark";
-const ThemeModeContext = createContext<{ mode: ColorMode; toggleMode: () => void }>({ mode: "light", toggleMode: () => {} });
+export const themeNames = { light: "Claro", dark: "Oscuro", metallic: "Metálico", organic: "Orgánico / Naturaleza" };
+export type ColorMode = keyof typeof themeNames;
+export const themeClass = (mode: ColorMode) => `${mode === "dark" || mode === "metallic" ? "dark-mode" : ""} theme-${mode}`;
+const ThemeModeContext = createContext<{ mode: ColorMode; setMode: (mode: ColorMode) => void; toggleMode: () => void }>({ mode: "light", setMode: () => {}, toggleMode: () => {} });
 
 export function useThemeMode() {
   return useContext(ThemeModeContext);
@@ -17,7 +19,7 @@ export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const savedMode = window.localStorage.getItem("color-mode");
-      if (savedMode === "light" || savedMode === "dark") setMode(savedMode);
+      if (savedMode && Object.hasOwn(themeNames, savedMode)) setMode(savedMode as ColorMode);
       setPreferencesLoaded(true);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -29,11 +31,11 @@ export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode
 
   const theme = useMemo(() => createTheme({
     palette: {
-      mode,
-      primary: { main: "#0b969f", dark: "#087f88", light: "#e2f4f3" },
+      mode: mode === "dark" || mode === "metallic" ? "dark" : "light",
+      primary: { main: mode === "organic" ? "#477443" : mode === "metallic" ? "#4d8da4" : "#0b969f", dark: "#087f88", light: "#e2f4f3" },
       secondary: { main: "#d29c58" },
-      background: mode === "dark" ? { default: "#121916", paper: "#1c2520" } : { default: "#f7f7f3", paper: "#ffffff" },
-      text: mode === "dark" ? { primary: "#edf2ed", secondary: "#aab4ac" } : { primary: "#202c25", secondary: "#7b837d" },
+      background: mode === "metallic" ? { default: "#151c26", paper: "#253141" } : mode === "organic" ? { default: "#f0f1e6", paper: "#fbfcf4" } : mode === "dark" ? { default: "#121916", paper: "#1c2520" } : { default: "#f7f7f3", paper: "#ffffff" },
+      text: mode === "metallic" ? { primary: "#f1f5fa", secondary: "#bac8d6" } : mode === "organic" ? { primary: "#253725", secondary: "#52694b" } : mode === "dark" ? { primary: "#edf2ed", secondary: "#aab4ac" } : { primary: "#202c25", secondary: "#7b837d" },
       success: { main: "#4d8b69" },
     },
     typography: {
@@ -43,7 +45,7 @@ export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode
     shape: { borderRadius: 16 },
   }), [mode]);
 
-  const toggleMode = () => setMode((current) => current === "light" ? "dark" : "light");
+  const toggleMode = () => setMode((current) => { const modes = Object.keys(themeNames) as ColorMode[]; return modes[(modes.indexOf(current) + 1) % modes.length]; });
 
-  return <ThemeModeContext.Provider value={{ mode, toggleMode }}><MuiThemeProvider theme={theme}><CssBaseline />{children}</MuiThemeProvider></ThemeModeContext.Provider>;
+  return <ThemeModeContext.Provider value={{ mode, setMode, toggleMode }}><MuiThemeProvider theme={theme}><CssBaseline />{children}</MuiThemeProvider></ThemeModeContext.Provider>;
 }

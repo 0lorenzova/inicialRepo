@@ -195,3 +195,25 @@
 @media (min-width: 1100px) {
   .page-content.envelope-page { max-width: 1440px; padding-inline: clamp(24px, 3vw, 48px); }
 }
+
+/* Additional palettes share every layout and control with the original themes. */
+.theme-metallic { --ink:#f1f5fa; --muted:#bac8d6; --line:#455367; --paper:#253141; --canvas:#151c26; --green:#66b5c9; --green-dark:#326c81; --pale:#293f50; background:var(--canvas); color:var(--ink); }
+.theme-organic { --ink:#253725; --muted:#52694b; --line:#c3cfb5; --paper:#fbfcf4; --canvas:#f0f1e6; --green:#477443; --green-dark:#335c31; --pale:#e2ebd8; background:var(--canvas); color:var(--ink); }
+:is(.theme-metallic,.theme-organic) :is(.side-nav,.app-header,.page-panel,.summary-card,.flow-modal,.flow-modal>header,.quick-actions>button,.secondary,input,select,textarea,.currency-input,.choice) { background:var(--paper); color:var(--ink); border-color:var(--line); }
+:is(.theme-metallic,.theme-organic) :is(.summary-card.accent,.quick-actions,.review-box,.nav-item.selected,.view-switch button.selected,.pin-button.pinned) { background:var(--pale); color:var(--ink); border-color:var(--green); }
+:is(.theme-metallic,.theme-organic) :is(.page-title p,.section-heading p,.summary-card small,.review-box span,.build-stamp small,.summary-top,.flow-intro,.flow-body>label) { color:var(--muted); }
+:is(.theme-metallic,.theme-organic) :is(.primary,.add-envelope) { background:var(--green-dark); color:#fff; }
+:is(.theme-metallic,.theme-organic) .primary:disabled { background:var(--line); color:var(--ink); }
+:is(.theme-metallic,.theme-organic) .text-btn { color:var(--green); }
+:is(.theme-metallic,.theme-organic).dialog-theme { background:transparent; }
+.theme-metallic .logo>.brand-name { color:var(--ink); }
+.theme-metallic .side-tip { background:var(--pale); color:var(--ink); }
+.theme-organic .side-tip { background:var(--pale); color:var(--ink); }
+
+.trace-link { display:block; min-height:44px; margin-top:3px; font-size:11px; white-space:normal; text-align:left; }
+.trace-name { overflow-wrap:anywhere; margin:0; font-size:16px; }
+.trace-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; border-bottom:1px solid var(--line); padding:10px 0; font-size:12px; overflow-wrap:anywhere; }
+.trace-row button { grid-column:1 / -1; min-height:44px; }
+
+.theme-metallic .positive { color:#8adbc9; }
+.theme-metallic .negative { color:#ffaaa7; }

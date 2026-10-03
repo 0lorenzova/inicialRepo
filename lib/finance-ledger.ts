@@ -1,8 +1,9 @@
+import { traceAssignmentSources, type IncomeSource } from "./income-trace";
 export type Account = { id: string; name: string; type: string; balance: number; active: boolean };
 export type LedgerEnvelope = { id: string; name: string; balance: number; archived?: boolean; goal?: number };
 export type Loan = { id: string; sourceId: string; sourceName: string; targetId: string; targetName: string; amount: number; outstanding: number; status: "Pendiente" | "Parcial" | "Devuelto"; date: string };
 export type LedgerAllocation = { envelopeId?: string; name: string; amount: number };
-export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; merchant?: string; reference?: string; allocations: LedgerAllocation[]; loanId?: string; products?:{name:string;amount:number}[] };
+export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; merchant?: string; reference?: string; allocations: LedgerAllocation[]; loanId?: string; products?:{name:string;amount:number}[]; incomeSources?: IncomeSource[]; scheduledAmountId?: string };
 export type Ledger = { accounts: Account[]; envelopes: LedgerEnvelope[]; loans: Loan[]; movements: LedgerMovement[] };
 const validAmount=(amount:number)=>Number.isSafeInteger(amount)&&amount>0;
 
@@ -106,7 +107,7 @@ export function commit(ledger: Ledger, movement: LedgerMovement, accounts = ledg
 export function assign(ledger: Ledger, envelopeId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {
   const envelope = ledger.envelopes.find((item) => item.id === envelopeId && !item.archived);
   if (!envelope || !validAmount(amount) || amount > totals(ledger).unassigned) throw new Error("No hay dinero sin asignar suficiente o el monto no es válido.");
-  return commit(ledger, { id, type: "Asignación", name: `Asignación a ${envelope.name}`, amount, date, allocations: [{ envelopeId: envelope.id, name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance + amount } : item));
+  return commit(ledger, { id, type: "Asignación", name: `Asignación a ${envelope.name}`, amount, date, incomeSources: traceAssignmentSources(ledger, amount, date), allocations: [{ envelopeId: envelope.id, name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance + amount } : item));
 }
 
 export function unassign(ledger: Ledger, envelopeId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {

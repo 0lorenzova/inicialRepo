@@ -5,10 +5,8 @@
 .toggle { min-height: 44px; cursor: pointer; }
 .form .toggle input { flex: none; width: 20px; height: 20px; min-height: 20px; accent-color: var(--green); }
 .hint { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
-.thresholds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-width: 0; margin: 5px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
-.thresholds legend { padding: 0 4px; color: var(--ink); font-size: 12px; }
-.thresholds label { display: grid; min-width: 0; gap: 6px; }
-.thresholds .hint { grid-column: 1 / -1; }
+.temporalPreview { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.toggle:has(input:disabled) { cursor: not-allowed; }
 .preview { display: grid; gap: 6px; min-width: 0; padding: 12px; margin: 5px 0; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-size: 12px; overflow-wrap: anywhere; }
 .preview span { color: var(--muted); line-height: 1.5; }
 .recurrence { padding-top: 13px; margin-top: 5px; border-top: 1px solid var(--line); min-width: 0; }
@@ -21,4 +19,3 @@
 .choices legend { padding: 0; margin-bottom: 10px; color: var(--ink); font-size: 12px; }
 .choices button { min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--paper); font-size: 12px; }
 .choices button[aria-pressed="true"] { border: 2px solid var(--green); font-weight: 700; }
-@media (max-width: 330px) { .thresholds { padding: 8px; gap: 5px; } .thresholds input { padding-inline: 6px; } }

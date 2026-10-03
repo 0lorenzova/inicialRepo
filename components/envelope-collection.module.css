@@ -15,12 +15,7 @@
 .progressLabel { flex: 1; min-width: 0; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; line-height: 1.45; }
 .progressTrack { position: absolute; top: 9px; right: 5px; bottom: 9px; display: flex; align-items: flex-end; width: 5px; overflow: hidden; border-radius: 5px; background: var(--line); }
 .progressTrack > span { width: 100%; min-height: 0; border-radius: 5px; background: var(--green); transition: height 160ms ease; }
-.statusButton { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink); }
-.statusDot { width: 9px; height: 9px; border: 1px solid currentColor; border-radius: 50%; }
-.statusDot[data-tone="green"] { background: #24b88b; color: #07875f; }
-.statusDot[data-tone="yellow"] { background: #f1bd33; color: #ae7800; }
-.statusDot[data-tone="red"] { background: #ed676c; color: #b8293b; }
-.statusExplanation { flex: 1 1 100%; min-width: 0; margin: 0 0 5px; padding: 5px; border-radius: 6px; background: var(--canvas); color: var(--ink); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.statusButton { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink); }
 .grid .card, .grid .card[data-goal="true"] { grid-template-columns: 44px minmax(0, 1fr) 44px; grid-template-rows: auto auto auto 1fr; gap: 4px 0; align-content: start; align-items: start; padding: 4px; }
 .grid .dragHandle { grid-column: 1; grid-row: 1; }
 .grid .actions { grid-column: 3; grid-row: 1; }
