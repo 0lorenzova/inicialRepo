@@ -12,7 +12,7 @@ type EnvelopeItem = { id: string; name: string; icon: string; color: string; bal
 type Drag = { id: string; ids: string[]; original: string[]; keyboard: boolean };
 type PendingPress = { x: number; y: number; pointerId: number; timer: ReturnType<typeof setTimeout> };
 
-export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder }: {
+export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, onNewMovement }: {
   envelopes: EnvelopeItem[];
   view: EnvelopeView;
   menuId?: string;
@@ -25,12 +25,14 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
   onPlanning: (id: string, anchor: HTMLButtonElement, filter?: ProximityFilter) => void;
   planningId?: string;
   onCreate: () => void;
+  onNewMovement: (id: string) => void;
   onReorder: (ids: string[]) => void;
 }) {
   const id = useId();
   const container = useRef<HTMLDivElement>(null);
   const pending = useRef<PendingPress | null>(null);
   const drag = useRef<Drag | null>(null);
+  const pointerType = useRef("mouse");
   const [preview, setPreview] = useState<Drag | null>(null);
   const [width, setWidth] = useState<number | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -103,12 +105,13 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
 
   function pointerDown(event: PointerEvent<HTMLButtonElement>, envelopeId: string) {
     if (!event.isPrimary || event.button !== 0) return;
+    pointerType.current = event.pointerType;
     if (drag.current || pending.current) finish(false);
-    // Capture on the stable collection, because cards move in the DOM while sorting.
-    container.current?.setPointerCapture(event.pointerId);
+    // Keep short clicks on the icon; capture switches to the collection only when sorting.
+    event.currentTarget.setPointerCapture(event.pointerId);
     pending.current = {
       x: event.clientX, y: event.clientY, pointerId: event.pointerId,
-      timer: setTimeout(() => start(envelopeId, false), 350),
+      timer: setTimeout(() => { container.current?.setPointerCapture(event.pointerId); start(envelopeId, false); }, 350),
     };
   }
 
@@ -147,7 +150,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
     if (event.key in targets) { event.preventDefault(); moveTo(targets[event.key]); }
   }
 
-  return <div ref={container} className={styles.wrapper} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => finish(false)} onLostPointerCapture={() => { if (pending.current) finish(false); }}>
+  return <div ref={container} className={styles.wrapper} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => finish(false)} onLostPointerCapture={event => { if (event.target === event.currentTarget && pending.current) finish(false); }}>
     <div className="view-switch" role="group" aria-label="Vista de sobres">
       <button type="button" aria-pressed={!grid} className={!grid ? "selected" : ""} onClick={onList}>Lista</button>
       <button type="button" aria-pressed={grid} className={grid ? "selected" : ""} onClick={onGrid} disabled={blockedNext}
@@ -174,11 +177,12 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
           const counts = proximityCounts(plans);
           const hasScheduled = plans.some(item => item.kind === "scheduled");
           const tones = (["green", "yellow", "red"] as const).filter(tone => counts[tone] > 0);
-          const indicators = hasScheduled ? (tones.length ? tones : ["white"] as const) : (temporal ? [temporal.tone] : []);
+          const indicators = hasScheduled ? (tones.length ? tones : ["white"] as const) : (temporal ? [temporal.tone] : ["white"] as const);
           return <div className={`${styles.card} ${preview?.id === envelope.id ? styles.dragging : ""}`} key={envelope.id} data-envelope-id={envelope.id} data-goal={showGoal}>
             <button type="button" className={`emoji ${envelope.color} ${styles.dragHandle}`} aria-label={`Ordenar ${envelope.name}`} aria-describedby={`${id}-sort-hint`} aria-pressed={preview?.id === envelope.id}
+              onDoubleClick={event => { event.stopPropagation(); if (pointerType.current === "touch") return; finish(false); onNewMovement(envelope.id); }}
               onPointerDown={event => pointerDown(event, envelope.id)}
-              onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title="Mantén pulsado para ordenar"><span aria-hidden="true">{envelope.icon}</span></button>
+              onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title="Doble clic: Entrada / Salida. Mantén pulsado para ordenar"><span aria-hidden="true">{envelope.icon}</span></button>
             <span className={styles.name}>{envelope.name}</span>
             <b className={styles.balance}>{(privateMode || envelope.balanceHidden) ? "••••••" : display(envelope.balance)}</b>
             <div className={`envelope-actions ${styles.actions}`}><button type="button" aria-label={`Opciones de ${envelope.name}`} aria-haspopup="menu"
@@ -187,7 +191,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
             {(envelope.recurrence || showGoal || indicators.length > 0) && <div className={styles.details}>
               {envelope.recurrence && <small>Próximo aporte: {privateMode ? "••••" : display(envelope.recurrence.amount)} · {new Date(`${envelope.recurrence.nextDate}T12:00:00`).toLocaleDateString("es-CR", { day: "numeric", month: "short", timeZone: "America/Costa_Rica" })}</small>}
               {showGoal && <span className={styles.progressLabel} aria-label={`Meta de ${envelope.name}: ${percentage} por ciento. ${goal.reached ? "Meta alcanzada." : ""}`}>{progressText}</span>}
-              {indicators.map(tone => <button key={tone} className={styles.statusButton} type="button" aria-label={`Metas e importes de ${envelope.name}: ${tone === "white" ? "Ver todos, sin importes próximos" : hasScheduled ? `${counts[tone]} ${counts[tone] === 1 ? "importe" : "importes"} ${tone === "green" ? "verde" : tone === "yellow" ? "amarillo" : "rojo"}${counts[tone] === 1 ? "" : "s"}` : temporal!.label}`} aria-haspopup="menu" aria-expanded={planningId === envelope.id} aria-controls={planningId === envelope.id ? "envelope-planning-menu" : undefined} onClick={event => onPlanning(envelope.id, event.currentTarget, hasScheduled && tone !== "white" ? tone : undefined)}><TemporalDot tone={tone} />{hasScheduled && tone !== "white" && <span>{counts[tone]}</span>}</button>)}
+              <div className={styles.indicators}>{indicators.map(tone => <button key={tone} className={styles.statusButton} type="button" aria-label={`Metas e importes de ${envelope.name}: ${tone === "white" ? "Ver todos, sin importes próximos" : hasScheduled ? `${counts[tone]} ${counts[tone] === 1 ? "importe" : "importes"} ${tone === "green" ? "verde" : tone === "yellow" ? "amarillo" : "rojo"}${counts[tone] === 1 ? "" : "s"}` : temporal!.label}`} aria-haspopup="menu" aria-expanded={planningId === envelope.id} aria-controls={planningId === envelope.id ? "envelope-planning-menu" : undefined} onClick={event => onPlanning(envelope.id, event.currentTarget, hasScheduled && tone !== "white" ? tone : undefined)}><TemporalDot tone={tone} />{hasScheduled && tone !== "white" && <span>{counts[tone]}</span>}</button>)}</div>
             </div>}
             {showGoal && <div className={styles.progressTrack} aria-hidden="true"><span style={{ height: `${goal.fillPercentage}%` }} /></div>}
           </div>;

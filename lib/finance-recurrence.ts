@@ -48,12 +48,13 @@ function validateDayInterval(days: number | undefined): asserts days is number {
 
 export type PostponeOption = { unit: "days" | "months"; amount: number };
 
-export function previewPostponement(todayDate: string, option: PostponeOption): string {
+export function previewPostponement(todayDate: string, option: PostponeOption, anchorDay?: number): string {
   validateDayInterval(option.amount);
   if (option.unit !== "days" && option.unit !== "months") throw new Error("Selecciona cómo quieres posponer el aporte.");
   const next = civilDate(todayDate);
   if (option.unit === "months") {
-    const day = next.getUTCDate();
+    const day = anchorDay ?? next.getUTCDate();
+    if (!Number.isInteger(day) || day < 1 || day > 31) throw new Error("El día de repetición mensual debe estar entre 1 y 31.");
     next.setUTCDate(1);
     next.setUTCMonth(next.getUTCMonth() + option.amount);
     const endOfMonth = new Date(next);

@@ -17,7 +17,7 @@ export function useAppNavigation(scope: string) {
     window.history.replaceState({ ...window.history.state, financeNav: entry }, "", navigationUrl(entry.value));
     const timer = window.setTimeout(() => { if (current.current === entry) setState(entry.value); }, 0);
     const pop = (event: PopStateEvent) => {
-      const restored = restoreNavigation(event.state?.financeNav, scope, session);
+      const restored = restoreNavigation(event.state?.financeNav, scope, current.current.session);
       if (!restored) return;
       window.clearTimeout(timer);
       current.current = restored.entry;
@@ -42,5 +42,11 @@ export function useAppNavigation(scope: string) {
     else open({ flow: null, step: 0, overlay: null }, true);
   };
   const back = () => window.history.back();
-  return { ...state, open, close, back };
+  const reset = () => {
+    const entry = baseNavigation(scope, crypto.randomUUID());
+    current.current = entry;
+    window.history.replaceState({ ...window.history.state, financeNav: entry }, "", navigationUrl(entry.value));
+    setState(entry.value);
+  };
+  return { ...state, open, close, back, reset };
 }

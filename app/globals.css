@@ -217,3 +217,7 @@
 
 .theme-metallic .positive { color:#8adbc9; }
 .theme-metallic .negative { color:#ffaaa7; }
+
+/* Keep proximity controls beside the section heading when space allows. */
+.envelope-heading { flex-wrap: wrap; gap: 0 8px; }
+.envelope-heading .accordion-toggle { flex: 1 1 150px; }

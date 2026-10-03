@@ -3,7 +3,7 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import { TemporalDot, TemporalThresholdFields } from "@/components/temporal-indicator";
 import { FinanceDialog } from "@/components/finance-dialog";
-import { DEFAULT_GOAL_THRESHOLDS, getEnvelopeGoal, validateGoalSettings, type GoalSettings } from "@/lib/envelope-goals";
+import { DEFAULT_GOAL_THRESHOLDS, LEGACY_GOAL_THRESHOLDS, getEnvelopeGoal, validateGoalSettings, type GoalSettings } from "@/lib/envelope-goals";
 import { nextContributionDate, validateRecurrence, type Recurrence } from "@/lib/finance-recurrence";
 import styles from "./envelope-goal-editor.module.css";
 
@@ -26,7 +26,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
   const [display, setDisplay] = useState<NonNullable<GoalSettings["goalDisplay"]>>(envelope.goalDisplay ?? "percentage");
   const [timing, setTiming] = useState(envelope.goalTimingEnabled ?? Boolean(envelope.goalDate));
   const [progressVisible, setProgressVisible] = useState(envelope.goalProgressVisible ?? true);
-  const initialThresholds = envelope.goalThresholds ?? DEFAULT_GOAL_THRESHOLDS;
+  const initialThresholds = envelope.goalThresholds ?? (envelope.goalDate ? LEGACY_GOAL_THRESHOLDS : DEFAULT_GOAL_THRESHOLDS);
   const [green, setGreen] = useState(String(initialThresholds.green));
   const [yellow, setYellow] = useState(String(initialThresholds.yellow));
   const [red, setRed] = useState(String(initialThresholds.red));

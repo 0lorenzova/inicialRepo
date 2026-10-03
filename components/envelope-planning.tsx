@@ -4,9 +4,9 @@ import { useId, useRef, useState } from "react";
 import type { Account } from "@/lib/finance-ledger";
 import { EnvelopeContextMenu } from "@/components/envelope-context-menu";
 import { FinanceDialog } from "@/components/finance-dialog";
-import { TemporalDot } from "@/components/temporal-indicator";
+import { TemporalBadge } from "@/components/temporal-indicator";
 import { getEnvelopeGoal } from "@/lib/envelope-goals";
-import { planningItems, type PlanningEnvelope, type PlanningItem, type ProximityFilter } from "@/lib/envelope-planning";
+import { planningItems, planningTone, type PlanningEnvelope, type PlanningItem, type ProximityFilter } from "@/lib/envelope-planning";
 import styles from "./envelope-planning.module.css";
 
 const dateLabel = (date?: string) => {
@@ -15,19 +15,23 @@ const dateLabel = (date?: string) => {
   return Number.isNaN(value.getTime()) ? "Revisa la fecha límite" : new Intl.DateTimeFormat("es-CR", { timeZone: "America/Costa_Rica", day: "2-digit", month: "2-digit", year: "numeric" }).format(value);
 };
 const itemType = (item: PlanningItem) => item.kind === "goal" ? "Meta" : "Importe programado";
-const stateText = (item: PlanningItem) => item.payment ? "Pagado" : item.temporal ? `${item.temporal.label}. ${item.temporal.explanation}` : !item.deadline ? "Sin fecha límite" : !item.timingEnabled ? "Indicador oculto" : "Fuera del plazo del indicador";
+const stateText = (item: PlanningItem) => item.payment ? "Pagado" : item.temporal ? `${item.temporal.label}. ${item.temporal.explanation}` : !item.deadline ? "Sin fecha límite" : "Fuera de los rangos monitoreados";
+
+export function PlanningItemSummary({ item, today, display, privateMode }: { item: PlanningItem; today: string; display: (value: number) => string; privateMode: boolean }) {
+  return <span className={styles.item}>
+      <span className={styles.heading}><strong>{privateMode ? itemType(item) : item.name}</strong><TemporalBadge tone={planningTone(item)} date={item.deadline} today={today} /></span>
+      <span>{itemType(item)} · {display(item.amount)}</span><span>Fecha límite: {dateLabel(item.deadline)}</span><small>{stateText(item)}</small>
+    </span>;
+}
 
 export function EnvelopePlanningMenu({ envelope, today, anchor, display, privateMode, onSelect, onClose, filter, onAll }: {
   envelope: PlanningEnvelope; today: string; anchor: HTMLElement; display: (value: number) => string; privateMode: boolean;
   filter?: ProximityFilter; onAll: () => void;
   onSelect: (item: PlanningItem) => void; onClose: () => void;
 }) {
-  const items = planningItems(envelope, today).filter(item => !filter || (item.kind === "scheduled" && item.temporal?.tone === filter && !item.payment));
+  const items = planningItems(envelope, today).filter(item => !filter || (item.kind === "scheduled" && planningTone(item) === filter && !item.payment));
   return <EnvelopeContextMenu anchor={anchor} name={envelope.name} title="Metas e importes de este sobre" menuId="envelope-planning-menu" onClose={onClose} closeOnSelect={false}
-    actions={[...(filter ? [{label:"Ver todos",onSelect:onAll}] : []), ...items.map(item => ({ key: `${item.kind}-${item.id}`, label: `${privateMode ? itemType(item) : item.name}. ${stateText(item)}`, onSelect: () => onSelect(item), content: <span className={styles.item}>
-      <span className={styles.heading}><strong>{privateMode ? itemType(item) : item.name}</strong>{item.temporal && <TemporalDot tone={item.temporal.tone} />}</span>
-      <span>{itemType(item)} · {display(item.amount)}</span><span>Fecha límite: {dateLabel(item.deadline)}</span><small>{stateText(item)}</small>
-    </span> }))]} />;
+    actions={[...(filter ? [{label:"Ver todos",onSelect:onAll}] : []), ...items.map(item => ({ key: `${item.kind}-${item.id}`, label: `${privateMode ? itemType(item) : item.name}. ${stateText(item)}`, onSelect: () => onSelect(item), content: <PlanningItemSummary item={item} today={today} display={display} privateMode={privateMode} /> }))]} />;
 }
 
 export function EnvelopePlanningDetail({ envelope, itemId, kind, today, display, privateMode, onEdit, onBack, accounts, onPay }: {
@@ -43,7 +47,7 @@ export function EnvelopePlanningDetail({ envelope, itemId, kind, today, display,
     <header><button type="button" aria-label="Volver a metas e importes" onClick={onBack}>‹</button><div><h2>{item ? itemType(item) : "Elemento no disponible"}</h2><p className={styles.context}>{envelope.name}</p></div></header>
     <div className="flow-body">{item ? <>
       <h3 className={styles.name}>{privateMode ? itemType(item) : item.name}</h3>
-      <div className="review-box"><b>{display(item.amount)}</b><span>Fecha límite: {dateLabel(item.deadline)}</span><span className={styles.heading}>{item.temporal && <TemporalDot tone={item.temporal.tone} />}{stateText(item)}</span></div>
+      <div className="review-box"><b>{display(item.amount)}</b><span>Fecha límite: {dateLabel(item.deadline)}</span><span className={styles.heading}><TemporalBadge tone={planningTone(item)} date={item.deadline} today={today} />{stateText(item)}</span></div>
       {goal && <p className={styles.context}>{privateMode ? "Progreso oculto" : `${new Intl.NumberFormat("es-CR", { maximumFractionDigits: 1 }).format(goal.percentage)}% · ${envelope.balanceHidden ? "••••••" : display(envelope.balance)} de ${display(goal.amount)}`}</p>}
       {kind === "scheduled" && !item.payment && <p className={styles.context}>Al marcar Pagado se registrará un gasto en este sobre y en la cuenta que elijas.</p>}
       {!item.payment && <button className="primary wide" type="button" onClick={onEdit}>{kind === "goal" ? "Configurar meta" : "Modificar importe"}</button>}

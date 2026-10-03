@@ -1,8 +1,13 @@
-import type { GoalTemporalState } from "@/lib/envelope-goals";
+import { compactTemporalDistance, type GoalTemporalState } from "@/lib/envelope-goals";
 import styles from "./temporal-indicator.module.css";
 
 export function TemporalDot({ tone }: { tone: GoalTemporalState["tone"] | "white" }) {
   return <span className={styles.dot} data-tone={tone} aria-hidden="true" />;
+}
+
+export function TemporalBadge({ tone, date, today }: { tone: GoalTemporalState["tone"] | "white"; date?: string; today: string }) {
+  const distance = compactTemporalDistance(date, today);
+  return <span className={styles.badge}><TemporalDot tone={tone} />{distance && <small>{distance}</small>}</span>;
 }
 
 export function TemporalThresholdFields({ values, onChange }: {
@@ -11,6 +16,6 @@ export function TemporalThresholdFields({ values, onChange }: {
 }) {
   return <fieldset className={styles.thresholds}><legend>Días antes de la fecha límite</legend>
     {([ ["green", "Verde"], ["yellow", "Amarillo"], ["red", "Rojo"] ] as const).map(([tone, label]) => <label key={tone}><span className={styles.label}><TemporalDot tone={tone} />{label}</span><input type="number" inputMode="numeric" min="0" step="1" value={values[tone]} onChange={event => onChange(tone, event.target.value)} /></label>)}
-    <p>Verde debe ser mayor que amarillo, y amarillo mayor que rojo. El indicador aparece al entrar en el plazo verde.</p>
+    <p>Verde debe ser mayor que amarillo, y amarillo mayor que rojo. Fuera de estos rangos se muestra un punto blanco.</p>
   </fieldset>;
 }

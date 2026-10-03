@@ -140,6 +140,16 @@ export function useFinanceStore<T>(client: SupabaseClient | null, initial: T, hy
       setData(initial);
     }
   };
+  const replaceWithBackup = (update: (current: T) => T) => {
+    const state = controller.current?.getState();
+    if (client && (!state?.ready || state.pending || state.status !== "synced" || !state.userId)) throw new Error("Primero sincroniza los cambios y resuelve cualquier conflicto antes de restablecer.");
+    if (!client && !snapshot.ready) throw new Error("Primero recupera la copia local antes de restablecer.");
+    const current = client ? state!.data : localData.current;
+    const next = update(current);
+    // If storage is unavailable/full, fail before changing any financial data.
+    localStorage.setItem(`finanzas:backup:${client ? state!.userId : "local"}:reset:${crypto.randomUUID()}`, JSON.stringify({ data: current, createdAt: new Date().toISOString() }));
+    setData(next);
+  };
   const downloadBackup = () => {
     let backups: { key: string; value: string | null }[] = [];
     let previous: string | null = null;
@@ -158,7 +168,7 @@ export function useFinanceStore<T>(client: SupabaseClient | null, initial: T, hy
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  return { ...snapshot, setData, user, authLoading, retry, clearLocalCopy, downloadBackup,
+  return { ...snapshot, setData, user, authLoading, retry, clearLocalCopy, downloadBackup, replaceWithBackup,
     reloadFromCloud: async () => { await controller.current?.reloadFromCloud(); },
   };
 }

@@ -11,7 +11,8 @@ export type GoalSettings = {
 };
 
 // Suggested initial values, copied into each goal's editable configuration.
-export const DEFAULT_GOAL_THRESHOLDS: GoalThresholds = { green: 60, yellow: 20, red: 5 };
+export const LEGACY_GOAL_THRESHOLDS: GoalThresholds = { green: 60, yellow: 20, red: 5 };
+export const DEFAULT_GOAL_THRESHOLDS: GoalThresholds = { green: 15, yellow: 8, red: LEGACY_GOAL_THRESHOLDS.red };
 
 function civilDate(value: string): number {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith("0000")) {
@@ -27,6 +28,19 @@ function civilDate(value: string): number {
 export function validateTemporalSettings(date: string, thresholds: GoalThresholds = DEFAULT_GOAL_THRESHOLDS): void {
   civilDate(date);
   validateThresholds(thresholds);
+}
+
+export function temporalDistance(date: string, today: string): number {
+  return Math.round((civilDate(date) - civilDate(today)) / 86_400_000);
+}
+
+export function compactTemporalDistance(date: string | undefined, today: string): string {
+  if (!date) return "";
+  try {
+    const days = Math.abs(temporalDistance(date, today));
+    const [amount, singular, plural] = days >= 30 ? [Math.floor(days / 30), "mes", "meses"] : days >= 7 ? [Math.floor(days / 7), "semana", "semanas"] : [days, "día", "días"];
+    return `${amount} ${amount === 1 ? singular : plural}`;
+  } catch { return ""; }
 }
 
 function validateThresholds(thresholds: GoalThresholds): void {
@@ -57,7 +71,7 @@ export type GoalTemporalState = {
 // Shared by goals and scheduled amounts; money never enters this calculation.
 export function getTemporalState(date: string, today: string, thresholds: GoalThresholds = DEFAULT_GOAL_THRESHOLDS): { daysRemaining: number; temporal: GoalTemporalState | null } {
   validateTemporalSettings(date, thresholds);
-  const days = Math.round((civilDate(date) - civilDate(today)) / 86_400_000);
+  const days = temporalDistance(date, today);
   let temporal: GoalTemporalState | null = null;
   if (days < 0) temporal = { tone: "red", label: "Fecha límite vencida", explanation: `La fecha límite pasó hace ${Math.abs(days)} ${Math.abs(days) === 1 ? "día" : "días"}.` };
   else if (days === 0) temporal = { tone: "red", label: "Fecha límite alcanzada", explanation: "La fecha límite es hoy." };
@@ -95,7 +109,7 @@ export function getEnvelopeGoal(envelope: GoalSettings & { balance: number }, to
     validateGoalSettings(envelope);
     // Time and money are intentionally independent: reaching the amount does
     // not hide a deadline, and a deadline never modifies the financial balance.
-    Object.assign(result, getTemporalState(envelope.goalDate, todayDate, envelope.goalThresholds));
+    Object.assign(result, getTemporalState(envelope.goalDate, todayDate, envelope.goalThresholds ?? LEGACY_GOAL_THRESHOLDS));
   } catch {
     // Old or malformed optional planning settings must never hide the balance
     // or break financial screens. Saving the form gives a specific error.

@@ -15,7 +15,7 @@
 .progressLabel { flex: 1; min-width: 0; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; line-height: 1.45; }
 .progressTrack { position: absolute; top: 9px; right: 5px; bottom: 9px; display: flex; align-items: flex-end; width: 5px; overflow: hidden; border-radius: 5px; background: var(--line); }
 .progressTrack > span { width: 100%; min-height: 0; border-radius: 5px; background: var(--green); transition: height 160ms ease; }
-.statusButton { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink); }
+.statusButton { display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 11px; flex: 1 1 44px; min-width: 25px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink); }
 .grid .card, .grid .card[data-goal="true"] { grid-template-columns: 44px minmax(0, 1fr) 44px; grid-template-rows: auto auto auto 1fr; gap: 4px 0; align-content: start; align-items: start; padding: 4px; }
 .grid .dragHandle { grid-column: 1; grid-row: 1; }
 .grid .actions { grid-column: 3; grid-row: 1; }
@@ -31,3 +31,6 @@
 .widthNotice button { min-height: 44px; height: auto; padding: 10px; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 @media (prefers-reduced-motion: reduce) { .progressTrack > span { transition: none; } }
+
+.indicators { display: flex; flex-flow: row nowrap; align-items: center; width: 132px; max-width: 100%; min-width: 0; flex-shrink: 0; }
+.grid .progressLabel { flex-basis: 100%; }
