@@ -110,3 +110,17 @@ export function planningStateText(item: PlanningItem): string {
   if (!item.timingEnabled) return "Seguimiento por proximidad desactivado para este elemento.";
   return item.greenDays !== undefined ? `Faltan más de ${item.greenDays} días para la fecha límite.` : "Sin rangos de proximidad configurados.";
 }
+
+// Move planning only. Payments and ledger history keep their original attribution.
+export function moveScheduledAmount<T extends PlanningEnvelope>(envelopes: T[], sourceId: string, targetId: string, original: ScheduledAmount): T[] {
+  if (sourceId === targetId) throw new Error("Selecciona otro sobre como destino.");
+  const source = envelopes.find(e=>e.id===sourceId && !e.archived);
+  const target = envelopes.find(e=>e.id===targetId && !e.archived);
+  if (!source || !target) throw new Error("Ambos sobres deben estar activos.");
+  const current = source.scheduledAmounts?.find(item=>item.id===original.id);
+  if (!current || !current.active) throw new Error("El importe ya no está en este sobre.");
+  if (current.payment || original.payment) throw new Error("Los importes pagados conservan su sobre e historial original.");
+  if (comparable(current)!==comparable(original)) throw new Error("El importe cambió. Vuelve a abrirlo antes de moverlo.");
+  if (target.scheduledAmounts?.some(item=>item.id===current.id || (current.repetition && item.repetition?.seriesId===current.repetition.seriesId && item.deadline===current.deadline))) throw new Error("El destino ya contiene esa programación.");
+  return envelopes.map(envelope=>envelope.id===sourceId ? { ...envelope, scheduledAmounts: envelope.scheduledAmounts!.filter(item=>item.id!==current.id) } : envelope.id===targetId ? { ...envelope, scheduledAmounts: [...(envelope.scheduledAmounts??[]),current] } : envelope);
+}

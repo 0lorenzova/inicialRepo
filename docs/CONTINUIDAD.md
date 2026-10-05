@@ -132,3 +132,13 @@ Archivos: app/page.tsx, app/globals.css; components/envelope-collection.tsx y CS
 
 ### Retomar después
 Priorizar cuentas contextuales, traslado seguro de pendientes, deuda separada, zoom y cronograma. Después continuar la matriz anterior. No repetir pruebas aprobadas salvo cambios que las afecten. Se cerró este bloque al llegar a 15 % semanal para publicar con margen.
+
+## Continuación — cuentas contextuales y traslado de importes (5 octubre)
+- Completado punto 7: crear y seleccionar cuenta desde Ingreso, Gasto y Pago programado, sin salir ni perder el borrador. Saldo inicial cero. La sección Cuentas y los selectores comparten addFinanceAccount.
+- Punto 8 parcialmente completado: traslado de importes programados pendientes, conservando ID, monto, fecha, rangos y repetición. Una actualización del mismo JSON, sin duplicación ni cambios de saldos. Pagos posteriores utilizan el sobre destino; pagos anteriores no se trasladan.
+- El traslado de METAS todavía falta; el modelo actual guarda una meta por sobre y su editor comparte ajustes de recurrencia del sobre. No sobrescribir metas del destino ni mover aportes sin definir esa separación.
+- Pruebas: nuevo verify-context-accounts-planning valida cuentas con saldo cero, IDs duplicados, traslado atómico e inmutable, conflictos, pagos históricos bloqueados, recurrencia y pago en destino conservando igualdad financiera. TypeScript, lint y build aprobados.
+- Navegador local sin Supabase a 320px: se creó Cuenta ficticia contextual desde un ingreso, conservando nombre y monto 1250. Sin overflow horizontal. Se trasladó un importe ficticio Hogar → Ahorro y el detalle actualizó el contexto. No se hicieron escrituras de prueba en producción.
+- Archivos: lib/finance-accounts.ts, components/account-selector.tsx, lib/envelope-planning.ts, components/envelope-planning.tsx, app/page.tsx, app/globals.css, scripts/verify-context-accounts-planning.mjs.
+- Sin cambios SQL. Sigue pendiente la migración RPC; NO ejecutarla sin cliente compatible y autorización.
+- Retomar: traslado de metas, deuda separada, zoom global, cronograma y después los restantes puntos de la matriz. No repetir pruebas anteriores que no hayan sido afectadas. Esta sesión comenzó ya bajo el umbral semanal de 15%; se publica un bloque corto para conservar margen.
