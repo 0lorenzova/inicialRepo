@@ -142,3 +142,12 @@ Priorizar cuentas contextuales, traslado seguro de pendientes, deuda separada, z
 - Archivos: lib/finance-accounts.ts, components/account-selector.tsx, lib/envelope-planning.ts, components/envelope-planning.tsx, app/page.tsx, app/globals.css, scripts/verify-context-accounts-planning.mjs.
 - Sin cambios SQL. Sigue pendiente la migración RPC; NO ejecutarla sin cliente compatible y autorización.
 - Retomar: traslado de metas, deuda separada, zoom global, cronograma y después los restantes puntos de la matriz. No repetir pruebas anteriores que no hayan sido afectadas. Esta sesión comenzó ya bajo el umbral semanal de 15%; se publica un bloque corto para conservar margen.
+
+## Continuación — detalles de gastos e historial (5 octubre)
+- Completado: selector global de sobres en Movimientos, incluidos archivados. Reutiliza el filtro por ID existente y conserva filtros de fecha, tipo y búsqueda.
+- Completado: método de pago opcional (Efectivo, Tarjeta, Transferencia, SINPE Móvil, Otro) y etiquetas en gastos; se guardan en el movimiento existente, se muestran en historial y participan en búsqueda. Modo privado los oculta.
+- Normalización central: etiquetas sin duplicados, hasta 12 de 40 caracteres, espacios y prefijo # normalizados. Datos antiguos siguen siendo válidos sin estos campos.
+- Pruebas: verify-expense-details aprobado (validación, persistencia JSON, búsqueda combinada, atomicidad y equilibrio financiero), TypeScript, lint y build aprobados. Navegador: selector Ahorro y formulario de gasto con SINPE Móvil/etiquetas a 390 y 320 px, sin overflow horizontal. No se guardó gasto en producción.
+- Archivos: app/page.tsx, lib/finance-ledger.ts, lib/finance-history.ts, lib/expense-details.ts y scripts/verify-expense-details.mjs.
+- No requiere SQL. Foto del recibo sigue pendiente, al igual que categorías editables.
+- Retomar todavía: traslado de metas, deuda separada, zoom global, cronograma y pendientes anteriores de la matriz. Esta continuación comenzó con 7 % semanal restante; se publica antes de agotar el margen.

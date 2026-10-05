@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import { normalizeExpenseDetails } from '../lib/expense-details.ts';
+import { postMovement, totals } from '../lib/finance-ledger.ts';
+import { filterHistory } from '../lib/finance-history.ts';
+assert.deepEqual(normalizeExpenseDetails('Tarjeta',[' Trabajo ','trabajo','#Almuerzo','']),{paymentMethod:'Tarjeta',tags:['Trabajo','Almuerzo']});
+assert.throws(()=>normalizeExpenseDetails('inexistente'));
+assert.throws(()=>normalizeExpenseDetails('', ['x'.repeat(41)]));
+assert.throws(()=>normalizeExpenseDetails('',Array.from({length:13},(_,i)=>String(i))));
+const ledger={accounts:[{id:'a',name:'Banco',balance:1000,type:'Banco',active:true}],envelopes:[{id:'e',name:'Comida',balance:500}],loans:[],movements:[]};
+const input={id:'m',type:'Gasto',accountId:'a',amount:100,envelopeAllocations:[{id:'e',amount:100}],date:'2026-10-05T12:00',name:'Almuerzo',paymentMethod:'SINPE Móvil',tags:['Trabajo','Trabajo']};
+const result=postMovement(ledger,input);
+assert.deepEqual(result.movements[0].tags,['Trabajo']);
+assert.equal(filterHistory(result.movements,{search:'sinpe movil',envelopeId:'e'}).length,1);
+assert.equal(filterHistory(result.movements,{search:'trabajo',envelopeId:'other'}).length,0);
+assert.equal(filterHistory(JSON.parse(JSON.stringify(result)).movements,{search:'trabajo'}).length,1);
+const before=JSON.stringify(ledger);assert.throws(()=>postMovement(ledger,{...input,tags:['x'.repeat(41)]}));assert.equal(JSON.stringify(ledger),before);
+const t=totals(result);assert.equal(t.accounts,t.assigned+t.unassigned);
+console.log('OK: expense details normalization, validation, persistence, search and financial atomicity.');

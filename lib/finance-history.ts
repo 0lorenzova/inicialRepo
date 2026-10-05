@@ -28,7 +28,7 @@ export function filterHistory(movements: LedgerMovement[], filters: HistoryFilte
     if (filters.type && filters.type !== "Todos" && m.type !== filters.type) return false;
     const day = movementDay(m.date);
     if (filters.from && (!day || day < filters.from) || filters.to && (!day || day > filters.to)) return false;
-    const searchable = [m.name, m.category, m.description, m.reference, m.merchant, m.accountName, ...m.allocations.map(a=>a.name), ...(m.products ?? []).map(p=>p.name)].filter(Boolean).join(" ");
+    const searchable = [m.name, m.category, m.description, m.reference, m.merchant, m.accountName, m.paymentMethod, ...(m.tags ?? []), ...m.allocations.map(a=>a.name), ...(m.products ?? []).map(p=>p.name)].filter(Boolean).join(" ");
     return !search || normalize(searchable).includes(search);
   }).sort((a,b) => (movementInstant(b.date) - movementInstant(a.date) || b.id.localeCompare(a.id)));
 }
