@@ -1,4 +1,4 @@
-import { getEnvelopeGoal, getTemporalState, validateTemporalSettings, type GoalSettings, type GoalTemporalState, type GoalThresholds } from "./envelope-goals";
+import { DEFAULT_GOAL_THRESHOLDS, getEnvelopeGoal, getTemporalState, validateTemporalSettings, type GoalSettings, type GoalTemporalState, type GoalThresholds } from "./envelope-goals";
 import { postMovement, type Ledger } from "./finance-ledger";
 import { previewPostponement } from "./finance-recurrence";
 import { temporalDistance } from "./envelope-goals";
@@ -18,7 +18,7 @@ export type ScheduledAmount = {
 };
 export type EnvelopePlanning = { scheduledAmounts?: ScheduledAmount[]; balanceHidden?: boolean };
 export type PlanningEnvelope = GoalSettings & EnvelopePlanning & { id: string; name: string; balance: number; archived?: boolean };
-export type PlanningItem = { id: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string; temporal: GoalTemporalState | null; timingEnabled: boolean; payment?: ScheduledAmount["payment"] };
+export type PlanningItem = { id: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string; temporal: GoalTemporalState | null; timingEnabled: boolean; greenDays?: number; payment?: ScheduledAmount["payment"] };
 export type ProximityFilter = "white" | "green" | "yellow" | "red";
 export const proximityLabels = { white: "Blanco", green: "Verde", yellow: "Amarillo", red: "Rojo" };
 export const planningTone = (item: PlanningItem): ProximityFilter => item.temporal?.tone ?? "white";
@@ -32,13 +32,13 @@ export function globalPlanningItems(envelopes: PlanningEnvelope[], today: string
 
 export function planningItems(envelope: PlanningEnvelope, today: string): PlanningItem[] {
   const goal = getEnvelopeGoal(envelope, today);
-  const items: PlanningItem[] = goal.active ? [{ id: "goal", kind: "goal", name: envelope.goalName?.trim() || `Meta de ${envelope.name}`, amount: goal.amount, deadline: envelope.goalDate, temporal: goal.temporal, timingEnabled: envelope.goalTimingEnabled !== false }] : [];
+  const items: PlanningItem[] = goal.active ? [{ id: "goal", kind: "goal", name: envelope.goalName?.trim() || `Meta de ${envelope.name}`, amount: goal.amount, deadline: envelope.goalDate, temporal: goal.temporal, greenDays: (envelope.goalThresholds ?? DEFAULT_GOAL_THRESHOLDS).green, timingEnabled: envelope.goalTimingEnabled !== false }] : [];
   for (const item of envelope.scheduledAmounts ?? []) {
     if (!item.active) continue;
     let temporal: GoalTemporalState | null = null;
     try { if (!item.payment && item.timingEnabled !== false && item.thresholds) temporal = getTemporalState(item.deadline, today, item.thresholds).temporal; }
     catch { /* Preserve legacy planning data; invalid optional dates never break financial screens. */ }
-    items.push({ id: item.id, kind: "scheduled", name: item.name, amount: item.amount, deadline: item.deadline, temporal, timingEnabled: item.timingEnabled !== false, payment: item.payment });
+    items.push({ id: item.id, kind: "scheduled", name: item.name, amount: item.amount, deadline: item.deadline, temporal, greenDays: item.thresholds?.green, timingEnabled: item.timingEnabled !== false, payment: item.payment });
   }
   return items.sort((a,b) => (a.deadline || "9999").localeCompare(b.deadline || "9999") || a.id.localeCompare(b.id));
 }
@@ -96,4 +96,17 @@ export function payScheduledAmount(ledger: Ledger, envelopeId: string, itemId: s
   const movementId = `scheduled-payment:${envelopeId}:${itemId}`;
   const next = postMovement(ledger, { id: movementId, type: "Gasto", amount, accountId, envelopeAllocations: [{ id: envelopeId, amount }], date, name: `Pago: ${item.name}`, category: "Importe programado" });
   return { ...next, movements: next.movements.map(m => m.id === movementId ? { ...m, scheduledAmountId: itemId } : m), envelopes: next.envelopes.map(e => e.id === envelopeId ? { ...e, scheduledAmounts: [...envelope!.scheduledAmounts!.map(p => p.id === itemId ? { ...p, payment: { movementId, amount, date, accountId } } : p), ...(following ? [following] : [])] } : e) };
+}
+
+export function planningIndicators(items: PlanningItem[]): ProximityFilter[] {
+  const pending = items.filter(item => !item.payment);
+  const active = (["red", "yellow", "green"] as const).filter(tone => pending.some(item => planningTone(item) === tone));
+  return active.length ? active : pending.length ? ["white"] : [];
+}
+export function planningStateText(item: PlanningItem): string {
+  if (item.payment) return "Pagado";
+  if (item.temporal) return `${item.temporal.label}. ${item.temporal.explanation}`;
+  if (!item.deadline) return "Sin fecha límite";
+  if (!item.timingEnabled) return "Seguimiento por proximidad desactivado para este elemento.";
+  return item.greenDays !== undefined ? `Faltan más de ${item.greenDays} días para la fecha límite.` : "Sin rangos de proximidad configurados.";
 }

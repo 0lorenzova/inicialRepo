@@ -199,13 +199,13 @@
 /* Additional palettes share every layout and control with the original themes. */
 .theme-metallic { --ink:#f1f5fa; --muted:#bac8d6; --line:#455367; --paper:#253141; --canvas:#151c26; --green:#66b5c9; --green-dark:#326c81; --pale:#293f50; background:var(--canvas); color:var(--ink); }
 .theme-organic { --ink:#253725; --muted:#52694b; --line:#c3cfb5; --paper:#fbfcf4; --canvas:#f0f1e6; --green:#477443; --green-dark:#335c31; --pale:#e2ebd8; background:var(--canvas); color:var(--ink); }
-:is(.theme-metallic,.theme-organic) :is(.side-nav,.app-header,.page-panel,.summary-card,.flow-modal,.flow-modal>header,.quick-actions>button,.secondary,input,select,textarea,.currency-input,.choice) { background:var(--paper); color:var(--ink); border-color:var(--line); }
-:is(.theme-metallic,.theme-organic) :is(.summary-card.accent,.quick-actions,.review-box,.nav-item.selected,.view-switch button.selected,.pin-button.pinned) { background:var(--pale); color:var(--ink); border-color:var(--green); }
-:is(.theme-metallic,.theme-organic) :is(.page-title p,.section-heading p,.summary-card small,.review-box span,.build-stamp small,.summary-top,.flow-intro,.flow-body>label) { color:var(--muted); }
-:is(.theme-metallic,.theme-organic) :is(.primary,.add-envelope) { background:var(--green-dark); color:#fff; }
-:is(.theme-metallic,.theme-organic) .primary:disabled { background:var(--line); color:var(--ink); }
-:is(.theme-metallic,.theme-organic) .text-btn { color:var(--green); }
-:is(.theme-metallic,.theme-organic).dialog-theme { background:transparent; }
+:is(.theme-metallic,.theme-organic,.theme-silver) :is(.side-nav,.app-header,.page-panel,.summary-card,.flow-modal,.flow-modal>header,.quick-actions>button,.secondary,input,select,textarea,.currency-input,.choice) { background:var(--paper); color:var(--ink); border-color:var(--line); }
+:is(.theme-metallic,.theme-organic,.theme-silver) :is(.summary-card.accent,.quick-actions,.review-box,.nav-item.selected,.view-switch button.selected,.pin-button.pinned) { background:var(--pale); color:var(--ink); border-color:var(--green); }
+:is(.theme-metallic,.theme-organic,.theme-silver) :is(.page-title p,.section-heading p,.summary-card small,.review-box span,.build-stamp small,.summary-top,.flow-intro,.flow-body>label) { color:var(--muted); }
+:is(.theme-metallic,.theme-organic,.theme-silver) :is(.primary,.add-envelope) { background:var(--green-dark); color:#fff; }
+:is(.theme-metallic,.theme-organic,.theme-silver) .primary:disabled { background:var(--line); color:var(--ink); }
+:is(.theme-metallic,.theme-organic,.theme-silver) .text-btn { color:var(--green); }
+:is(.theme-metallic,.theme-organic,.theme-silver).dialog-theme { background:transparent; }
 .theme-metallic .logo>.brand-name { color:var(--ink); }
 .theme-metallic .side-tip { background:var(--pale); color:var(--ink); }
 .theme-organic .side-tip { background:var(--pale); color:var(--ink); }
@@ -221,3 +221,19 @@
 /* Keep proximity controls beside the section heading when space allows. */
 .envelope-heading { flex-wrap: wrap; gap: 0 8px; }
 .envelope-heading .accordion-toggle { flex: 1 1 150px; }
+
+/* Incremental themes use the same surfaces and component tokens. */
+.theme-silver { --ink:#202e3a; --muted:#526171; --line:#b6c2cf; --paper:#f6f8fb; --canvas:#e5e9ef; --green:#465c70; --green-dark:#334b60; --pale:#d8e1eb; background:linear-gradient(135deg,#edf0f5,#dbe1e8); color:var(--ink); }
+.theme-silver :is(.summary-card,.page-panel,.flow-modal) { box-shadow:inset 0 1px 0 #fff,0 3px 10px #2030400b; }
+.theme-organic { --ink:#1e392b; --muted:#46634d; --line:#adbea0; --paper:#f4f6e9; --canvas:#e3e9d6; --green:#3b7047; --green-dark:#28573a; --pale:#d0dfba; background:radial-gradient(ellipse at top right,#c8dab688,transparent 60%),var(--canvas); }
+.theme-organic :is(.summary-card,.page-panel,.flow-modal) { box-shadow:inset 0 1px 0 #ffffffb0,0 3px 10px #263e1c0b; }
+.theme-organic .side-nav { background:linear-gradient(160deg,#edf2df,#d5e2c3); }
+.envelope-proximity { flex:1 0 100%; min-width:0; padding:0 0 6px; }
+.envelope-proximity > div { justify-content:flex-start; }
+.settings-group { padding:12px 0; border-bottom:1px solid var(--line); }
+.settings-group > h2 { margin:0; font-size:15px; }
+.settings-group > div:not([hidden]) { margin-top:12px; }
+.settings-group [hidden] { display:none; }
+.page-title > .primary { flex-shrink:0; white-space:normal; width:auto; height:auto; min-height:44px; padding:10px 14px; font-size:13px; }
+.page-title > .primary span { display:inline; }
+@media(max-width:480px) { .page-title { flex-wrap:wrap; gap:12px; } .page-title > button { align-self:flex-start; } }

@@ -93,3 +93,42 @@
 - La migración propuesta `supabase/migrations/202610010001_finance_revision.sql` aún NO se ejecutó. Revoca escrituras directas del cliente actual: NO ejecutarla aisladamente.
 - Antes de aplicarla: cliente compatible, base de prueba, respaldo y autorización explícita. Referencia: docs/sync-migration.md.
 - Definir rojo solo si se cambia 5 días; decidir alcance multimoneda y push cerrado cuando se aborden.
+
+## Actualización incremental — 5 octubre 2026
+El despliegue de 0834a15 fue confirmado exitoso. Esta entrega continúa ese estado.
+
+### Completado del adjunto incremental
+1. Blanco solo cuando existe contenido pendiente fuera de los colores activos; vacío sin punto y mensaje exacto. Explicación usa el umbral verde del elemento.
+2. Indicadores anclados a la derecha, orden visual rojo/amarillo/verde; blanco solo si no hay proximidad activa, sin contador blanco ni huecos.
+3. Mostrar proximidad guarda preferencia y oculta puntos y filtros. No cambia cálculos, metas ni notificaciones.
+4. Pagar desde la consulta abre la confirmación existente y usa payScheduledAmount/postMovement. No se creó otro motor de pagos.
+5. Botón + en el diálogo permite configurar meta o crear importe conservando el sobre.
+6. Diálogo ampliable a 960 px con tarjetas en columnas adaptables; móvil mantiene lectura vertical.
+10–11. Silver agregado al sistema de temas; Orgánico reforzado con superficies y tonos naturales.
+13. Nuevo movimiento se muestra completo también en teléfono.
+14. Configuración inicia plegada con encabezados visibles y un único control Plegar/Desplegar todo.
+15. Semana del año ISO 8601, incluidos cambios de año y fechas en Costa Rica. Conserva la clave Semana en preferencias antiguas.
+16. Filtros de proximidad separados en su propia línea también en escritorio.
+18. Reutilizados cálculo de proximidad, pagos, navegación contextual, formularios y proveedor de temas.
+
+### Pendientes del adjunto (NO implementados en esta entrega)
+7. Crear cuenta sin abandonar operaciones.
+8. Mover metas/importes conservando identidad; no mover comprobantes pagados sin definir tratamiento histórico.
+9. Confirmación de asignación con déficit separado del efectivo; no alterar saldos para simular dinero. Aún se conserva validación que impide sobregiros de asignación.
+12. Zoom global de tres niveles, persistente y responsive.
+17. Cronograma Día/Semana/Mes/Año sobre los mismos datos.
+19. Informe completo de estos puntos debe ampliarse al implementarlos.
+También siguen pendientes las funciones anteriores de la matriz, salvo la corrección de semana ISO ya completada.
+
+### Validación y archivos
+TypeScript, lint de archivos afectados, compilación y pruebas de proximidad/repetición/pagos existentes correctos. Nuevo scripts/verify-incremental-ui.mjs prueba semana ISO, límites Costa Rica, blanco vacío/futuro/pagado y orden de urgencia.
+Navegador local sin Supabase: Configuración plegada/desplegada, Silver, ocultación de filtros, diálogo vacío, + contextual, creación ficticia de importe futuro y acceso a Pagar. Diálogo de pago a 320 px dentro del viewport, sin scroll horizontal. Se revisó a 390 y 1280 px; ampliación de ancho del diálogo ajustada tras la revisión.
+Archivos: app/page.tsx, app/globals.css; components/envelope-collection.tsx y CSS; components/envelope-planning.tsx y CSS; components/finance-dialog.tsx; components/theme-provider.tsx; components/settings-groups.tsx; lib/envelope-planning.ts; lib/iso-week.ts; scripts/verify-incremental-ui.mjs.
+
+### PENDIENTES DE CONFIRMACIÓN DEL USUARIO
+- SQL RPC anterior: todavía NO ejecutarlo; requiere cliente compatible, prueba y autorización. Esta entrega NO requiere SQL.
+- Si se desea trasladar importes ya pagados, definir si solo se mueve planificación futura o también atribución histórica; no se supone una respuesta.
+- Mantener decisiones previas pendientes sobre multimoneda y notificaciones con app cerrada.
+
+### Retomar después
+Priorizar cuentas contextuales, traslado seguro de pendientes, deuda separada, zoom y cronograma. Después continuar la matriz anterior. No repetir pruebas aprobadas salvo cambios que las afecten. Se cerró este bloque al llegar a 15 % semanal para publicar con margen.

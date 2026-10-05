@@ -7,3 +7,9 @@
 
 .payment { display: grid; gap: 9px; min-width: 0; }
 .payment label { font-size: 12px; }
+
+.planningDialog { width: min(960px, 100%); }
+.items { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr)); gap: 12px; }
+.planCard { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.itemButton { width: 100%; min-height: 44px; padding: 0; background: transparent; color: var(--ink); border: 0; text-align: left; }
+.addActions { display: flex; flex-wrap: wrap; gap: 8px; }

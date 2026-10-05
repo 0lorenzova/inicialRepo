@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import { isoWeek } from '../lib/iso-week.ts';
+import { planningItems, planningIndicators, planningStateText } from '../lib/envelope-planning.ts';
+assert.deepEqual(isoWeek('2021-01-01'), {week:53,year:2020});
+assert.deepEqual(isoWeek('2021-01-04'), {week:1,year:2021});
+assert.deepEqual(isoWeek('2018-12-31'), {week:1,year:2019});
+assert.deepEqual(isoWeek('2026-10-05T03:00:00Z'), {week:40,year:2026});
+assert.deepEqual(isoWeek('2026-10-05T08:00'), {week:41,year:2026});
+const envelope={id:'test',name:'Test',balance:0};
+assert.deepEqual(planningIndicators(planningItems(envelope,'2026-10-05')),[]);
+const item={id:'future',name:'Future',amount:100,active:true,timingEnabled:true,deadline:'2026-11-20',thresholds:{green:15,yellow:8,red:5}};
+const future=planningItems({...envelope,scheduledAmounts:[item]},'2026-10-05');
+assert.deepEqual(planningIndicators(future),['white']);
+assert.equal(planningStateText(future[0]),'Faltan más de 15 días para la fecha límite.');
+const mixed=planningItems({...envelope,scheduledAmounts:[item,...['2026-10-18','2026-10-12','2026-10-06'].map((deadline,i)=>({...item,id:String(i),deadline}))]},'2026-10-05');
+assert.deepEqual(planningIndicators(mixed),['red','yellow','green']);
+assert.deepEqual(planningIndicators(future.map(i=>({...i,payment:{movementId:'m',amount:100,date:'2026-10-05',accountId:'a'}}))),[]);
+console.log('OK: ISO year boundaries, Costa Rica, no empty white, white explanation and urgency order.');
