@@ -48,10 +48,10 @@
 | Reportes mensuales y fechas | Completado en esta entrega. |
 | Historial separado ingreso/gasto y cronología gráfica | Parcial: filtro por tipo y orden cronológico disponibles; falta presentación separada/timeline de referencia. |
 | Productos, cantidad/notas/seguimiento y reporte | Completado núcleo en esta entrega. Pendientes fotografía/imagen propia y gráfico comparativo entre meses. |
-| Categorías editables | Pendiente; actualmente selector de categorías predefinidas. |
+| Categorías editables | Implementado el 7 de octubre: crear, renombrar, archivar/restaurar y administrar desde el gasto sin perder borrador; historial conservado. |
 | Gastos: comercio, referencia y descripción | Implementado. Pendientes etiquetas, método de pago explícito y foto del recibo. |
 | Monedas | CRC operativo. Multimoneda/cambio de moneda de las primeras referencias no implementado. Requiere definir conversión antes de sumar monedas diferentes. |
-| Nombre automático/manual | Parcial. Selección y orden por activación funcionan; falta arrastre real, separador configurable, vista previa dedicada, ajustes independientes de gastos y aviso de nombre manual sin editar. Corregir también Semana: actualmente semana del mes, debe ser semana del año. |
+| Nombre automático/manual | Implementado: ajustes independientes, selección/orden, asas de arrastre, flechas y teclado, separador, ejemplo, aviso manual, semana ISO y zona Costa Rica. Pendiente comprobar arrastre en dispositivo físico; flechas y teclado probados. |
 | Plantillas de distribución y no asignados por ingreso | Parcial: asignación y trazabilidad funcionan; falta plantilla reutilizable y pantalla dedicada de no asignados por ingreso. |
 | Editar distribución histórica de ingreso | Pendiente; requiere ajustes compensatorios para conservar coherencia del historial, no sobrescribir saldos. |
 | Campana y sonidos | Implementado; avisos del sistema con la app abierta y permisos. Push con app cerrada no implementado; requiere decidir infraestructura. |
@@ -164,3 +164,17 @@ Priorizar cuentas contextuales, traslado seguro de pendientes, deuda separada, z
 - Retomar: déficit/asignación excepcional separado del dinero real; configuración completa de nombres (orden, separador, vista previa y gastos independientes); categorías editables; fotos de recibos/productos; comparación mensual de productos; plantillas de distribución; vista dedicada de no asignados por ingreso; correcciones históricas mediante movimientos compensatorios; vistas separadas de ingresos/gastos. Mantener decisiones pendientes de multimoneda y notificaciones con app cerrada.
 - Sin decisión aún: traslado de elementos pagados y tratamiento histórico, incluir pagados en filtro global. No modificar por suposición.
 - Publicación de checkpoint al detectar 8% restante del límite de cinco horas; semanal 86% restante. No comenzar otra función antes de cerrar este despliegue.
+
+## Entrega — nombres configurables y categorías (7 octubre 2026, continuación)
+- Nombres: configuración independiente de ingresos/gastos, automático editable o manual con confirmación, orden por selección/arrastre/flechas/teclado, cuatro separadores y vista previa con datos de ejemplo. Preferencias anteriores migradas conservando orden y modo; no se renombra el historial.
+- Campos: fecha/hora de Costa Rica, monto, tipo de ingreso o categoría, semana ISO, comercio para gastos y consecutivo por tipo. Tipo de ingreso editable; nombres sugeridos cambian con el borrador hasta la edición manual; botón para recuperar sugerencia. Borrar texto ya no lo repone mientras se escribe.
+- Aviso manual: pide confirmación si se conserva la sugerencia o se deja vacío. Volver y editar conserva monto y demás datos. Guardar confirmado usa el motor financiero existente.
+- Categorías: catálogo persistente dentro del mismo JSON, creación/edición/archivado/restauración. Disponible en Configuración y dentro del gasto. Crear desde el gasto selecciona automáticamente la nueva categoría; renombrar la seleccionada actualiza el borrador. Los gastos históricos conservan la categoría registrada.
+- Validación: nombres de categorías normalizados, duplicados incluso con diferencias de acentos/mayúsculas bloqueados, edición obsoleta rechazada, Sin categoría reservado como opción del selector.
+- Corrección adicional: --pale definido para modo oscuro, evitando fondo claro con texto claro en la vista previa y superficies que comparten esa variable.
+- Pruebas: verify-movement-names y verify-expense-categories aprobados, TypeScript, lint y compilación final correctos. Navegador offline: ajustes independientes, orden por flechas/teclado, separador y persistencia tras recargar; aviso manual, volver sin perder monto e ingreso ficticio 10000 confirmado. Gasto ficticio 1250 con categoría contextual Viajes locales y nombre automático; renombrada a Vacaciones, archivada/restaurada; historial mantiene Viajes locales. Sin escrituras en producción.
+- Responsive: formularios y ajustes revisados a 384px; vista de nombres/categorías a 320px sin overflow horizontal, contraste oscuro corregido. No se certifica arrastre táctil físico; quedan alternativas accesibles probadas.
+- Archivos: app/page.tsx, app/globals.css; components/movement-name-settings.tsx y CSS, components/expense-categories.tsx y CSS; lib/movement-names.ts, lib/expense-categories.ts; scripts/verify-movement-names.mjs, scripts/verify-expense-categories.mjs.
+- SQL: NO requiere SQL. Migración RPC anterior sigue pendiente y NO debe ejecutarse aisladamente: requiere cliente compatible, base de prueba, respaldo y permiso del propietario.
+- Retomar: déficit separado de efectivo; foto de recibo/imagen de producto (definir almacenamiento); gráfico mensual de productos; plantillas de distribución; no asignados por ingreso; ajustes compensatorios y presentación separada/timeline de historial. Multimoneda, push con app cerrada y traslado de pagados requieren decisiones previas.
+- Cierre al detectar 15% restante del límite de cinco horas, 71% semanal restante. Publicar este bloque y confirmar Vercel antes de iniciar otro.

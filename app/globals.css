@@ -72,6 +72,7 @@
 .secondary, .add-envelope, .reminder-actions button { min-height: 44px; height: auto; padding: 8px 12px; }
 .build-stamp { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .toast { max-width: calc(100vw - 24px); overflow-wrap: anywhere; }
+.dark-mode { --pale:#203b32; }
 .dark-mode .pin-button.pinned { color: #88d9c9; border-color: #498775; }
 .dark-mode .summary-top, .dark-mode .flow-modal > header > button { color: var(--muted); }
 .dark-mode .add-envelope, .dark-mode .envelope-edit, .dark-mode .context-filter button, .dark-mode .text-btn { color: #7ed6cb; }
