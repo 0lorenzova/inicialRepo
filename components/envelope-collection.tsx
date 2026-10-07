@@ -1,5 +1,6 @@
 "use client";
 
+import { useThemeMode } from "@/components/theme-provider";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { canShowThreeColumns, envelopeGridColumns, isAdaptiveEnvelopeGrid, type EnvelopeView } from "@/lib/envelope-view";
 import { getEnvelopeGoal, type GoalSettings } from "@/lib/envelope-goals";
@@ -29,6 +30,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
   onNewMovement: (id: string) => void;
   onReorder: (ids: string[]) => void;
 }) {
+  const {scale}=useThemeMode();
   const id = useId();
   const container = useRef<HTMLDivElement>(null);
   const pending = useRef<PendingPress | null>(null);
@@ -54,10 +56,10 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
   useEffect(() => {
     const element = container.current;
     if (!element) return;
-    const observer = new ResizeObserver(entries => setWidth(entries[0].contentRect.width));
+    const observer = new ResizeObserver(entries => setWidth(entries[0].contentRect.width/scale));
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [scale]);
   useEffect(() => () => { if (pending.current) clearTimeout(pending.current.timer); }, []);
 
   function start(idToMove: string, keyboard: boolean) {

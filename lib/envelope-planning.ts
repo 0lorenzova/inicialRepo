@@ -1,4 +1,4 @@
-import { DEFAULT_GOAL_THRESHOLDS, getEnvelopeGoal, getTemporalState, validateTemporalSettings, type GoalSettings, type GoalTemporalState, type GoalThresholds } from "./envelope-goals";
+import { LEGACY_GOAL_THRESHOLDS, getEnvelopeGoal, getTemporalState, validateTemporalSettings, type GoalSettings, type GoalTemporalState, type GoalThresholds } from "./envelope-goals";
 import { postMovement, type Ledger } from "./finance-ledger";
 import { previewPostponement } from "./finance-recurrence";
 import { temporalDistance } from "./envelope-goals";
@@ -32,7 +32,7 @@ export function globalPlanningItems(envelopes: PlanningEnvelope[], today: string
 
 export function planningItems(envelope: PlanningEnvelope, today: string): PlanningItem[] {
   const goal = getEnvelopeGoal(envelope, today);
-  const items: PlanningItem[] = goal.active ? [{ id: "goal", kind: "goal", name: envelope.goalName?.trim() || `Meta de ${envelope.name}`, amount: goal.amount, deadline: envelope.goalDate, temporal: goal.temporal, greenDays: (envelope.goalThresholds ?? DEFAULT_GOAL_THRESHOLDS).green, timingEnabled: envelope.goalTimingEnabled !== false }] : [];
+  const items: PlanningItem[] = goal.active ? [{ id: envelope.goalId || "goal", kind: "goal", name: envelope.goalName?.trim() || `Meta de ${envelope.name}`, amount: goal.amount, deadline: envelope.goalDate, temporal: goal.temporal, greenDays: (envelope.goalThresholds ?? LEGACY_GOAL_THRESHOLDS).green, timingEnabled: envelope.goalTimingEnabled !== false }] : [];
   for (const item of envelope.scheduledAmounts ?? []) {
     if (!item.active) continue;
     let temporal: GoalTemporalState | null = null;

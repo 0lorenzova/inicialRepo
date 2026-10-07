@@ -1,4 +1,4 @@
-export const appViews = ["Inicio", "Movimientos", "Sobres", "Cuentas", "Préstamos", "Reportes", "Recordatorios", "Configuración"] as const;
+export const appViews = ["Inicio", "Movimientos", "Sobres", "Cuentas", "Préstamos", "Reportes", "Recordatorios", "Configuración", "Cronograma"] as const;
 const overlays = ["new", "envelope", "goal", "account", "repay", "action", "postpone", "notifications", "feedback", "planning", "planningDetail", "scheduled", "incomeTrace", "proximity", "reset", "products"] as const;
 export type AppNavigation = {
   view: string;
@@ -9,6 +9,8 @@ export type AppNavigation = {
   historyFrom?: string;
   historyTo?: string;
   reportMonth?: string;
+  calendarDate?: string;
+  calendarScale?: "Día" | "Semana" | "Mes" | "Año";
   flowEnvelopeId?: string | null;
   movementEnvelopeId?: string | null;
   movementId?: string | null;
@@ -51,8 +53,8 @@ export function restoreNavigation(saved: unknown, scope: string, session: string
   const validStep = Number.isSafeInteger(value?.step) && value!.step >= 0 && value!.step <= (value?.flow === "Gasto" ? 2 : value?.flow === "Ingreso" ? 1 : 0);
   const needsContext = ["goal", "repay", "action", "postpone", "planning", "planningDetail", "scheduled", "incomeTrace", "proximity", "reset", "products"].some(overlay => overlay === value?.overlay);
   const validContext = !needsContext || (value?.context !== null && typeof value?.context === "object");
-  const validFilters = [value?.historyFrom, value?.historyTo, value?.reportMonth, value?.flowEnvelopeId, value?.movementEnvelopeId, value?.movementId, value?.reminderEnvelopeId].every(id => id == null || typeof id === "string");
-  if (candidate.scope !== scope || candidate.session !== session || !validIndices || !validView || !validFlow || !validOverlay || !validStep || !validContext || !validFilters) {
+  const validFilters = [value?.calendarDate, value?.historyFrom, value?.historyTo, value?.reportMonth, value?.flowEnvelopeId, value?.movementEnvelopeId, value?.movementId, value?.reminderEnvelopeId].every(id => id == null || typeof id === "string");
+  if (candidate.scope !== scope || candidate.session !== session || !validIndices || !validView || !validFlow || !validOverlay || !validStep || !validContext || !validFilters || (value?.calendarScale !== undefined && !["Día","Semana","Mes","Año"].includes(value.calendarScale))) {
     return { entry: baseNavigation(scope, session, view), replace: true };
   }
   return { entry: candidate as NavigationEntry, replace: false };

@@ -1,5 +1,6 @@
 "use client";
 
+import { useThemeMode } from "@/components/theme-provider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import type { ReactNode } from "react";
@@ -15,6 +16,7 @@ export function EnvelopeContextMenu({ anchor, name, onClose, actions, title, men
   menuId?: string;
   closeOnSelect?: boolean;
 }) {
+  const {scale}=useThemeMode();
   const bounds = anchor.getBoundingClientRect();
   const viewport = window.visualViewport;
   const bottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
@@ -49,14 +51,14 @@ export function EnvelopeContextMenu({ anchor, name, onClose, actions, title, men
         list: { "aria-label": title ?? `Opciones de ${name}`, sx: { p: "5px" } },
       }}
     >
-      {title && <li role="presentation" style={{ padding: "10px", fontSize: 12, fontWeight: 700, overflowWrap: "anywhere" }}>{title}</li>}
+      {title && <li role="presentation" style={{ padding: "10px", fontSize: 12*scale, fontWeight: 700, overflowWrap: "anywhere" }}>{title}</li>}
       {title && !actions.length && <li role="presentation" style={{ padding: "10px", fontSize: 12 }}>No hay metas ni importes activos en este sobre.</li>}
       {actions.map(action => (
         <MenuItem
           key={action.key ?? action.label}
           aria-label={action.content ? action.label : undefined}
           onClick={() => { if (closeOnSelect) onClose(); action.onSelect(); }}
-          sx={{ minHeight: "44px !important", px: "10px", py: "8px", borderRadius: "6px", fontSize: "12px", whiteSpace: "normal", color: action.danger ? "error.main" : "text.primary" }}
+          sx={{ minHeight: `${44*scale}px !important`, px: "10px", py: "8px", borderRadius: "6px", fontSize: `${12*scale}px`, whiteSpace: "normal", color: action.danger ? "error.main" : "text.primary" }}
         >
           {action.content ?? action.label}
         </MenuItem>

@@ -1,5 +1,6 @@
 export type GoalThresholds = { green: number; yellow: number; red: number };
 export type GoalSettings = {
+  goalId?: string;
   goalName?: string;
   goal?: number;
   goalEnabled?: boolean;

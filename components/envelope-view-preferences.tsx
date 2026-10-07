@@ -1,5 +1,6 @@
 "use client";
 
+import { useThemeMode } from "@/components/theme-provider";
 import { useEffect, useId, useRef, useState } from "react";
 import { canShowThreeColumns, isAdaptiveEnvelopeGrid, type EnvelopeView } from "@/lib/envelope-view";
 
@@ -7,6 +8,7 @@ export function EnvelopeViewPreferences({ value, onChange }: {
   value: EnvelopeView;
   onChange: (view: EnvelopeView) => void;
 }) {
+  const {scale}=useThemeMode();
   const id = useId();
   const container = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number | null>(null);
@@ -14,10 +16,10 @@ export function EnvelopeViewPreferences({ value, onChange }: {
   const adaptive = isAdaptiveEnvelopeGrid(width);
   useEffect(() => {
     if (!container.current) return;
-    const observer = new ResizeObserver(entries => setWidth(entries[0].contentRect.width));
+    const observer = new ResizeObserver(entries => setWidth(entries[0].contentRect.width/scale));
     observer.observe(container.current);
     return () => observer.disconnect();
-  }, []);
+  }, [scale]);
   return <div ref={container} className="envelope-view-preferences">
     <label htmlFor={id}>Vista preferida</label>
     <select id={id} value={value.envelopesViewMode === "list" ? "list" : String(value.envelopesGridColumns)}
