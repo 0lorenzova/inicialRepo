@@ -1,4 +1,4 @@
-import { LEGACY_GOAL_THRESHOLDS, getEnvelopeGoal, getTemporalState, validateTemporalSettings, type GoalSettings, type GoalTemporalState, type GoalThresholds } from "./envelope-goals";
+import { DEFAULT_GOAL_THRESHOLDS, LEGACY_GOAL_THRESHOLDS, getEnvelopeGoal, getTemporalState, validateTemporalSettings, type GoalSettings, type GoalTemporalState, type GoalThresholds } from "./envelope-goals";
 import { postMovement, type Ledger } from "./finance-ledger";
 import { previewPostponement } from "./finance-recurrence";
 import { temporalDistance } from "./envelope-goals";
@@ -19,13 +19,14 @@ export type ScheduledAmount = {
 export type EnvelopePlanning = { scheduledAmounts?: ScheduledAmount[]; balanceHidden?: boolean };
 export type PlanningEnvelope = GoalSettings & EnvelopePlanning & { id: string; name: string; balance: number; archived?: boolean };
 export type PlanningItem = { id: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string; temporal: GoalTemporalState | null; timingEnabled: boolean; greenDays?: number; payment?: ScheduledAmount["payment"] };
-export type ProximityFilter = "white" | "green" | "yellow" | "red";
-export const proximityLabels = { white: "Blanco", green: "Verde", yellow: "Amarillo", red: "Rojo" };
+export const proximityTones = ["white", "green", "yellow", "red", "purple"] as const;
+export type ProximityFilter = typeof proximityTones[number];
+export const proximityLabels = { white: "Blanco", green: "Verde", yellow: "Amarillo", red: "Rojo", purple: "Púrpura" };
 export const planningTone = (item: PlanningItem): ProximityFilter => item.temporal?.tone ?? "white";
 
 export function globalPlanningItems(envelopes: PlanningEnvelope[], today: string, filter?: ProximityFilter) {
   return envelopes.filter(e => !e.archived).flatMap(envelope => planningItems(envelope, today)
-    .filter(item => item.kind === "scheduled" && !item.payment && (!filter || planningTone(item) === filter))
+    .filter(item => !item.payment && (!filter || planningTone(item) === filter))
     .map(item => ({ envelopeId: envelope.id, envelopeName: envelope.name, item })))
     .sort((a,b) => (a.item.deadline || "9999").localeCompare(b.item.deadline || "9999") || a.item.id.localeCompare(b.item.id));
 }
@@ -36,21 +37,21 @@ export function planningItems(envelope: PlanningEnvelope, today: string): Planni
   for (const item of envelope.scheduledAmounts ?? []) {
     if (!item.active) continue;
     let temporal: GoalTemporalState | null = null;
-    try { if (!item.payment && item.timingEnabled !== false && item.thresholds) temporal = getTemporalState(item.deadline, today, item.thresholds).temporal; }
+    try { if (!item.payment) temporal = getTemporalState(item.deadline, today, item.thresholds ?? DEFAULT_GOAL_THRESHOLDS).temporal; }
     catch { /* Preserve legacy planning data; invalid optional dates never break financial screens. */ }
-    items.push({ id: item.id, kind: "scheduled", name: item.name, amount: item.amount, deadline: item.deadline, temporal, greenDays: item.thresholds?.green, timingEnabled: item.timingEnabled !== false, payment: item.payment });
+    items.push({ id: item.id, kind: "scheduled", name: item.name, amount: item.amount, deadline: item.deadline, temporal, greenDays: (item.thresholds ?? DEFAULT_GOAL_THRESHOLDS).green, timingEnabled: item.timingEnabled !== false, payment: item.payment });
   }
   return items.sort((a,b) => (a.deadline || "9999").localeCompare(b.deadline || "9999") || a.id.localeCompare(b.id));
 }
 
 export function proximityCounts(items: PlanningItem[]) {
-  const counts = { green: 0, yellow: 0, red: 0 };
-  for (const item of items) if (item.kind === "scheduled" && !item.payment && item.temporal) counts[item.temporal.tone]++;
+  const counts = { white: 0, green: 0, yellow: 0, red: 0, purple: 0 };
+  for (const item of items) if (!item.payment) counts[planningTone(item)]++;
   return counts;
 }
 
 export function mostUrgent(items: PlanningItem[]): GoalTemporalState | null {
-  const priority = { green: 1, yellow: 2, red: 3 };
+  const priority = { green: 1, yellow: 2, red: 3, purple: 4 };
   return items.reduce<GoalTemporalState | null>((urgent, item) => item.temporal && (!urgent || priority[item.temporal.tone] > priority[urgent.tone]) ? item.temporal : urgent, null);
 }
 
@@ -99,9 +100,8 @@ export function payScheduledAmount(ledger: Ledger, envelopeId: string, itemId: s
 }
 
 export function planningIndicators(items: PlanningItem[]): ProximityFilter[] {
-  const pending = items.filter(item => !item.payment);
-  const active = (["red", "yellow", "green"] as const).filter(tone => pending.some(item => planningTone(item) === tone));
-  return active.length ? active : pending.length ? ["white"] : [];
+  const counts = proximityCounts(items);
+  return proximityTones.filter(tone => counts[tone] > 0);
 }
 export function planningStateText(item: PlanningItem): string {
   if (item.payment) return "Pagado";

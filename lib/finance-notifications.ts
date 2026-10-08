@@ -1,5 +1,7 @@
-import type { LedgerEnvelope, LedgerMovement } from "./finance-ledger";
-import { isRecurrenceDue, type Recurrence } from "./finance-recurrence";
+import { globalPlanningItems, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
+import { getTemporalState, type GoalTemporalState } from "./envelope-goals";
+import type { LedgerMovement } from "./finance-ledger";
+import { isRecurrenceDue, recurrenceDueDate, type Recurrence } from "./finance-recurrence";
 
 export const notificationTones = ["Suave", "Campana", "Breve"] as const;
 export type NotificationTone = (typeof notificationTones)[number];
@@ -13,17 +15,18 @@ export type NotificationState = {
   dismissedIds: string[];
   deliveredIds: string[];
 };
-export type NotificationDestination = { page: "Movimientos" | "Recordatorios"; movementId?: string; envelopeId?: string };
+export type NotificationDestination = { page: "Movimientos" | "Recordatorios" | "Cronograma"; movementId?: string; envelopeId?: string; itemId?: string; itemKind?: PlanningItem["kind"] };
 export type FinanceNotification = {
   id: string;
   title: string;
   detail: string;
   date: string;
   amount: number;
-  kind: "movement" | "reminder";
+  kind: "movement" | "reminder" | "attention";
+  tone?: GoalTemporalState["tone"];
   destination: NotificationDestination;
 };
-export type NotificationEnvelope = LedgerEnvelope & { recurrence?: Recurrence };
+export type NotificationEnvelope = PlanningEnvelope & { recurrence?: Recurrence };
 export type NotificationUpdate = (update: (current: NotificationState) => NotificationState) => void;
 
 export function saveNotificationUpdate(persist: NotificationUpdate, update: (current: NotificationState) => NotificationState): string | null {
@@ -55,26 +58,27 @@ export function normalizeNotificationState(value?: Partial<NotificationState> | 
 // read/dismiss/delivery preferences are persisted; no financial copy is created.
 export function deriveFinanceNotifications(movements: LedgerMovement[], envelopes: NotificationEnvelope[], today: string): FinanceNotification[] {
   const result = new Map<string, FinanceNotification>();
-  for (const movement of movements) {
-    const id = `movement:${movement.id}`;
-    result.set(id, {
-      id, title: movement.type, detail: movement.name, date: movement.date,
-      amount: movement.amount, kind: "movement",
-      destination: { page: "Movimientos", movementId: movement.id },
-    });
+  // Ordinary activity belongs exclusively to Movimientos.
+  void movements;
+  for (const {envelopeId,envelopeName,item} of globalPlanningItems(envelopes,today)) {
+    if (!item.temporal || !["red","purple"].includes(item.temporal.tone)) continue;
+    const stage = item.deadline === today ? "today" : item.temporal.tone;
+    const id = `attention:${encodeURIComponent(envelopeId)}:${item.kind}:${encodeURIComponent(item.id)}:${item.deadline}:${stage}`;
+    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeName}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.amount,kind:"attention",tone:item.temporal.tone,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
   }
   for (const envelope of envelopes) {
     if (!isRecurrenceDue(envelope, today) || !envelope.recurrence) continue;
-    const dueDate = envelope.recurrence.nextDate;
-    const id = `reminder:${encodeURIComponent(envelope.id)}:${dueDate}`;
+    const dueDate = recurrenceDueDate(envelope.recurrence);
+    const temporal = getTemporalState(dueDate,today).temporal!;
+    const id = `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:${temporal.tone}`;
     result.set(id, {
-      id, title: "Aporte pendiente", detail: envelope.name,
+      id, title: "Aporte pendiente", detail: `${envelope.name}. ${temporal.explanation}`, tone: temporal.tone,
       amount: envelope.recurrence.amount, date: `${dueDate}T00:00`, kind: "reminder",
       destination: { page: "Recordatorios", envelopeId: envelope.id },
     });
   }
-  // Equal timestamps retain the ledger's order, just as Movimientos does.
-  return [...result.values()].sort((a, b) => b.date.localeCompare(a.date));
+  // Overdue obligations first, then nearest deadline. IDs keep delivery idempotent.
+  return [...result.values()].sort((a, b) => Number(b.tone === "purple") - Number(a.tone === "purple") || a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
 }
 
 export function initializeNotifications(state: NotificationState, events: FinanceNotification[]): NotificationState {

@@ -29,7 +29,7 @@ for (const [days, tone, label] of [
   [61, null, null], [60, "green", "Estás a tiempo"], [21, "green", "Estás a tiempo"],
   [20, "yellow", "Queda poco tiempo"], [6, "yellow", "Queda poco tiempo"],
   [5, "red", "Tiempo crítico"], [1, "red", "Tiempo crítico"],
-  [0, "red", "Fecha límite alcanzada"], [-1, "red", "Fecha límite vencida"],
+  [0, "red", "Fecha límite alcanzada"], [-1, "purple", "Fecha límite vencida"],
 ]) {
   const result = getEnvelopeGoal({ ...timed, goalDate: dateAfter(days) }, "2026-10-01");
   assert.equal(result.daysRemaining, days);
@@ -41,7 +41,7 @@ for (const [days, tone, label] of [
 const overGoal = getEnvelopeGoal({ ...timed, balance: 700_000, goalDate: dateAfter(-1) }, "2026-10-01");
 assert.equal(overGoal.percentage, 700);
 assert.equal(overGoal.temporal.label, "Fecha límite vencida");
-assert.equal(getEnvelopeGoal({ ...timed, goalDate: dateAfter(1), goalTimingEnabled: false }, "2026-10-01").temporal, null);
+assert.equal(getEnvelopeGoal({ ...timed, goalDate: dateAfter(1), goalTimingEnabled: false }, "2026-10-01").temporal.tone, "red");
 assert.equal(getEnvelopeGoal({ ...legacy, goalDate: dateAfter(DEFAULT_GOAL_THRESHOLDS.yellow) }, "2026-10-01").temporal.tone, "yellow");
 assert.equal(getEnvelopeGoal({ ...timed, goalDate: "2026-02-30" }, "2026-10-01").active, true);
 assert.equal(getEnvelopeGoal({ ...timed, goalDate: "2026-02-30" }, "2026-10-01").temporal, null);

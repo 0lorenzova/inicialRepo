@@ -104,7 +104,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
           <label className={`check-label ${styles.toggle}`}><input type="checkbox" checked={progressVisible} onChange={event => setProgressVisible(event.target.checked)} />Mostrar barra y progreso en la tarjeta</label>
           <p className={styles.hint}>Puedes ocultarlos sin desactivar la meta ni modificar el saldo.</p>
           <label className={`check-label ${styles.toggle}`}><input type="checkbox" checked={Boolean(date) && timing} disabled={!date} aria-describedby={`${id}-timing-hint`} onChange={event => setTiming(event.target.checked)} />Mostrar indicador de tiempo</label>
-          <p id={`${id}-timing-hint`} className={styles.hint}>{!date ? "Selecciona una fecha límite para activar el punto verde, amarillo o rojo." : timing ? "El punto muestra la proximidad de la fecha. Puedes tocarlo en la tarjeta para consultar las metas e importes del sobre." : "El punto está oculto. Esto no cambia el saldo ni la meta."}</p>
+          <p id={`${id}-timing-hint`} className={styles.hint}>{!date ? "Selecciona una fecha límite para mostrar su proximidad. Las fechas vencidas se indican en púrpura." : timing ? "El punto muestra la proximidad de la fecha. Puedes tocarlo en la tarjeta para consultar las metas e importes del sobre." : "El punto está oculto. Esto no cambia el saldo ni la meta."}</p>
           {date && timing && <>
             <TemporalThresholdFields values={{green, yellow, red}} onChange={(tone, value) => ({green:setGreen, yellow:setYellow, red:setRed})[tone](value)} />
           </>}

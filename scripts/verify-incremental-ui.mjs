@@ -13,6 +13,6 @@ const future=planningItems({...envelope,scheduledAmounts:[item]},'2026-10-05');
 assert.deepEqual(planningIndicators(future),['white']);
 assert.equal(planningStateText(future[0]),'Faltan más de 15 días para la fecha límite.');
 const mixed=planningItems({...envelope,scheduledAmounts:[item,...['2026-10-18','2026-10-12','2026-10-06'].map((deadline,i)=>({...item,id:String(i),deadline}))]},'2026-10-05');
-assert.deepEqual(planningIndicators(mixed),['red','yellow','green']);
+assert.deepEqual(planningIndicators(mixed),['white','green','yellow','red']);
 assert.deepEqual(planningIndicators(future.map(i=>({...i,payment:{movementId:'m',amount:100,date:'2026-10-05',accountId:'a'}}))),[]);
 console.log('OK: ISO year boundaries, Costa Rica, no empty white, white explanation and urgency order.');

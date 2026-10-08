@@ -16,6 +16,6 @@ export function TemporalThresholdFields({ values, onChange }: {
 }) {
   return <fieldset className={styles.thresholds}><legend>Días antes de la fecha límite</legend>
     {([ ["green", "Verde"], ["yellow", "Amarillo"], ["red", "Rojo"] ] as const).map(([tone, label]) => <label key={tone}><span className={styles.label}><TemporalDot tone={tone} />{label}</span><input type="number" inputMode="numeric" min="0" step="1" value={values[tone]} onChange={event => onChange(tone, event.target.value)} /></label>)}
-    <p>Verde debe ser mayor que amarillo, y amarillo mayor que rojo. Fuera de estos rangos se muestra un punto blanco.</p>
+    <p>Verde debe ser mayor que amarillo, y amarillo mayor que rojo. Antes de estos rangos se muestra blanco; el día del vencimiento, rojo; después, púrpura.</p>
   </fieldset>;
 }

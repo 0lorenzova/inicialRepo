@@ -13,3 +13,5 @@
 
 .badge { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; gap: 5px; min-width: 50px; }
 .badge small { white-space: nowrap; font-size:calc(10px * var(--ui-scale, 1)); color: var(--muted); }
+
+.dot[data-tone="purple"] { background:#b278ec; }

@@ -4,7 +4,7 @@ import { useThemeMode } from "@/components/theme-provider";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { canShowThreeColumns, envelopeGridColumns, isAdaptiveEnvelopeGrid, type EnvelopeView } from "@/lib/envelope-view";
 import { getEnvelopeGoal, type GoalSettings } from "@/lib/envelope-goals";
-import { planningItems, planningIndicators, proximityCounts, type ProximityFilter, type EnvelopePlanning } from "@/lib/envelope-planning";
+import { planningItems, planningIndicators, proximityLabels, proximityCounts, type ProximityFilter, type EnvelopePlanning } from "@/lib/envelope-planning";
 import { TemporalDot } from "@/components/temporal-indicator";
 import type { Recurrence } from "@/lib/finance-recurrence";
 import styles from "./envelope-collection.module.css";
@@ -177,22 +177,21 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
           const progressText = goal.reached && envelope.goalDisplay === "reached" ? "Meta alcanzada" : goal.reached && envelope.goalDisplay === "surplus" ? `Excedente: ${display(goal.surplus)}` : `${percentage}%`;
           const plans = planningItems(envelope, today);
           const counts = proximityCounts(plans);
-          const hasScheduled = plans.some(item => item.kind === "scheduled");
-          const indicators = showProximity ? planningIndicators(plans) : [];
+          const indicators = showProximity ? planningIndicators(plans.filter(item=>item.timingEnabled)) : [];
           return <div className={`${styles.card} ${preview?.id === envelope.id ? styles.dragging : ""}`} key={envelope.id} data-envelope-id={envelope.id} data-goal={showGoal}>
             <button type="button" className={`emoji ${envelope.color} ${styles.dragHandle}`} aria-label={`Ordenar ${envelope.name}`} aria-describedby={`${id}-sort-hint`} aria-pressed={preview?.id === envelope.id}
               onDoubleClick={event => { event.stopPropagation(); if (pointerType.current === "touch") return; finish(false); onNewMovement(envelope.id); }}
               onPointerDown={event => pointerDown(event, envelope.id)}
               onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title="Doble clic: Entrada / Salida. Mantén pulsado para ordenar"><span aria-hidden="true">{envelope.icon}</span></button>
             <span className={styles.name}>{envelope.name}</span>
-            <b className={styles.balance}>{(privateMode || envelope.balanceHidden) ? "••••••" : display(envelope.balance)}</b>
+            <b className={styles.balance}><small className={styles.balanceLabel}>Saldo actual</small>{(privateMode || envelope.balanceHidden) ? "••••••" : display(envelope.balance)}</b>
             <div className={`envelope-actions ${styles.actions}`}><button type="button" aria-label={`Opciones de ${envelope.name}`} aria-haspopup="menu"
               aria-expanded={menuId === envelope.id} aria-controls={menuId === envelope.id ? "envelope-context-menu" : undefined}
               onClick={event => onMenu(envelope.id, event.currentTarget)}>⋮</button></div>
             {(envelope.recurrence || showGoal || indicators.length > 0) && <div className={styles.details}>
               {envelope.recurrence && <small>Próximo aporte: {privateMode ? "••••" : display(envelope.recurrence.amount)} · {new Date(`${envelope.recurrence.nextDate}T12:00:00`).toLocaleDateString("es-CR", { day: "numeric", month: "short", timeZone: "America/Costa_Rica" })}</small>}
               {showGoal && <span className={styles.progressLabel} aria-label={`Meta de ${envelope.name}: ${percentage} por ciento. ${goal.reached ? "Meta alcanzada." : ""}`}>{progressText}</span>}
-              <div className={styles.indicators}>{indicators.map(tone => <button key={tone} className={styles.statusButton} type="button" aria-label={`Metas e importes de ${envelope.name}: ${tone === "white" ? "Ver todos, sin importes próximos" : hasScheduled && counts[tone]>0 ? `${counts[tone]} ${counts[tone] === 1 ? "importe" : "importes"} ${tone === "green" ? "verde" : tone === "yellow" ? "amarillo" : "rojo"}${counts[tone] === 1 ? "" : "s"}` : "Consultar proximidad"}`} aria-haspopup="dialog" aria-expanded={planningId === envelope.id} aria-controls={planningId === envelope.id ? "envelope-planning-menu" : undefined} onClick={event => onPlanning(envelope.id, event.currentTarget, tone !== "white" ? tone : undefined)}><TemporalDot tone={tone} />{hasScheduled && tone !== "white" && counts[tone]>0 && <span>{counts[tone]}</span>}</button>)}</div>
+              <div className={styles.indicators}>{indicators.map(tone => <button key={tone} className={styles.statusButton} type="button" aria-label={`Metas e importes de ${envelope.name}: ${proximityLabels[tone]}, ${counts[tone]} elementos`} aria-haspopup="dialog" aria-expanded={planningId === envelope.id} aria-controls={planningId === envelope.id ? "envelope-planning-menu" : undefined} onClick={event => onPlanning(envelope.id, event.currentTarget, tone)}><TemporalDot tone={tone} />{<span>{counts[tone]}</span>}</button>)}</div>
             </div>}
             {showGoal && <div className={styles.progressTrack} aria-hidden="true"><span style={{ height: `${goal.fillPercentage}%` }} /></div>}
           </div>;

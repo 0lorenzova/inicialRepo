@@ -66,12 +66,18 @@ export function previewPostponement(todayDate: string, option: PostponeOption, a
   return formatCivilDate(next);
 }
 
+export function recurrenceDueDate(recurrence: Recurrence): string {
+  validateRecurrence(recurrence);
+  if (recurrence.snoozedUntil) civilDate(recurrence.snoozedUntil);
+  return recurrence.snoozedUntil && recurrence.snoozedUntil > recurrence.nextDate ? recurrence.snoozedUntil : recurrence.nextDate;
+}
+
 export function isRecurrenceDue(envelope: RecurringEnvelope, todayDate: string): boolean {
   if (envelope.archived || !envelope.recurrence) return false;
   try {
     validateRecurrence(envelope.recurrence);
     civilDate(todayDate);
-    return envelope.recurrence.nextDate <= todayDate;
+    return recurrenceDueDate(envelope.recurrence) <= todayDate;
   } catch {
     // A malformed saved setting must not make the dashboard unusable.
     // Saving or confirming the configuration reports the validation error.
@@ -111,7 +117,7 @@ export function confirmRecurringContribution(
   const todayDate = dateTime.slice(0, 10);
   civilDate(todayDate);
   const recurrence = currentRecurrence(ledger, envelopeId, expectedNextDate);
-  if (recurrence.nextDate > todayDate) throw new Error("Este aporte todavía no vence.");
+  if (recurrenceDueDate(recurrence) > todayDate) throw new Error("Este aporte todavía no vence.");
   // Advance from the scheduled contribution, so late confirmation does not
   // silently shift the plan. An overdue next period still needs confirmation.
   const nextDate = nextContributionDate(recurrence.nextDate, recurrence.frequency, recurrence.intervalDays);

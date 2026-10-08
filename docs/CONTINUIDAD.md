@@ -191,3 +191,23 @@ Fuente íntegra: docs/ACTUALIZACION-CINCO-ESTADOS.md. Sustituye las reglas anter
 - Retomar la implementación central antes de tocar pantallas: pruebas de ayer/hoy/mañana, umbrales, blanco, pagos realizados, independencia de visibilidad y coherencia entre todas las vistas. Después distribución, pruebas locales ficticias y reporte de los 28 puntos.
 - Solo quedaba 3% del límite de cinco horas al recibir el prompt. Esta entrega contiene únicamente terminología y registro completo de requisitos; no afirmar que los cinco estados o la nueva distribución estén implementados.
 - No requiere SQL esta entrega. Consultar antes de cualquier migración.
+
+## Decisiones confirmadas por el propietario — distribución de ingresos
+Estas decisiones posteriores resuelven las dos preguntas del prompt de cinco estados:
+1. Texto definitivo: «Asignar dinero a este sobre». Usar exactamente este texto para esa acción.
+2. Confirmar los checkboxes SOLO asigna fondos a los sobres. NO registra gastos, NO marca obligaciones como pagadas y NO descuenta dinero real de las cuentas por esas obligaciones. El ingreso y su distribución deben utilizar el motor financiero existente, con una única confirmación y protección contra duplicados.
+La selección sigue siendo provisional hasta confirmar. Las obligaciones conservan su fecha, estado de pago y proximidad; los contadores de obligaciones pendientes no deben disminuir por una mera asignación. El pago continúa siendo una operación separada.
+Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación de la nueva distribución y los cinco estados continúa pendiente.
+
+## Entrega — cinco estados y atención (7 octubre 2026)
+- Completado: fuente temporal única blanco/verde/amarillo/rojo/púrpura; hoy rojo, días negativos púrpura, umbrales previos conservados y distancia compacta en días.
+- Contadores y filtros globales incluyen metas y pagos pendientes; blanco con contenido real y sin indicadores falsos en sobres vacíos. Los pagados se excluyen conservando historial.
+- Visibilidad separada del cálculo: ocultar puntos no detiene alertas ni cálculo temporal. Tarjetas muestran Saldo actual. Acción contextual usa «Asignar dinero a este sobre».
+- Notificaciones: críticos, vencimiento y vencidos; movimientos ordinarios ya no generan avisos. Eventos identificados por obligación/fecha/etapa para evitar repeticiones diarias; apertura muestra resumen breve y acceso contextual.
+- Corrección central adicional: calendario, recordatorios y confirmación comparten fecha efectiva de aportes pospuestos, incluidos datos antiguos.
+- Pruebas afectadas aprobadas: envelope-goals, envelope-planning, incremental-ui, planning-payments-trace, proximity-repetition-reset, finance-notifications, calendar-goal-move y finance-recurrence. TypeScript, lint y build comprobados. No repetición de toda la batería histórica.
+- Navegador local sin Supabase: inicio vacío sin alertas, meta ficticia vencida, contador púrpura global y del sobre, filtro incluye la meta y aviso al recargar. Anchos 384 y 320 px sin overflow del documento; captura del aviso guardada. No se hicieron escrituras de prueba en producción. Ocultar indicadores tiene cobertura lógica, sin nueva comprobación visual completa en esta ronda.
+- Pendiente prioritario: rango textual lunes-domingo ISO con calendario de consulta; distribución de ingresos por obligaciones con selección provisional compartida con cronograma, prioridad temporal, totales únicos y confirmación atómica. Las casillas SOLO asignarán fondos; no pagarán ni reducirán contadores de obligaciones.
+- No afirmar que todo el prompt está completo: falta esa distribución (apartados 15–26) y rango ISO (13–14). El sistema de cinco estados queda listo para reutilizarlo allí. Préstamos no tienen vencimiento propio; no se inventaron fechas para notificarlos.
+- Pendientes anteriores siguen vigentes salvo los explícitamente resueltos arriba: déficit separado del dinero real, fotos/almacenamiento, comparación de productos, plantillas, no asignados por ingreso, correcciones compensatorias y mejoras restantes de historial. Multimoneda y avisos con app cerrada requieren definición.
+- SQL: NO se requiere para esta entrega. La migración RPC 202610010001_finance_revision.sql sigue pendiente y NO debe ejecutarse aisladamente; primero cliente compatible, prueba, respaldo y autorización del propietario.

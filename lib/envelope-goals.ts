@@ -39,8 +39,7 @@ export function compactTemporalDistance(date: string | undefined, today: string)
   if (!date) return "";
   try {
     const days = Math.abs(temporalDistance(date, today));
-    const [amount, singular, plural] = days >= 30 ? [Math.floor(days / 30), "mes", "meses"] : days >= 7 ? [Math.floor(days / 7), "semana", "semanas"] : [days, "día", "días"];
-    return `${amount} ${amount === 1 ? singular : plural}`;
+    return `${days} ${days === 1 ? "día" : "días"}`;
   } catch { return ""; }
 }
 
@@ -64,7 +63,7 @@ export function validateGoalSettings(settings: GoalSettings): void {
 }
 
 export type GoalTemporalState = {
-  tone: "green" | "yellow" | "red";
+  tone: "green" | "yellow" | "red" | "purple";
   label: string;
   explanation: string;
 };
@@ -74,7 +73,7 @@ export function getTemporalState(date: string, today: string, thresholds: GoalTh
   validateTemporalSettings(date, thresholds);
   const days = temporalDistance(date, today);
   let temporal: GoalTemporalState | null = null;
-  if (days < 0) temporal = { tone: "red", label: "Fecha límite vencida", explanation: `La fecha límite pasó hace ${Math.abs(days)} ${Math.abs(days) === 1 ? "día" : "días"}.` };
+  if (days < 0) temporal = { tone: "purple", label: "Fecha límite vencida", explanation: `La fecha límite pasó hace ${Math.abs(days)} ${Math.abs(days) === 1 ? "día" : "días"}.` };
   else if (days === 0) temporal = { tone: "red", label: "Fecha límite alcanzada", explanation: "La fecha límite es hoy." };
   else if (days <= thresholds.red) temporal = { tone: "red", label: "Tiempo crítico", explanation: `${days === 1 ? "Falta" : "Faltan"} ${days} ${days === 1 ? "día" : "días"} para la fecha límite.` };
   else if (days <= thresholds.yellow) temporal = { tone: "yellow", label: "Queda poco tiempo", explanation: `Faltan ${days} días para la fecha límite.` };
@@ -105,7 +104,7 @@ export function getEnvelopeGoal(envelope: GoalSettings & { balance: number }, to
     active: true, showProgress: envelope.goalProgressVisible !== false, amount, percentage, fillPercentage: Math.max(0, Math.min(100, percentage)),
     reached: balance >= amount, surplus: Math.max(0, balance - amount), daysRemaining: null, temporal: null,
   };
-  if (!envelope.goalDate || envelope.goalTimingEnabled === false) return result;
+  if (!envelope.goalDate) return result;
   try {
     validateGoalSettings(envelope);
     // Time and money are intentionally independent: reaching the amount does

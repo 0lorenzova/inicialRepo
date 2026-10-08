@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import NotificationsOutlined from "@mui/icons-material/NotificationsOutlined";
+import { TemporalDot } from "@/components/temporal-indicator";
 import { FinanceDialog } from "@/components/finance-dialog";
 import {
   deriveFinanceNotifications, initializeNotifications, markNotifications,
@@ -119,10 +120,10 @@ export function FinanceNotifications({
         <div className={styles.body}>
           {!state.internal ? <p>Las notificaciones internas están desactivadas. Puedes activarlas en Configuración.</p> : <>
             <div className={styles.actions}><button type="button" className="secondary" disabled={!unread} onClick={() => updateState(current => markNotifications(current, "readIds", visible.map(event => event.id)))}>Marcar todas como leídas</button></div>
-            {!visible.length && <p>No tienes notificaciones. Los nuevos movimientos y aportes pendientes aparecerán aquí.</p>}
+            {!visible.length && <p>No tienes avisos que requieran atención. Aquí aparecerán vencimientos, obligaciones críticas y aportes pendientes.</p>}
             <ul className={styles.list}>{visible.slice(0, pageSize).map(event => <li className={`${styles.item} ${!read.has(event.id) ? styles.unread : ""}`} key={event.id}>
               <button type="button" className={styles.open} onClick={() => openEvent(event)}>
-                <strong>{privateMode ? (event.kind === "reminder" ? "Recordatorio pendiente" : "Movimiento registrado") : event.title} · {read.has(event.id) ? "Leída" : "Sin leer"}</strong>
+                <strong>{event.tone&&<TemporalDot tone={event.tone}/>} {privateMode ? (event.kind === "reminder" ? "Recordatorio pendiente" : "Obligación pendiente") : event.title} · {read.has(event.id) ? "Leída" : "Sin leer"}</strong>
                 <span>{privateMode ? "Los detalles están ocultos por privacidad." : `${event.detail} · ${money(event.amount)}`}</span>
                 <small>{dateLabel(event.date)} · Abrir {event.destination.page.toLowerCase()}</small>
               </button>
@@ -184,7 +185,7 @@ export function NotificationSettings({ state, onChange }: { state: NotificationS
 
   return <div className={styles.settings}>
     <h3>Notificaciones</h3>
-    <div className={styles.setting}><span><b>Dentro de Finanzas</b><small>Campana, contador y listado de actividad.</small></span><button type="button" className={styles.toggle} aria-label="Notificaciones dentro de Finanzas" aria-pressed={state.internal} onClick={() => updateState(current => ({ ...current, internal: !current.internal }))}>{state.internal ? "Activadas" : "Desactivadas"}</button></div>
+    <div className={styles.setting}><span><b>Dentro de Finanzas</b><small>Campana y avisos que requieren atención.</small></span><button type="button" className={styles.toggle} aria-label="Notificaciones dentro de Finanzas" aria-pressed={state.internal} onClick={() => updateState(current => ({ ...current, internal: !current.internal }))}>{state.internal ? "Activadas" : "Desactivadas"}</button></div>
     <div className={styles.setting}><span><b>En el dispositivo</b><small>{!systemSupported ? "Este navegador o conexión no admite avisos del sistema." : permission === "denied" ? "Permiso bloqueado en los ajustes del navegador." : state.system && permission === "default" ? "Falta conceder permiso en este dispositivo." : "Avisos discretos, sin mostrar montos ni nombres."}</small></span><button type="button" className={styles.toggle} aria-label="Notificaciones del dispositivo" aria-pressed={state.system} disabled={busy || (!systemSupported && !state.system)} onClick={() => void toggleSystem()}>{busy ? "Esperando…" : state.system && permission === "default" ? "Dar permiso" : state.system ? "Activadas" : "Activar"}</button></div>
     <p className={styles.hint}>Los avisos se generan mientras Finanzas está abierta. La disponibilidad de avisos del sistema depende del navegador; no se envían con la aplicación cerrada.</p>
     <h3>Sonidos</h3>

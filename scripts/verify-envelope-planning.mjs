@@ -21,11 +21,11 @@ for (const [deadline, label] of [["2026-10-04", "Tiempo crítico"], [today, "Fec
   const urgent = { ...planned, id: "urgent", deadline };
   const result = saveScheduledAmount([saved], envelope.id, urgent, null)[0];
   const state = mostUrgent(planningItems(result, today));
-  assert.equal(state.tone, "red"); assert.equal(state.label, label);
+  assert.equal(state.tone, deadline < today ? "purple" : "red"); assert.equal(state.label, label);
 }
 assert.deepEqual(planningItems(saved, today).map(item => item.temporal.tone), ["yellow", "green"]);
 assert.equal(mostUrgent(planningItems({ ...saved, goalEnabled: false, scheduledAmounts: [{ ...planned, active: false }] }, today)), null);
-assert.equal(mostUrgent(planningItems({ ...saved, goalTimingEnabled: false, scheduledAmounts: [{ ...planned, timingEnabled: false }] }, today)), null);
+assert.equal(mostUrgent(planningItems({ ...saved, goalTimingEnabled: false, scheduledAmounts: [{ ...planned, timingEnabled: false }] }, today)).tone, "yellow");
 assert.equal(mostUrgent(planningItems({ ...saved, goalDate: "2027-12-01", scheduledAmounts: [] }, today)), null);
 assert.equal(getEnvelopeGoal({ id: "scheduled-only", balance: 100, scheduledAmounts: [planned] }, today).active, false, "Scheduled amounts do not create a progress bar");
 assert.equal(planningItems({ ...saved, scheduledAmounts: [{ ...planned, deadline: "bad" }] }, today).length, 2, "Bad optional dates preserve the financial screen");

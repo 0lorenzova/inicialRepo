@@ -10,20 +10,20 @@ const base={name:'Prueba',amount:100,active:true,timingEnabled:true,thresholds:D
 const dates=['2026-12-03','2026-10-16','2026-10-10','2026-10-05','2026-10-02','2026-09-12'];
 const envelope={id:'e',name:'Sobre',balance:0,scheduledAmounts:dates.map((deadline,i)=>({...base,id:String(i),deadline}))};
 const states=planningItems(envelope,today);
-assert.deepEqual(dates.map((d,i)=>planningTone(states.find(p=>p.id===String(i)))),['white','green','yellow','red','red','red']);
+assert.deepEqual(dates.map((d,i)=>planningTone(states.find(p=>p.id===String(i)))),['white','green','yellow','red','purple','purple']);
 assert.equal(compactTemporalDistance('2026-10-02',today),'1 día');
-assert.equal(compactTemporalDistance('2026-09-12',today),'3 semanas');
+assert.equal(compactTemporalDistance('2026-09-12',today),'21 días');
 assert.equal(compactTemporalDistance('2026-10-03',today),'0 días');
-assert.equal(compactTemporalDistance('2026-11-03',today),'1 mes');
-assert.equal(compactTemporalDistance('2026-12-03',today),'2 meses');
+assert.equal(compactTemporalDistance('2026-11-03',today),'31 días');
+assert.equal(compactTemporalDistance('2026-12-03',today),'61 días');
 assert.match(states.find(p=>p.id==='4').temporal.explanation,/pasó hace 1 día/);
 envelope.scheduledAmounts.push({...base,id:'green2',deadline:'2026-10-17'});
-assert.deepEqual(proximityCounts(planningItems(envelope,today)),{green:2,yellow:1,red:3});
+assert.deepEqual(proximityCounts(planningItems(envelope,today)),{white:1,green:2,yellow:1,red:1,purple:2});
 const plain={...envelope,id:'plain',scheduledAmounts:[{...base,id:'missing-config',deadline:'2026-10-04',thresholds:undefined},{...base,id:'disabled',deadline:'2026-10-02',timingEnabled:false}]};
-assert.deepEqual(proximityCounts(planningItems(plain,today)),{green:0,yellow:0,red:0});
-assert.ok(planningItems(plain,today).every(p=>planningTone(p)==='white'));
+assert.deepEqual(proximityCounts(planningItems(plain,today)),{white:0,green:0,yellow:0,red:1,purple:1});
+assert.deepEqual(planningItems(plain,today).map(planningTone),['purple','red']);
 validateScheduledAmount({...base,id:'off',deadline:today,timingEnabled:false,thresholds:{green:NaN,yellow:NaN,red:NaN}});
-for(const tone of ['white','green','yellow','red']) {
+for(const tone of ['white','green','yellow','red','purple']) {
  const result=globalPlanningItems([envelope,plain],today,tone);
  assert.ok(result.length>0);
  assert.ok(result.every(p=>planningTone(p.item)===tone));
@@ -61,4 +61,4 @@ assert.equal(kept.envelopes[0].balanceHidden,true);assert.equal(kept.envelopes[0
 assert.equal(kept.envelopes[0].scheduledAmounts.length,1);assert.equal(kept.envelopes[0].scheduledAmounts[0].payment,undefined);
 assert.equal(kept.notifications.sound,true);assert.deepEqual(kept.notifications.readIds,[]);
 assert.deepEqual(resetFinanceData(data,initial,false),initial);
-console.log('OK A-Q: four states, compact distance, counts, four global filters + all, recurrence calendar/leap years, atomic payment and duplicates, both reset modes and preservation.');
+console.log('OK A-Q: five states, compact distance, counts, five global filters + all, recurrence calendar/leap years, atomic payment and duplicates, both reset modes and preservation.');

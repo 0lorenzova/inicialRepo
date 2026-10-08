@@ -1,6 +1,6 @@
 import { planningItems, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
 import { temporalDistance } from "./envelope-goals";
-import { validateRecurrence, type Recurrence } from "./finance-recurrence";
+import { validateRecurrence, recurrenceDueDate, type Recurrence } from "./finance-recurrence";
 
 export const calendarScales = ["Día", "Semana", "Mes", "Año"] as const;
 export type CalendarScale = typeof calendarScales[number];
@@ -38,7 +38,7 @@ export function calendarEntries(envelopes: CalendarEnvelope[], today: string): C
     if (envelope.recurrence) {
       try {
         validateRecurrence(envelope.recurrence);
-        const date = envelope.recurrence.snoozedUntil && envelope.recurrence.snoozedUntil>envelope.recurrence.nextDate ? envelope.recurrence.snoozedUntil : envelope.recurrence.nextDate;
+        const date = recurrenceDueDate(envelope.recurrence);
         dateOf(date);
         entries.push({key:`${envelope.id}:contribution`,envelopeId:envelope.id,envelopeName:envelope.name,date,name:`Aporte a ${envelope.name}`,amount:envelope.recurrence.amount});
       } catch { /* Malformed legacy schedules remain available in their editor. */ }
