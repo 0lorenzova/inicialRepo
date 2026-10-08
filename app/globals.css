@@ -263,3 +263,6 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 }
 
 .attention-item { display:grid; gap:8px; min-width:0; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); text-align:left; overflow-wrap:anywhere; font-size:calc(13px * var(--ui-scale,1)); }
+
+/* Native date/time controls and their picker icons follow the dark surfaces. */
+.dark-mode input:is([type="date"],[type="datetime-local"],[type="time"]) { color-scheme: dark; }

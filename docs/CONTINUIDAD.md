@@ -232,3 +232,12 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - Retomar: revisión visual adicional indicada, pendientes históricos de continuidad (déficit separado, fotos/almacenamiento, comparación de productos, plantillas, no asignados por ingreso, compensaciones e historial). Multimoneda y notificaciones con app cerrada siguen necesitando definición. No repetir decisiones ya confirmadas sobre texto o solo asignar fondos.
 - SQL: esta entrega NO requiere SQL, los metadatos opcionales viajan en el JSON existente. La migración RPC anterior no debe ejecutarse aisladamente; requiere cliente compatible, pruebas, respaldo y permiso del propietario.
 - Publicación iniciada con 15% de la ronda disponible, por instrucción permanente del propietario.
+
+## Continuación — revisión responsive y claridad (8 octubre 2026)
+- Revisado en navegador local offline: calendario en tablet 768×1024 y escritorio 1280×900, temas claro/oscuro, acceso rápido de cabecera → día → detalle contextual → volver al cronograma. La revisión del icono de cabecera que figuraba pendiente en la entrega anterior queda cerrada.
+- Distribución revisada en escritorio por sobres y tablet en agenda; formularios sin overflow horizontal, conservando el motor ya probado. Solo se abrió un borrador ficticio, sin confirmar nuevos movimientos.
+- Correcciones: título mensual duplicado eliminado; subtítulo específico del cronograma; singular/plural de obligaciones y pendientes; controles nativos de fecha/hora con esquema oscuro para que el icono del calendario tenga contraste.
+- No se repitieron pruebas financieras ya aprobadas: no hubo modificaciones en cálculos, persistencia ni SQL.
+- Precisión del plan de pruebas: los cinco colores no pueden coexistir en el mismo día civil con una misma fecha actual. Un día pasado es púrpura para todas sus obligaciones; en una fecha futura sí pueden coexistir blanco/verde/amarillo/rojo según sus umbrales. Queda la comprobación visual de ese caso de cuatro colores; la coherencia de los cinco estados tiene pruebas lógicas anteriores.
+- Retomar siguientes implementaciones anteriores: vista de dinero sin asignar por ingreso (reutilizar income-trace; no atribuir fondos sin evidencia), plantillas de distribución, comparación de productos, fotos/almacenamiento, déficit separado y compensaciones históricas. No considerar terminado todo el backlog.
+- SQL: no ejecutar ningún SQL para esta revisión. La migración RPC anterior sigue requiriendo cliente compatible, pruebas, respaldo y autorización previa.
