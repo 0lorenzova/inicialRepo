@@ -1,4 +1,12 @@
 .calendar { min-width:0; }
+.shortcuts { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.shortcuts button { flex:1 1 85px; height:auto; min-height:44px; white-space:normal; }
+.shortcuts button[aria-pressed="true"] { border-color:var(--green); background:var(--pale); color:var(--ink); }
+.legend { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; font-size:calc(11px * var(--ui-scale,1)); }
+.legend>span,.dots { display:flex; align-items:center; justify-content:center; gap:4px; }
+.dots { flex-wrap:wrap; max-width:100%; }
+.dots:empty { display:none; }
+.day[data-selected="true"] { background:var(--pale); border-color:var(--green); }
 .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
 .controls label { display:grid; gap:6px; flex:1 1 140px; min-width:0; font-size:calc(12px * var(--ui-scale, 1)); }
 .controls input,.controls select { width:100%; min-width:0; min-height:calc(44px * var(--ui-scale,1)); padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--paper); color:var(--ink); font:inherit; }

@@ -2,9 +2,10 @@
 import { useId, useRef, useState } from "react";
 import { buildMovementName, fieldsFor, nameSeparators, reorderNameFields, type MovementNamingPreferences, type NameField, type NamingKind } from "@/lib/movement-names";
 import { IsoWeekPreview } from "./iso-week-preview";
+import type { CalendarEnvelope } from "@/lib/planning-calendar";
 import styles from "./movement-name-settings.module.css";
 
-export function MovementNameSettings({ value, onChange }: { value: MovementNamingPreferences; onChange: (kind: NamingKind, settings: MovementNamingPreferences[NamingKind]) => void }) {
+export function MovementNameSettings({ value, onChange, envelopes, today, display, privateMode }: { envelopes:CalendarEnvelope[];today:string;display:(amount:number)=>string;privateMode:boolean;value: MovementNamingPreferences; onChange: (kind: NamingKind, settings: MovementNamingPreferences[NamingKind]) => void }) {
   const [kind, setKind] = useState<NamingKind>("Ingreso");
   const [announcement, setAnnouncement] = useState("");
   const [dragTarget, setDragTarget] = useState<NameField | null>(null);
@@ -45,7 +46,7 @@ export function MovementNameSettings({ value, onChange }: { value: MovementNamin
     <label htmlFor={`${id}-separator`}>Separador entre elementos</label>
     <select id={`${id}-separator`} value={settings.separator} onChange={event => onChange(kind, { ...settings, separator: event.target.value as typeof settings.separator })}>{nameSeparators.map((separator, index) => <option key={separator} value={separator}>{["Guion ( - )", "Punto ( · )", "Barra ( / )", "Espacio"][index]}</option>)}</select>
     <div className={styles.preview}><b>Vista previa · datos de ejemplo</b><output aria-live="polite">{preview}</output>{!settings.fields.length && <small>Sin elementos seleccionados, se utiliza el monto.</small>}</div>
-    {settings.fields.includes("Semana") && <IsoWeekPreview date="2026-09-27T10:24"/>}
+    {settings.fields.includes("Semana") && <IsoWeekPreview date="2026-09-27T10:24" envelopes={envelopes} today={today} display={display} privateMode={privateMode}/>}
     <p role="status" className={styles.status}>{announcement}</p>
   </div>;
 }

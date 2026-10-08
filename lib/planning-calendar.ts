@@ -1,11 +1,14 @@
-import { planningItems, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
-import { temporalDistance } from "./envelope-goals";
+import { planningItems, planningTone, type ProximityFilter, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
+import { temporalDistance, getTemporalState, DEFAULT_GOAL_THRESHOLDS } from "./envelope-goals";
 import { validateRecurrence, recurrenceDueDate, type Recurrence } from "./finance-recurrence";
 
 export const calendarScales = ["Día", "Semana", "Mes", "Año"] as const;
 export type CalendarScale = typeof calendarScales[number];
 export type CalendarEnvelope = PlanningEnvelope & { recurrence?: Recurrence };
 export type CalendarEntry = { key: string; envelopeId: string; envelopeName: string; date: string; name: string; amount: number; item?: PlanningItem };
+export function calendarEntryTone(entry: CalendarEntry, today: string): ProximityFilter {
+  return entry.item ? planningTone(entry.item) : getTemporalState(entry.date, today, DEFAULT_GOAL_THRESHOLDS).temporal?.tone ?? "white";
+}
 const dateOf = (value: string) => { temporalDistance(value,value); return new Date(`${value}T12:00:00Z`); };
 const format = (value: Date) => value.getUTCFullYear()<1 ? "0001-01-01" : value.getUTCFullYear()>9999 ? "9999-12-31" : value.toISOString().slice(0,10);
 export function calendarRange(value: string, scale: CalendarScale) {
