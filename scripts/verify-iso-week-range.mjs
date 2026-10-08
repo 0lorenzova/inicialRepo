@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import { isoWeekRange } from "../lib/iso-week-range.ts";
+const example = isoWeekRange("2026-10-07T10:24");
+assert.equal(example.week, 41);
+assert.equal(example.from, "2026-10-05");
+assert.equal(example.to, "2026-10-11");
+assert.match(example.label, /lunes.*5.*octubre.*domingo.*11.*octubre/);
+const boundary = isoWeekRange("2021-01-01");
+assert.equal(boundary.year, 2020);
+assert.equal(boundary.week, 53);
+assert.equal(boundary.from, "2020-12-28");
+assert.equal(boundary.to, "2021-01-03");
+assert.equal(isoWeekRange("2026-10-05T02:00:00Z").from, "2026-09-28");
+assert.equal(isoWeekRange("2024-02-29").to, "2024-03-03");
+assert.throws(() => isoWeekRange("2026-02-30"));
+assert.throws(() => isoWeekRange(""));
+console.log("OK: rango ISO, lunes/domingo, cambio de año, Costa Rica, febrero e incompletos.");

@@ -211,3 +211,10 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - No afirmar que todo el prompt está completo: falta esa distribución (apartados 15–26) y rango ISO (13–14). El sistema de cinco estados queda listo para reutilizarlo allí. Préstamos no tienen vencimiento propio; no se inventaron fechas para notificarlos.
 - Pendientes anteriores siguen vigentes salvo los explícitamente resueltos arriba: déficit separado del dinero real, fotos/almacenamiento, comparación de productos, plantillas, no asignados por ingreso, correcciones compensatorias y mejoras restantes de historial. Multimoneda y avisos con app cerrada requieren definición.
 - SQL: NO se requiere para esta entrega. La migración RPC 202610010001_finance_revision.sql sigue pendiente y NO debe ejecutarse aisladamente; primero cliente compatible, prueba, respaldo y autorización del propietario.
+
+## Entrega incremental — rango ISO y consulta (7 octubre 2026)
+- Implementado: rango lunes–domingo con meses textuales y año, bajo la fecha del ingreso y en la configuración cuando se incluye Semana. Se actualiza con el borrador.
+- Tocar el rango abre un calendario de consulta con la semana resaltada; muestra ambos meses si cruza un límite. No cambia fechas, saldos ni movimientos.
+- Reutiliza isoWeek, movementDay (Costa Rica), calendarRange, calendarDays, FinanceDialog y los estilos del calendario existente.
+- Verificación dirigida: semana 41 de 2026, cruce de año ISO 2020/2021, conversión Costa Rica, febrero bisiesto y fechas inválidas. Revisión visual interactiva del nuevo calendario queda pendiente para la siguiente ronda; no afirmar que fue realizada.
+- No requiere SQL. La distribución provisional compartida con cronograma sigue pendiente; decisiones de texto y solo asignar fondos ya están resueltas.
