@@ -253,3 +253,9 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - SQL: NO ejecutar SQL para esta entrega. Metadatos incomeSources ya compatibles con el JSON existente. Migración RPC anterior sigue pendiente de cliente compatible, base de prueba, respaldo y autorización; no ejecutarla aisladamente.
 - Retomar: plantillas de distribución, comparación mensual de productos, fotos/almacenamiento, déficit separado y compensaciones históricas. Multimoneda, avisos con app cerrada y vencimientos propios de préstamos requieren definir alcance/modelo. Sigue pendiente comprobación visual de cuatro colores futuros en un mismo día del calendario; esta ronda comprobó varios colores en un sobre, no ese caso de calendario.
 - Publicar este bloque antes de iniciar otro, conservando margen de cupo; autorización permanente del propietario vigente.
+
+## Cierre breve — validación comprensible al asignar (8 octubre 2026)
+- Monto de asignación desde un ingreso: mensaje inmediato para cero, negativos, fracciones y exceso sobre el remanente. El campo expone aria-invalid y vincula el mensaje accesible; no muestra el saldo en el aviso de privacidad.
+- Mantiene el bloqueo y la validación del motor ya comprobados. Cambio exclusivo de feedback visual; sin SQL ni cambios de saldos.
+- Comprobaciones: lint y TypeScript. No se repitió la prueba financiera ni la revisión responsive anteriores; no se realizó una nueva prueba visual de estos mensajes.
+- Iniciada esta tarea con 14% de cupo; publicar este ajuste pequeño y retomar en la próxima ronda las plantillas, comparación de productos y demás pendientes de la entrega anterior.
