@@ -178,3 +178,16 @@ Priorizar cuentas contextuales, traslado seguro de pendientes, deuda separada, z
 - SQL: NO requiere SQL. Migración RPC anterior sigue pendiente y NO debe ejecutarse aisladamente: requiere cliente compatible, base de prueba, respaldo y permiso del propietario.
 - Retomar: déficit separado de efectivo; foto de recibo/imagen de producto (definir almacenamiento); gráfico mensual de productos; plantillas de distribución; no asignados por ingreso; ajustes compensatorios y presentación separada/timeline de historial. Multimoneda, push con app cerrada y traslado de pagados requieren decisiones previas.
 - Cierre al detectar 15% restante del límite de cinco horas, 71% semanal restante. Publicar este bloque y confirmar Vercel antes de iniciar otro.
+
+## Nueva actualización recibida — cinco estados y distribución (7 octubre)
+Fuente íntegra: docs/ACTUALIZACION-CINCO-ESTADOS.md. Sustituye las reglas anteriores solo donde las modifica.
+- Completados ahora: texto «Asignar pago a este sobre» en menú y diálogo; etiqueta exacta «Semana del año (ISO 8601)». El cálculo ISO ya existía y se conserva.
+- Pendiente prioritario: ampliar fuente temporal central con púrpura para días negativos; día cero rojo; conservar umbrales existentes. Propagar los cinco estados a tarjetas, filtros, contadores (incluido blanco), calendario, notificaciones y futuros selectores. No naranja.
+- Pendiente: contadores globales de metas Y pagos, blanco con contenido fuera de seguimiento, sin indicadores falsos en sobres vacíos. Mantener visibilidad independiente del cálculo.
+- Pendiente: aviso inicial breve de vencidos/críticos y notificaciones solo de atención; retirar notificaciones de movimientos ordinarios. Añadir Saldo actual compacto.
+- Pendiente: rango ISO lunes-domingo con meses textuales y acceso a calendario de consulta, reutilizando calendario existente.
+- Pendiente: distribución de ingresos con obligaciones desplegables por sobre, orden temporal, selección provisional compartida con Cronograma de pagos, total seleccionado/restante únicos y confirmación final atómica. No generar movimientos al marcar/desmarcar.
+- Decisiones del propietario: (1) texto definitivo de Asignar dinero a este sobre; conservar el actual. (2) confirmar si los nuevos checks únicamente reservan/asignan fondos o además registran pagos. El flujo actual de ingreso asigna a sobres; los pagos programados son gastos separados. No suponer que el checkbox paga.
+- Retomar la implementación central antes de tocar pantallas: pruebas de ayer/hoy/mañana, umbrales, blanco, pagos realizados, independencia de visibilidad y coherencia entre todas las vistas. Después distribución, pruebas locales ficticias y reporte de los 28 puntos.
+- Solo quedaba 3% del límite de cinco horas al recibir el prompt. Esta entrega contiene únicamente terminología y registro completo de requisitos; no afirmar que los cinco estados o la nueva distribución estén implementados.
+- No requiere SQL esta entrega. Consultar antes de cualquier migración.

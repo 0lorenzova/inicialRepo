@@ -216,7 +216,7 @@ function FinanceWorkspace({store,supabase}:{store:ReturnType<typeof useFinanceSt
       {label:"Pedir prestado",onSelect:()=>setEnvelopeAction({kind:"Pedir prestado",sourceId:menuEnvelope.id})},
       {label:"Productos",onSelect:()=>navigation.open({overlay:"products",context:{envelopeId:menuEnvelope.id}})},
       {label:"Configurar meta",onSelect:()=>openGoal(menuEnvelope)},
-      {label:"Programar importe a este sobre",onSelect:()=>openScheduled(menuEnvelope.id)},
+      {label:"Asignar pago a este sobre",onSelect:()=>openScheduled(menuEnvelope.id)},
       {label:"Metas e importes",onSelect:()=>openPlanning(menuEnvelope.id,envelopeMenu.anchor)},
       {label:menuEnvelope.balanceHidden?"Mostrar saldo del sobre":"Ocultar saldo del sobre",onSelect:()=>setData(d=>({...d,envelopes:d.envelopes.map(e=>e.id===menuEnvelope.id?{...e,balanceHidden:!e.balanceHidden}:e)}))},
       {label:"Editar sobre",onSelect:()=>openEditor(menuEnvelope)},

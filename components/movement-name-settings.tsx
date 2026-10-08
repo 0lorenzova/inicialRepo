@@ -15,7 +15,7 @@ export function MovementNameSettings({ value, onChange }: { value: MovementNamin
     onChange(kind, { ...settings, fields: reorderNameFields(settings.fields, source, target) });
     setAnnouncement(`${source} cambiado de posición.`);
   };
-  const label = (field: NameField) => field === "Semana" ? "Semana del año (ISO)" : field === "Número" ? "Número consecutivo" : field;
+  const label = (field: NameField) => field === "Semana" ? "Semana del año (ISO 8601)" : field === "Número" ? "Número consecutivo" : field;
   const preview = buildMovementName(settings, { kind, date: "2026-09-27T10:24", amount: 125000, incomeType: "Salario", category: "Alimentación", merchant: "Soda La Plaza", sequence: 1 });
   return <div ref={root} className={styles.settings}>
     <label htmlFor={`${id}-kind`}>Configurar nombres de</label>
