@@ -1,0 +1,48 @@
+import assert from "node:assert/strict";
+import { assign, unassign, postMovement, totals } from "../lib/finance-ledger.ts";
+import { unassignedIncomes } from "../lib/unassigned-incomes.ts";
+import { incomeDistribution } from "../lib/income-trace.ts";
+import { baseNavigation, nextNavigation, restoreNavigation } from "../lib/app-navigation.ts";
+
+let ledger={accounts:[{id:"a",name:"Cuenta",type:"Banco",balance:100,active:true}],envelopes:[{id:"home",name:"Hogar",balance:0},{id:"old",name:"Archivado",balance:0,archived:true}],loans:[],movements:[]};
+for(const [id,amount,date] of [["older",1000,"2026-10-01T09:00"],["newer",2000,"2026-10-02T09:00"]]) ledger=postMovement(ledger,{id,type:"Ingreso",amount,accountId:"a",envelopeAllocations:[],date,name:id});
+const date="2026-10-08T09:00";
+const available=(id)=>unassignedIncomes(ledger).incomes.find(item=>item.income.id===id)?.available??0;
+assert.equal(unassignedIncomes(ledger).total,3100);
+assert.equal(unassignedIncomes(ledger).common,100);
+assert.deepEqual(unassignedIncomes(ledger).incomes.map(item=>item.income.id),["newer","older"]);
+const initial=structuredClone(ledger);
+ledger=assign(ledger,"home",300,date,"selected","newer");
+assert.equal(available("newer"),1700);
+assert.equal(available("older"),1000);
+assert.equal(unassignedIncomes(ledger).common,100);
+assert.deepEqual(ledger.movements[0].incomeSources,[{incomeId:"newer",amount:300}]);
+assert.equal(ledger.movements.length,initial.movements.length+1);
+assert.deepEqual(ledger.accounts,initial.accounts);
+assert.equal(incomeDistribution(ledger,"newer").assigned,300);
+for(const [envelope,amount,id,income,when] of [["home",1800,"excess","newer",date],["home",1,"missing","unknown",date],["old",1,"archived","newer",date],["home",0,"zero","newer",date],["home",1.5,"fraction","newer",date],["home",1,"selected","newer",date],["home",1,"early","newer","2026-09-30T09:00"],["home",1,"invalid","newer","2026-02-30T09:00"]]) {
+  const before=structuredClone(ledger);
+  assert.throws(()=>assign(ledger,envelope,amount,when,id,income));
+  assert.deepEqual(ledger,before,"Rejected assignment must be atomic");
+}
+ledger=assign(ledger,"home",150,date,"fifo");
+assert.equal(available("older"),950);
+assert.equal(available("newer"),1700);
+assert.equal(unassignedIncomes(ledger).common,0);
+ledger=assign(ledger,"home",1700,date,"finish","newer");
+assert.equal(available("newer"),0);
+assert.throws(()=>assign(ledger,"home",1,date,"stale","newer"));
+ledger=unassign(ledger,"home",200,date,"return");
+assert.equal(unassignedIncomes(ledger).common,200);
+assert.equal(available("newer"),0,"Returning funds cannot invent an income link");
+ledger=postMovement(ledger,{id:"expense",type:"Gasto",amount:100,accountId:"a",envelopeAllocations:[],date,name:"Common spending"});
+assert.equal(available("older"),850);
+assert.equal(unassignedIncomes(ledger).common,200);
+assert.equal(JSON.stringify(unassignedIncomes(JSON.parse(JSON.stringify(ledger)))),JSON.stringify(unassignedIncomes(ledger)));
+const summary=totals(ledger);
+assert.equal(summary.accounts,summary.assigned+summary.unassigned);
+assert.equal(summary.unassigned,unassignedIncomes(ledger).common+unassignedIncomes(ledger).incomes.reduce((sum,item)=>sum+item.available,0));
+const entry=nextNavigation(baseNavigation("local","session","Sin asignar"),{overlay:"assignIncome",context:{incomeId:"older",operationId:"pending"}});
+assert.deepEqual(restoreNavigation(entry,"local","session").entry,entry);
+assert.equal(restoreNavigation(entry,"local","new-session").entry.value.overlay,null);
+console.log("OK: selected-income assignment, FIFO compatibility, unknown funds, partial/exhausted income, invalid/stale/duplicate rejection, atomicity, persistence, navigation and ledger equality.");

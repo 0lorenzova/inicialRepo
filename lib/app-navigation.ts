@@ -1,5 +1,5 @@
-export const appViews = ["Inicio", "Movimientos", "Sobres", "Cuentas", "Préstamos", "Reportes", "Recordatorios", "Configuración", "Cronograma"] as const;
-const overlays = ["new", "envelope", "goal", "account", "repay", "action", "postpone", "notifications", "feedback", "planning", "planningDetail", "scheduled", "incomeTrace", "proximity", "reset", "products"] as const;
+export const appViews = ["Inicio", "Movimientos", "Sobres", "Cuentas", "Préstamos", "Reportes", "Recordatorios", "Configuración", "Cronograma", "Sin asignar"] as const;
+const overlays = ["new", "envelope", "goal", "account", "repay", "action", "postpone", "notifications", "feedback", "planning", "planningDetail", "scheduled", "incomeTrace", "assignIncome", "proximity", "reset", "products"] as const;
 export type AppNavigation = {
   view: string;
   flow: "Ingreso" | "Gasto" | null;
@@ -51,7 +51,7 @@ export function restoreNavigation(saved: unknown, scope: string, session: string
   const validFlow = value?.flow === null || value?.flow === "Ingreso" || value?.flow === "Gasto";
   const validOverlay = value?.overlay === null || overlays.some(overlay => overlay === value?.overlay);
   const validStep = Number.isSafeInteger(value?.step) && value!.step >= 0 && value!.step <= (value?.flow === "Gasto" ? 2 : value?.flow === "Ingreso" ? 1 : 0);
-  const needsContext = ["goal", "repay", "action", "postpone", "planning", "planningDetail", "scheduled", "incomeTrace", "proximity", "reset", "products"].some(overlay => overlay === value?.overlay);
+  const needsContext = ["goal", "repay", "action", "postpone", "planning", "planningDetail", "scheduled", "incomeTrace", "assignIncome", "proximity", "reset", "products"].some(overlay => overlay === value?.overlay);
   const validContext = !needsContext || (value?.context !== null && typeof value?.context === "object");
   const validFilters = [value?.calendarDate, value?.historyFrom, value?.historyTo, value?.reportMonth, value?.flowEnvelopeId, value?.movementEnvelopeId, value?.movementId, value?.reminderEnvelopeId].every(id => id == null || typeof id === "string");
   if (candidate.scope !== scope || candidate.session !== session || !validIndices || !validView || !validFlow || !validOverlay || !validStep || !validContext || !validFilters || (value?.calendarScale !== undefined && !["Día","Semana","Mes","Año"].includes(value.calendarScale))) {

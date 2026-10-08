@@ -40,6 +40,16 @@ export function traceAssignmentSources(ledger: Ledger, amount: number, date: str
   return sources;
 }
 
+// Explicit selection must consume this income, never silently fall back to FIFO.
+export function selectedIncomeSource(ledger: Ledger, incomeId: string, amount: number, date: string): IncomeSource[] {
+  const income = ledger.movements.find(movement => movement.id === incomeId && movement.type === "Ingreso");
+  const available = unassignedIncomeLots(ledger).filter(lot => lot.incomeId === incomeId && lot.date <= date).reduce((sum, lot) => sum + lot.amount, 0);
+  if (!income || !Number.isSafeInteger(amount) || amount <= 0 || amount > available) {
+    throw new Error("Este ingreso ya no tiene suficiente dinero sin asignar para ese monto. Revisa su saldo disponible.");
+  }
+  return [{ incomeId, amount }];
+}
+
 export function incomeDistribution(ledger: Ledger, incomeId: string) {
   const income=ledger.movements.find(m=>m.id===incomeId&&m.type==="Ingreso");
   if(!income)return null;

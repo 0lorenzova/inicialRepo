@@ -1,6 +1,6 @@
 import { normalizeExpenseDetails } from "./expense-details";
 import { validatePurchaseProducts, type PurchaseProduct } from "./finance-products";
-import { traceAssignmentSources, type IncomeSource } from "./income-trace";
+import { traceAssignmentSources, selectedIncomeSource, type IncomeSource } from "./income-trace";
 export type Account = { id: string; name: string; type: string; balance: number; active: boolean };
 export type LedgerEnvelope = { id: string; name: string; balance: number; archived?: boolean; goal?: number };
 export type Loan = { id: string; sourceId: string; sourceName: string; targetId: string; targetName: string; amount: number; outstanding: number; status: "Pendiente" | "Parcial" | "Devuelto"; date: string };
@@ -106,10 +106,12 @@ export function commit(ledger: Ledger, movement: LedgerMovement, accounts = ledg
   return next;
 }
 
-export function assign(ledger: Ledger, envelopeId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {
+export function assign(ledger: Ledger, envelopeId: string, amount: number, date: string, id = crypto.randomUUID(), incomeId?: string): Ledger {
   const envelope = ledger.envelopes.find((item) => item.id === envelopeId && !item.archived);
   if (!envelope || !validAmount(amount) || amount > totals(ledger).unassigned) throw new Error("No hay dinero sin asignar suficiente o el monto no es válido.");
-  return commit(ledger, { id, type: "Asignación", name: `Asignación a ${envelope.name}`, amount, date, incomeSources: traceAssignmentSources(ledger, amount, date), allocations: [{ envelopeId: envelope.id, name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance + amount } : item));
+  if (!validMovementDate(date)) throw new Error("Selecciona una fecha y hora válidas para la asignación.");
+  const incomeSources = incomeId === undefined ? traceAssignmentSources(ledger, amount, date) : selectedIncomeSource(ledger, incomeId, amount, date);
+  return commit(ledger, { id, type: "Asignación", name: `Asignación a ${envelope.name}`, amount, date, incomeSources, allocations: [{ envelopeId: envelope.id, name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance + amount } : item));
 }
 
 export function unassign(ledger: Ledger, envelopeId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {

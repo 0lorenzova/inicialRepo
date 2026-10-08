@@ -1,0 +1,10 @@
+.total { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; padding:18px; border-radius:12px; background:var(--pale); color:var(--ink); }
+.total strong { font-size:calc(24px * var(--ui-scale,1)); overflow-wrap:anywhere; }
+.list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:14px; }
+.card { display:grid; gap:12px; min-width:0; border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:12px; }
+.card h2 { font-size:calc(16px * var(--ui-scale,1)); margin:0; overflow-wrap:anywhere; }
+.card small { display:block; color:var(--muted); margin-top:6px; overflow-wrap:anywhere; }
+.amounts,.actions { display:flex; flex-wrap:wrap; gap:12px; }
+.amounts>span { display:grid; gap:6px; flex:1 1 120px; min-width:0; }
+.amounts strong { overflow-wrap:anywhere; }
+.actions button { min-height:44px; height:auto; flex:1 1 140px; white-space:normal; }

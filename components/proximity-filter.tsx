@@ -10,8 +10,7 @@ export function ProximityControls({ value, onChange, envelopes, today }: { envel
   const counts = proximityCounts(globalPlanningItems(envelopes, today).map(entry => entry.item));
   return <div className={styles.controls} role="group" aria-label="Filtrar por proximidad"><span className={styles.label}>Filtrar por proximidad</span><div className={styles.colors}>
     {proximityTones.map(tone => <button key={tone} type="button" aria-label={`Filtrar proximidad: ${proximityLabels[tone]}, ${counts[tone]} elementos`} aria-pressed={value === tone} onClick={() => onChange(tone)}><TemporalDot tone={tone} /><small>{counts[tone]}</small></button>)}
-    <button className={styles.all} type="button" aria-pressed={!value} onClick={() => onChange()}>Ver todos</button>
-  </div></div>;
+  </div><button className={styles.all} type="button" aria-pressed={!value} onClick={() => onChange()}>Ver todos</button></div>;
 }
 
 export function GlobalPlanningDialog({ envelopes, today, filter, onFilter, display, privateMode, onSelect, onClose }: {
