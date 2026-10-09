@@ -15,3 +15,12 @@
 .badge small { white-space: nowrap; font-size:calc(10px * var(--ui-scale, 1)); color: var(--muted); }
 
 .dot[data-tone="purple"] { background:#b278ec; }
+
+@keyframes purpleBlink {
+  0%, 49.99% { opacity:1; }
+  50%, 100% { opacity:0; }
+}
+.dot[data-tone="purple"] { animation:purpleBlink 2s steps(1,end) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .dot[data-tone="purple"] { animation:none; opacity:1; }
+}

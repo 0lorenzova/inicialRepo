@@ -24,3 +24,16 @@
 .entry { display:grid; gap:8px; text-align:left; min-width:0; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--paper); color:var(--ink); overflow-wrap:anywhere; }
 .entry > small { color:var(--muted); }
 .srOnly { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+
+/* One shared phase moves the visual reminder; records and counts stay put. */
+.dotHint { display:inline-flex; align-items:center; justify-content:center; min-width:12px; min-height:16px; border-radius:4px; }
+.dotHint:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+.calendar[data-today-phase="false"] .echo,
+.calendar[data-today-phase="true"] .origin { opacity:0; }
+.overdue { margin-top:18px; padding-top:12px; border-top:1px solid var(--line); }
+@media (prefers-reduced-motion: reduce) {
+  .calendar .origin, .calendar .echo, .calendar .entry [data-tone="purple"] { opacity:1 !important; }
+}
+
+/* Cell indicators use the shared origin/today phase instead of a second blink. */
+.calendar .dotHint [data-tone="purple"] { animation:none; opacity:1; }

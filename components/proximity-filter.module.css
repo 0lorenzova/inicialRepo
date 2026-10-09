@@ -1,8 +1,8 @@
 .controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0 8px; min-width: 0; }
 .label { font-size:calc(11px * var(--ui-scale, 1)); color: var(--muted); }
-.colors { display: flex; flex-flow: row nowrap; align-items: center; min-width: 0; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
-.colors > button { flex: 0 0 auto; }
+.colors { display: flex; flex-flow: row nowrap; align-items: center; min-width: 0; max-width: 100%; }
 .colors button, .all { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 6px; background: transparent; color: var(--ink); border: 1px solid transparent; border-radius: 8px; }
+.colors > button { flex: 1 1 44px; min-width: 0; }
 .colors button[aria-pressed="true"], .all[aria-pressed="true"] { border-color: var(--green); background: var(--canvas); }
 .colors button > span { width: 12px; height: 12px; flex-basis: 12px; }
 .all { font-size:calc(11px * var(--ui-scale, 1)); white-space: nowrap; }

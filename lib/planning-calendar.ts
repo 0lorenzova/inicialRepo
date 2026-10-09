@@ -9,6 +9,20 @@ export type CalendarEntry = { key: string; envelopeId: string; envelopeName: str
 export function calendarEntryTone(entry: CalendarEntry, today: string): ProximityFilter {
   return entry.item ? planningTone(entry.item) : getTemporalState(entry.date, today, DEFAULT_GOAL_THRESHOLDS).temporal?.tone ?? "white";
 }
+
+export function calendarOverdueEntries(entries: CalendarEntry[], today: string, before = today) {
+  return entries.filter(entry => entry.date < today && entry.date < before && calendarEntryTone(entry, today) === "purple");
+}
+
+export function calendarDotDescription(items: CalendarEntry[], tone: ProximityFilter, today: string, privateMode: boolean, reminder = false) {
+  const meanings = {white:"Fuera del período de seguimiento",green:"Con tiempo disponible",yellow:"Se acerca la fecha límite",red:"Fecha límite de hoy o tiempo crítico",purple:"Fecha límite vencida"};
+  const matches = items.filter(entry => calendarEntryTone(entry, today) === tone);
+  const details = matches.slice(0, 4).map(entry => {
+    const date = new Intl.DateTimeFormat("es-CR", {timeZone:"America/Costa_Rica",dateStyle:"short"}).format(new Date(`${entry.date}T12:00:00Z`));
+    return `${privateMode ? "Responsabilidad" : `${entry.name} · ${entry.envelopeName}`} (${date})`;
+  });
+  return `${reminder ? "Aviso de atrasados; conservan su fecha original. " : ""}${meanings[tone]}. ${matches.length} ${matches.length === 1 ? "pendiente" : "pendientes"}${details.length ? `: ${details.join("; ")}` : ""}${matches.length > 4 ? `; y ${matches.length - 4} más` : ""}.`;
+}
 const dateOf = (value: string) => { temporalDistance(value,value); return new Date(`${value}T12:00:00Z`); };
 const format = (value: Date) => value.getUTCFullYear()<1 ? "0001-01-01" : value.getUTCFullYear()>9999 ? "9999-12-31" : value.toISOString().slice(0,10);
 export function calendarRange(value: string, scale: CalendarScale) {
