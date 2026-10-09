@@ -45,3 +45,17 @@ export function productReport(movements:LedgerMovement[],envelopeId:string,month
   const identified=products.reduce((sum,p)=>sum+p.amount,0);
   return {spent,identified,withoutProduct:spent-identified,products};
 }
+
+// Read-only projection: use the same report, product identity and Costa Rica dates.
+export function productMonthlyComparison(movements:LedgerMovement[],envelopeId:string,productId:string,month:string) {
+  monthRange(month);
+  const [year,number]=month.split("-").map(Number), end=year*12+number-1;
+  const months=Array.from({length:Math.min(6,end-11)},(_,index)=>{
+    const ordinal=Math.max(12,end-5)+index;
+    const value=`${String(Math.floor(ordinal/12)).padStart(4,"0")}-${String(ordinal%12+1).padStart(2,"0")}`;
+    const row=productReport(movements,envelopeId,value).products.find(product=>product.id===productId);
+    return {month:value,amount:row?.amount??0,count:row?.count??0};
+  });
+  const current=months[months.length-1],previous=months.at(-2);
+  return {months,current,previous,change:previous?current.amount-previous.amount:null,percentage:previous&&previous.amount>0?(current.amount-previous.amount)/previous.amount*100:null};
+}

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { ProductMonthlyComparison } from "./product-monthly-comparison";
 import { FinanceDialog } from "./finance-dialog";
 import { productReport, type ProductEnvelope, type PurchaseProduct, type TrackedProduct } from "@/lib/finance-products";
 import type { LedgerMovement } from "@/lib/finance-ledger";
@@ -23,7 +24,7 @@ export function PurchaseProductsEditor({items,onChange,envelopes,total}: {items:
   </div>;
 }
 
-export function EnvelopeProductsDialog({envelope,movements,today,display,onSave,onClose,onMovement}: {envelope:ProductEnvelope;movements:LedgerMovement[];today:string;display:(value:number)=>string;onSave:(product:TrackedProduct)=>void;onClose:()=>void;onMovement:(id:string)=>void}) {
+export function EnvelopeProductsDialog({envelope,movements,today,display,privateMode,onSave,onClose,onMovement}: {envelope:ProductEnvelope;movements:LedgerMovement[];today:string;display:(value:number)=>string;privateMode:boolean;onSave:(product:TrackedProduct)=>void;onClose:()=>void;onMovement:(id:string)=>void}) {
   const [month,setMonth]=useState(today.slice(0,7)),[editing,setEditing]=useState<TrackedProduct|null>(null),[detail,setDetail]=useState<string|null>(null),[error,setError]=useState("");
   let report;try {report=productReport(movements,envelope.id,month);}catch {report=null;}
   const row=report?.products.find(p=>p.id===detail);
@@ -32,12 +33,13 @@ export function EnvelopeProductsDialog({envelope,movements,today,display,onSave,
     {error&&<p className="form-error" role="alert">{error}</p>}
     {editing ? <form className={styles.editor} noValidate onSubmit={event=>{event.preventDefault();save(editing);}}><label>Nombre del producto<input value={editing.name} onChange={event=>setEditing({...editing,name:event.target.value})}/></label><label>Icono del producto<select aria-label="Icono del producto" value={editing.icon} onChange={event=>setEditing({...editing,icon:event.target.value})}>{["📦","🛒","🍷","🍽️","☕","🍫","🍕","🍎"].map(icon=><option key={icon}>{icon}</option>)}</select></label><label className="check-label"><input type="checkbox" checked={editing.tracking} onChange={event=>setEditing({...editing,tracking:event.target.checked})}/>Seguimiento</label><button type="submit" className="primary">Guardar producto</button><button type="button" className="secondary" onClick={()=>{setEditing(null);setError("");}}>Cancelar</button></form> : <>
       <button className="secondary wide" onClick={()=>{setEditing({id:crypto.randomUUID(),name:"",icon:"📦",tracking:true});setDetail(null);}}>＋ Nuevo producto</button>
-      <div className={styles.editor}>{(envelope.products??[]).map(p=><div className={styles.catalog} key={p.id}><span>{p.icon} {p.name}</span><label><input type="checkbox" checked={p.tracking} onChange={event=>save({...p,tracking:event.target.checked})}/>Seguimiento de {p.name}</label><button className="secondary" onClick={()=>setEditing({...p})}>Editar {p.name}</button></div>)}</div>
+      <div className={styles.editor}>{(envelope.products??[]).map(p=><div className={styles.catalog} key={p.id}><span>{p.icon} {p.name}</span><label><input type="checkbox" checked={p.tracking} onChange={event=>save({...p,tracking:event.target.checked})}/>Seguimiento de {p.name}</label><button className="secondary" aria-expanded={detail===p.id} onClick={()=>setDetail(detail===p.id?null:p.id)}>Ver evolución de {p.name}</button><button className="secondary" onClick={()=>setEditing({...p})}>Editar {p.name}</button></div>)}</div>
       <label>Mes del reporte de productos<input type="month" value={month} onChange={event=>setMonth(event.target.value)}/></label>
       {report ? <><div className="review-box"><span>Gasto total del sobre: {display(report.spent)}</span><span>Productos identificados: {display(report.identified)}</span><span>Resto sin producto identificado: {display(report.withoutProduct)}</span></div>
         <p className="flow-intro">Los productos anteriores sin sobre identificado se conservan en el gasto original. Activar seguimiento permite seleccionarlos en gastos nuevos.</p>
-        {report.products.map(p=><button className="choice" key={p.id} onClick={()=>setDetail(detail===p.id?null:p.id)}><span>{p.name}</span><span>{display(p.amount)} · {new Intl.NumberFormat("es-CR",{maximumFractionDigits:1}).format(p.percentage)}% · {p.count} {p.count===1?"compra":"compras"}</span></button>)}
+        {report.products.map(p=><button className="choice" key={p.id} aria-expanded={detail===p.id} onClick={()=>setDetail(detail===p.id?null:p.id)}><span>{p.name}</span><span>{display(p.amount)} · {new Intl.NumberFormat("es-CR",{maximumFractionDigits:1}).format(p.percentage)}% · {p.count} {p.count===1?"compra":"compras"}</span></button>)}
         {!report.products.length&&<p className="empty-state">No hay productos identificados para este sobre y mes.</p>}
+        {detail&&<ProductMonthlyComparison movements={movements} envelopeId={envelope.id} productId={detail} name={envelope.products?.find(product=>product.id===detail)?.name??row?.name??"producto"} month={month} display={display} privateMode={privateMode}/>}
         {row&&<div className={styles.editor}><h3>Compras de {row.name}</h3>{row.purchases.map((purchase,index)=><button className="choice" key={`${purchase.movementId}:${index}`} onClick={()=>onMovement(purchase.movementId)}>{purchase.date.slice(0,10)} · {display(purchase.amount)}{purchase.quantity?` · Cantidad: ${purchase.quantity}`:""}{purchase.notes?` · ${purchase.notes}`:""}<span>Ver movimiento →</span></button>)}</div>}
       </>:<p className="form-error" role="alert">Selecciona un mes válido.</p>}
     </>}
