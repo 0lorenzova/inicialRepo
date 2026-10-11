@@ -1,3 +1,4 @@
+import { normalizeIncomeMethod } from "./income-preferences";
 import { normalizeExpenseDetails } from "./expense-details";
 import { validatePurchaseProducts, type PurchaseProduct } from "./finance-products";
 import { traceAssignmentSources, selectedIncomeSource, type IncomeSource } from "./income-trace";
@@ -167,6 +168,6 @@ export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingres
     return { ...item, balance: item.balance + (input.type === "Ingreso" ? allocation : -allocation) };
   });
   const accountName = account.name;
-  const movement: LedgerMovement = { ...(input.type === "Gasto" ? normalizeExpenseDetails(input.paymentMethod, input.tags) : {}), id: input.id || crypto.randomUUID(), type: input.type, name: input.name, amount: input.amount, date: input.date, accountId: account.id, accountName, category: input.category, description: input.description, reference: input.reference, merchant: input.merchant?.trim() || undefined, products:input.products, allocations: input.envelopeAllocations.map((allocation) => ({ envelopeId: allocation.id, name: ledger.envelopes.find((item) => item.id === allocation.id)!.name, amount: allocation.amount })) };
+  const movement: LedgerMovement = { ...(input.type === "Gasto" ? normalizeExpenseDetails(input.paymentMethod, input.tags) : normalizeIncomeMethod(input.paymentMethod)), id: input.id || crypto.randomUUID(), type: input.type, name: input.name, amount: input.amount, date: input.date, accountId: account.id, accountName, category: input.category, description: input.description, reference: input.reference, merchant: input.merchant?.trim() || undefined, products:input.products, allocations: input.envelopeAllocations.map((allocation) => ({ envelopeId: allocation.id, name: ledger.envelopes.find((item) => item.id === allocation.id)!.name, amount: allocation.amount })) };
   return commit(ledger, movement, ledger.accounts.map((item) => item.id === account.id ? { ...item, balance: item.balance + delta } : item), envelopes);
 }

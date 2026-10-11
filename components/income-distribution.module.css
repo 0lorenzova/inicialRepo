@@ -18,3 +18,8 @@
 .summary { display:grid; gap:10px; background:var(--pale); color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:12px; }
 .summary>span { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; }
 .summary b { overflow-wrap:anywhere; }
+
+.indicators { display:flex; flex-flow:row nowrap; gap:3px; padding:0 12px; min-width:0; }
+.indicators button { display:grid; place-items:center; gap:3px; flex:0 1 44px; min-width:0; min-height:44px; border:1px solid transparent; background:transparent; color:var(--ink); border-radius:8px; }
+.indicators button[aria-pressed="true"] { border-color:var(--green); background:var(--pale); }
+.subtotal { margin:8px 12px; color:var(--muted); overflow-wrap:anywhere; }

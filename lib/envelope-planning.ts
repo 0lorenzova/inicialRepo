@@ -18,7 +18,7 @@ export type ScheduledAmount = {
 };
 export type EnvelopePlanning = { scheduledAmounts?: ScheduledAmount[]; balanceHidden?: boolean };
 export type PlanningEnvelope = GoalSettings & EnvelopePlanning & { id: string; name: string; balance: number; archived?: boolean };
-export type PlanningItem = { id: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string; temporal: GoalTemporalState | null; timingEnabled: boolean; greenDays?: number; payment?: ScheduledAmount["payment"] };
+export type PlanningItem = { id: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string; temporal: GoalTemporalState | null; timingEnabled: boolean; greenDays?: number; payment?: ScheduledAmount["payment"]; covered?: boolean; coverageHidden?: boolean; fundedAmount?: number; shortfall?: number };
 export const proximityTones = ["white", "green", "yellow", "red", "purple"] as const;
 export type ProximityFilter = typeof proximityTones[number];
 export const proximityLabels = { white: "Blanco", green: "Verde", yellow: "Amarillo", red: "Rojo", purple: "Púrpura" };
@@ -41,7 +41,25 @@ export function planningItems(envelope: PlanningEnvelope, today: string): Planni
     catch { /* Preserve legacy planning data; invalid optional dates never break financial screens. */ }
     items.push({ id: item.id, kind: "scheduled", name: item.name, amount: item.amount, deadline: item.deadline, temporal, greenDays: (item.thresholds ?? DEFAULT_GOAL_THRESHOLDS).green, timingEnabled: item.timingEnabled !== false, payment: item.payment });
   }
-  return items.sort((a,b) => (a.deadline || "9999").localeCompare(b.deadline || "9999") || a.id.localeCompare(b.id));
+  return allocatePlanningCoverage(items.sort((a,b) => (a.deadline || "9999").localeCompare(b.deadline || "9999") || a.id.localeCompare(b.id)), envelope.balance).map(item=>({...item,coverageHidden:envelope.balanceHidden||undefined}));
+}
+
+// Projection only. Each colón covers one obligation, in the existing chronological
+// display order. Paid items and deficits never contribute spendable funds.
+export function allocatePlanningCoverage(items: PlanningItem[], balance: number): PlanningItem[] {
+  let remaining = Number.isSafeInteger(balance) ? Math.max(0, balance) : 0;
+  return items.map(item => {
+    if (item.payment) return { ...item, covered: undefined, fundedAmount: undefined, shortfall: undefined };
+    const valid = Number.isSafeInteger(item.amount) && item.amount > 0;
+    const fundedAmount = valid ? Math.min(remaining, item.amount) : 0;
+    remaining -= fundedAmount;
+    return { ...item, fundedAmount, shortfall: valid ? item.amount - fundedAmount : undefined, covered: valid && fundedAmount === item.amount };
+  });
+}
+
+export function planningCoverage(items: PlanningItem[]): boolean | undefined {
+  const pending = items.filter(item => !item.payment);
+  return pending.length&&!pending.some(item=>item.coverageHidden) ? pending.every(item => item.covered === true) : undefined;
 }
 
 export function proximityCounts(items: PlanningItem[]) {

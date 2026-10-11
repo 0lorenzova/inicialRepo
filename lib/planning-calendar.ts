@@ -19,7 +19,7 @@ export function calendarDotDescription(items: CalendarEntry[], tone: ProximityFi
   const matches = items.filter(entry => calendarEntryTone(entry, today) === tone);
   const details = matches.slice(0, 4).map(entry => {
     const date = new Intl.DateTimeFormat("es-CR", {timeZone:"America/Costa_Rica",dateStyle:"short"}).format(new Date(`${entry.date}T12:00:00Z`));
-    return `${privateMode ? "Responsabilidad" : `${entry.name} · ${entry.envelopeName}`} (${date})`;
+    return `${privateMode ? "Responsabilidad" : `${entry.name} · ${entry.envelopeName}`} (${date})${!privateMode&&!entry.item?.coverageHidden&&entry.item?.covered!==undefined?entry.item.covered?" · Cubierto; aún no pagado":" · Sin cobertura completa":""}`;
   });
   return `${reminder ? "Aviso de atrasados; conservan su fecha original. " : ""}${meanings[tone]}. ${matches.length} ${matches.length === 1 ? "pendiente" : "pendientes"}${details.length ? `: ${details.join("; ")}` : ""}${matches.length > 4 ? `; y ${matches.length - 4} más` : ""}.`;
 }

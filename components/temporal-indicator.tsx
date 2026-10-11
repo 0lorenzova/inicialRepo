@@ -1,13 +1,25 @@
+"use client";
+import { createContext, useContext, type ReactNode } from "react";
 import { compactTemporalDistance, type GoalTemporalState } from "@/lib/envelope-goals";
 import styles from "./temporal-indicator.module.css";
 
-export function TemporalDot({ tone }: { tone: GoalTemporalState["tone"] | "white" }) {
-  return <span className={styles.dot} data-tone={tone} aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><rect x="2" y="5" width="20" height="15" rx="2" fill="currentColor"/><path d="m3 6 9 7 9-7" fill="none" stroke="var(--paper, #fff)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>;
+const TemporalDisplay = createContext({ visible:true, privateMode:false });
+export const useTemporalDisplay = () => useContext(TemporalDisplay);
+export function TemporalDisplayProvider({visible,privateMode,children}:{visible:boolean;privateMode:boolean;children:ReactNode}) {
+  return <TemporalDisplay.Provider value={{visible,privateMode}}>{children}</TemporalDisplay.Provider>;
 }
 
-export function TemporalBadge({ tone, date, today }: { tone: GoalTemporalState["tone"] | "white"; date?: string; today: string }) {
+export function TemporalDot({ tone, covered }: { tone: GoalTemporalState["tone"] | "white"; covered?:boolean }) {
+  const {visible,privateMode}=useTemporalDisplay();
+  if(!visible)return null;
+  const state=privateMode||covered===undefined?"neutral":covered?"closed":"open";
+  return <span className={styles.dot} data-tone={tone} data-coverage={state} aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">{state==="open"?<><path d="M2 10 12 2 22 10v12H2Z" fill="currentColor"/><path d="m2 10 10 7 10-7 M2 22l7-7 m6 0 7 7" fill="none" stroke="var(--paper, #fff)" strokeWidth="1.8" strokeLinejoin="round"/></>:<><rect x="2" y="5" width="20" height="15" rx="2" fill="currentColor"/><path d="m3 6 9 7 9-7" fill="none" stroke="var(--paper, #fff)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>}</svg></span>;
+}
+
+export function TemporalBadge({ tone, date, today, covered }: { tone: GoalTemporalState["tone"] | "white"; date?: string; today: string; covered?:boolean }) {
+  const {visible}=useTemporalDisplay();
   const distance = compactTemporalDistance(date, today);
-  return <span className={styles.badge}><TemporalDot tone={tone} />{distance && <small>{distance}</small>}</span>;
+  return visible?<span className={styles.badge}><TemporalDot tone={tone} covered={covered}/>{distance && <small>{distance}</small>}</span>:null;
 }
 
 export function TemporalThresholdFields({ values, onChange }: {

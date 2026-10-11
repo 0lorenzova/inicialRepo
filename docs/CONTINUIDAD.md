@@ -290,3 +290,9 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - Ver docs/actualizacion-interfaz-2026-10-10.md: matriz completa de 19 requisitos, complemento del menú, pagos desde avisos, pruebas y pendientes. No afirmar que el prompt completo está implementado.
 - Publicación anterior de comparación de productos a6c16ef confirmada success en GitHub/Vercel.
 - Publicar esta entrega; priorizar próximos bloques de cobertura, ocultación global, ingresos y calendario. Sin SQL nuevo.
+
+## Ampliación — sobres de proximidad, cobertura y distribución
+- Reemplazo visual publicado como dbe582c y confirmado en Vercel. La ampliación integra forma abierto/cerrado por cobertura acumulativa, ocultación global, preferencias de ingreso, medio de recepción, filtros por sobre, calendario seleccionable y plantillas reutilizables.
+- Matriz vigente y pruebas: docs/actualizacion-interfaz-2026-10-10.md. Las entradas antiguas que indican estos puntos pendientes quedan sustituidas.
+- SQL: ninguno para esta entrega. No ejecutar migración RPC antigua aisladamente.
+- Retomar: déficit separado de dinero real, compensaciones históricas y vistas de historial; fotos requieren decisión de almacenamiento. Prioridad configurable en empates, multimoneda y avisos con app cerrada siguen pendientes de definición.

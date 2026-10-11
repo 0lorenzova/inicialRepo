@@ -290,3 +290,12 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 .notification-payment>div { display:flex; flex-wrap:wrap; gap:8px; }
 .notification-payment button { flex:1 1 100px; height:auto; min-height:44px; padding:8px; white-space:normal; }
 .notification-payment small { overflow-wrap:anywhere; color:var(--muted); }
+
+.income-preferences { display:grid; gap:8px; min-width:0; }
+.income-preferences :is(input,select,textarea) { width:100%; min-width:0; min-height:44px; padding:8px; font:inherit; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:8px; }
+
+.distribution-templates { border:1px solid var(--line); border-radius:10px; padding:10px; min-width:0; }
+.distribution-templates>summary { cursor:pointer; min-height:44px; align-content:center; font-weight:600; }
+.distribution-templates>div { display:grid; gap:8px; min-width:0; }
+.distribution-templates :is(input,select) { width:100%; min-width:0; }
+.distribution-templates p { overflow-wrap:anywhere; }
