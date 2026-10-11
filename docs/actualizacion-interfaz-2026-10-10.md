@@ -6,7 +6,7 @@
 3. Implementado: engranajes del resumen conservan menú real Mostrar/Ocultar monto.
 4. Implementado: selector reutilizado en encabezado Mis sobres, iconos compactos en móvil, lista/cuadrícula y preferencias actuales; cuadrícula mantiene reglas 2/3 y adaptación escritorio.
 5. PENDIENTE: ocultación global de proximidad con confirmación, usando showProximity existente. Hoy solo parte de las pantallas lo respeta.
-6. PENDIENTE: reemplazar puntos temporales por sobres abiertos/cerrados. No confundir con los SVG de acciones del menú incluidos ahora.
+6. Parcial: puntos reemplazados globalmente por pequeños SVG de sobres en TemporalDot compartido. Mantienen cinco colores, contadores, acciones, parpadeo y fases del calendario; sin scroll nuevo. Pendiente variación abierto/cerrado ligada a cobertura real (punto 7); el icono actual solo indica proximidad, no fondos suficientes.
 7. PENDIENTE: motor único de cobertura acumulativa por saldo y vencimiento, sin contar el mismo saldo varias veces.
 8. PENDIENTE: preferencias de registro de ingresos (monto/tipo/cuenta/referencia/descripción).
 9. PENDIENTE: medio de recepción distinto del tipo de ingreso (Efectivo/Transferencia/SINPE/Otro).

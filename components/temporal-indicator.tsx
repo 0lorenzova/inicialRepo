@@ -2,7 +2,7 @@ import { compactTemporalDistance, type GoalTemporalState } from "@/lib/envelope-
 import styles from "./temporal-indicator.module.css";
 
 export function TemporalDot({ tone }: { tone: GoalTemporalState["tone"] | "white" }) {
-  return <span className={styles.dot} data-tone={tone} aria-hidden="true" />;
+  return <span className={styles.dot} data-tone={tone} aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><rect x="2" y="5" width="20" height="15" rx="2" fill="currentColor"/><path d="m3 6 9 7 9-7" fill="none" stroke="var(--paper, #fff)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></span>;
 }
 
 export function TemporalBadge({ tone, date, today }: { tone: GoalTemporalState["tone"] | "white"; date?: string; today: string }) {

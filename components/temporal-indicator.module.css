@@ -1,8 +1,11 @@
-.dot { display: inline-block; flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; }
-.dot[data-tone="green"] { background: #24b88b; }
-.dot[data-tone="yellow"] { background: #f1bd33; }
-.dot[data-tone="red"] { background: #ed676c; }
-.dot[data-tone="white"] { background: #fff; box-shadow: 0 0 0 1px #78848b; }
+.dot { display: inline-flex; align-items:center; justify-content:center; flex: 0 0 12px; width: 12px; height: 12px; vertical-align:middle; }
+.dot svg { display:block; width:100%; height:100%; overflow:visible; }
+.dot[data-tone="green"] { color: #24b88b; }
+.dot[data-tone="yellow"] { color: #f1bd33; }
+.dot[data-tone="red"] { color: #ed676c; }
+.dot[data-tone="white"] { color: #fff; }
+.dot[data-tone="white"] rect { stroke:#78848b; stroke-width:1.5; }
+.dot[data-tone="white"] path { stroke:#78848b; }
 .thresholds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-width: 0; margin: 5px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
 .thresholds legend { padding: 0 4px; color: var(--ink); font-size:calc(12px * var(--ui-scale, 1)); }
 .thresholds label { display: grid; min-width: 0; gap: 6px; }
@@ -14,7 +17,7 @@
 .badge { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; gap: 5px; min-width: 50px; }
 .badge small { white-space: nowrap; font-size:calc(10px * var(--ui-scale, 1)); color: var(--muted); }
 
-.dot[data-tone="purple"] { background:#b278ec; }
+.dot[data-tone="purple"] { color:#b278ec; }
 
 @keyframes purpleBlink {
   0%, 49.99% { opacity:1; }
