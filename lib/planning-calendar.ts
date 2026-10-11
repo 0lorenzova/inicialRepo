@@ -14,14 +14,15 @@ export function calendarOverdueEntries(entries: CalendarEntry[], today: string, 
   return entries.filter(entry => entry.date < today && entry.date < before && calendarEntryTone(entry, today) === "purple");
 }
 
+export const calendarProximityMeanings = {white:"Fuera del período de seguimiento",green:"Con tiempo disponible",yellow:"Se acerca la fecha límite",red:"Fecha límite de hoy o tiempo crítico",purple:"Fecha límite vencida"};
+
 export function calendarDotDescription(items: CalendarEntry[], tone: ProximityFilter, today: string, privateMode: boolean, reminder = false) {
-  const meanings = {white:"Fuera del período de seguimiento",green:"Con tiempo disponible",yellow:"Se acerca la fecha límite",red:"Fecha límite de hoy o tiempo crítico",purple:"Fecha límite vencida"};
   const matches = items.filter(entry => calendarEntryTone(entry, today) === tone);
   const details = matches.slice(0, 4).map(entry => {
     const date = new Intl.DateTimeFormat("es-CR", {timeZone:"America/Costa_Rica",dateStyle:"short"}).format(new Date(`${entry.date}T12:00:00Z`));
     return `${privateMode ? "Responsabilidad" : `${entry.name} · ${entry.envelopeName}`} (${date})${!privateMode&&!entry.item?.coverageHidden&&entry.item?.covered!==undefined?entry.item.covered?" · Cubierto; aún no pagado":" · Sin cobertura completa":""}`;
   });
-  return `${reminder ? "Aviso de atrasados; conservan su fecha original. " : ""}${meanings[tone]}. ${matches.length} ${matches.length === 1 ? "pendiente" : "pendientes"}${details.length ? `: ${details.join("; ")}` : ""}${matches.length > 4 ? `; y ${matches.length - 4} más` : ""}.`;
+  return `${reminder ? "Aviso de atrasados; conservan su fecha original. " : ""}${calendarProximityMeanings[tone]}. ${matches.length} ${matches.length === 1 ? "pendiente" : "pendientes"}${details.length ? `: ${details.join("; ")}` : ""}${matches.length > 4 ? `; y ${matches.length - 4} más` : ""}.`;
 }
 const dateOf = (value: string) => { temporalDistance(value,value); return new Date(`${value}T12:00:00Z`); };
 const format = (value: Date) => value.getUTCFullYear()<1 ? "0001-01-01" : value.getUTCFullYear()>9999 ? "9999-12-31" : value.toISOString().slice(0,10);
