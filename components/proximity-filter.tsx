@@ -1,19 +1,24 @@
 "use client";
 
+import { useState } from "react";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTemporalDisplay, TemporalDot } from "./temporal-indicator";
 import { PlanningItemSummary } from "./envelope-planning";
 import { FinanceDialog } from "./finance-dialog";
 import { globalPlanningItems, planningCoverage, planningTone, proximityLabels, proximityCounts, proximityTones, type PlanningEnvelope, type PlanningItem, type ProximityFilter } from "@/lib/envelope-planning";
 import styles from "./proximity-filter.module.css";
 
-export function ProximityControls({ value, onChange, envelopes, today }: { envelopes: PlanningEnvelope[]; today: string; value?: ProximityFilter; onChange: (value?: ProximityFilter) => void }) {
+export function ProximityControls({ value, onChange, envelopes, today, home = false }: { envelopes: PlanningEnvelope[]; today: string; value?: ProximityFilter; onChange: (value?: ProximityFilter) => void; home?: boolean }) {
+  const [enabled,setEnabled]=useState(true);
+  const mobile=useMediaQuery("(max-width:650px)");
+  const disabled=home&&mobile&&!enabled;
   const {visible}=useTemporalDisplay();
   const all=globalPlanningItems(envelopes,today).map(entry=>entry.item);
   const counts = proximityCounts(all);
   if(!visible)return null;
-  return <div className={styles.controls} role="group" aria-label="Filtrar por proximidad"><span className={styles.label}>Filtrar por proximidad</span><div className={styles.colors}>
-    {proximityTones.map(tone => <button key={tone} type="button" aria-label={`Filtrar proximidad: ${proximityLabels[tone]}, ${counts[tone]} elementos`} aria-pressed={value === tone} onClick={() => onChange(tone)}><TemporalDot tone={tone} covered={planningCoverage(all.filter(item=>planningTone(item)===tone))}/><small>{counts[tone]}</small></button>)}
-  </div><button className={styles.all} type="button" aria-pressed={!value} onClick={() => onChange()}>Ver todos</button></div>;
+  return <div className={`${styles.controls} ${home?styles.home:""}`} role="group" aria-label="Filtrar por proximidad"><span className={styles.label}>Filtrar por proximidad</span><div className={styles.colors}>
+    {proximityTones.map(tone => <button key={tone} type="button" disabled={disabled} aria-label={`Filtrar proximidad: ${proximityLabels[tone]}, ${counts[tone]} elementos`} aria-pressed={!disabled&&value === tone} onClick={() => onChange(tone)}><TemporalDot tone={tone} covered={planningCoverage(all.filter(item=>planningTone(item)===tone))}/><small>{counts[tone]}</small></button>)}
+  </div>{home&&<label className={styles.enable}><input type="checkbox" checked={enabled} onChange={event=>setEnabled(event.target.checked)}/><span>Activar filtro</span></label>}<button className={styles.all} type="button" aria-pressed={!value} onClick={() => onChange()}>Ver todos</button></div>;
 }
 
 export function GlobalPlanningDialog({ envelopes, today, filter, onFilter, display, privateMode, onSelect, onClose }: {

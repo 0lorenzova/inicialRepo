@@ -323,3 +323,8 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 ## Ajuste puntual — leyenda del almanaque (11 octubre 2026)
 - Bajo «Fechas pendientes guardadas en tus sobres», los indicadores muestran su significado: fuera del período de seguimiento, con tiempo disponible, se acerca la fecha límite, fecha límite de hoy o tiempo crítico y fecha límite vencida.
 - Leyenda, reseñas y etiquetas accesibles reutilizan el mismo texto. Colores, cobertura, parpadeo y cálculos conservados. Sin SQL.
+
+## Ajuste puntual — Inicio móvil y selector único (11 octubre 2026)
+- Inicio móvil: título Filtrar por proximidad arriba, cinco sobres en una fila debajo, casilla Activar filtro y Ver todos a su derecha. Desactivar impide abrir filtros por color; Ver todos sigue accesible. No oculta obligaciones ni desactiva alertas. Estado de la casilla durante la sesión del componente; no se agregó preferencia persistente.
+- Un solo botón de vista en Inicio/Sobres: Lista → cuadrícula cómoda → compacta → Lista. Muestra icono y número de columnas de la siguiente vista. En teléfono demasiado angosto se omite la cuadrícula de tres columnas; escritorio conserva la cantidad adaptable. Preferencias existentes conservadas.
+- TypeScript y lint dirigidos; sin nueva prueba visual interactiva de estos dos ajustes. Sin SQL. Publicar con el margen restante según instrucción del propietario.
