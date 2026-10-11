@@ -305,3 +305,10 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 .history-view-switch button[aria-pressed="true"] { background:var(--ink); color:var(--paper); border-color:var(--ink); }
 .envelope-history .subhead { overflow-wrap:anywhere; font-size:calc(13px * var(--ui-scale,1)); }
 .movement-scope { display:block; margin-top:4px; color:var(--muted); font-size:calc(9px * var(--ui-scale,1)); font-weight:400; }
+
+.income-correction { display:grid; gap:10px; min-width:0; border-top:1px solid var(--line); padding-top:12px; }
+.income-correction h3,.income-correction h4 { margin:0; }
+.correction-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(70px,32%); align-items:center; gap:8px; }
+.correction-row span { overflow-wrap:anywhere; }
+.correction-row small,.trace-row small { display:block; margin-top:4px; color:var(--muted); }
+.income-correction>small { color:var(--muted); overflow-wrap:anywhere; }

@@ -6,11 +6,11 @@ export type Account = { id: string; name: string; type: string; balance: number;
 export type LedgerEnvelope = { id: string; name: string; balance: number; archived?: boolean; goal?: number };
 export type Loan = { id: string; sourceId: string; sourceName: string; targetId: string; targetName: string; amount: number; outstanding: number; status: "Pendiente" | "Parcial" | "Devuelto"; date: string };
 export type LedgerAllocation = { envelopeId?: string; name: string; amount: number };
-export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; merchant?: string; reference?: string; paymentMethod?: string; tags?: string[]; allocations: LedgerAllocation[]; loanId?: string; products?:PurchaseProduct[]; incomeSources?: IncomeSource[]; scheduledAmountId?: string; fundingTargets?: { envelopeId: string; itemId: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string }[] };
+export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; merchant?: string; reference?: string; paymentMethod?: string; tags?: string[]; allocations: LedgerAllocation[]; loanId?: string; products?:PurchaseProduct[]; incomeSources?: IncomeSource[]; scheduledAmountId?: string; distributionCorrection?: { incomeId: string; batchId: string; reason: string }; fundingTargets?: { envelopeId: string; itemId: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string }[] };
 export type Ledger = { accounts: Account[]; envelopes: LedgerEnvelope[]; loans: Loan[]; movements: LedgerMovement[] };
 const validAmount=(amount:number)=>Number.isSafeInteger(amount)&&amount>0;
 
-function validMovementDate(value: string): boolean {
+export function validMovementDate(value: string): boolean {
   const match = /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,3})?)?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?$/.exec(value);
   if (!match || value.startsWith("0000")) return false;
   // Validate the civil day separately: Date otherwise normalizes February 30.
