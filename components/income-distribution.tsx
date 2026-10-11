@@ -20,6 +20,8 @@ export function IncomeDistribution({ envelopes, today, amount, manual, selection
   const [expanded, setExpanded] = useState<string[]>([]);
   const id = useId(), options = fundingOptions(envelopes, today);
   const plan = incomeDistribution(envelopes, today, amount, manual, selections);
+  const activeEnvelopes = envelopes.filter(envelope => !envelope.archived);
+  const allExpanded = activeEnvelopes.length > 0 && activeEnvelopes.every(envelope => expanded.includes(envelope.id));
   const selectedKeys = new Set(selections.map(fundingKey));
   const toggle = (choice: FundingSelection) => onSelections(selectedKeys.has(fundingKey(choice)) ? selections.filter(item => fundingKey(item) !== fundingKey(choice)) : [...selections, choice]);
   const renderOption = (option: typeof options[number], showEnvelope: boolean) => <label className={styles.obligation} key={fundingKey(option.selection)}>
@@ -30,7 +32,8 @@ export function IncomeDistribution({ envelopes, today, amount, manual, selection
   return <section className={styles.distribution} aria-label="Distribución provisional del ingreso">
     <p className="flow-intro">Selecciona obligaciones para asignar su monto al sobre. El saldo actual del sobre no se descuenta de esta selección. Los pagos se registran por separado.</p>
     <div className={styles.tabs} role="group" aria-label="Vista de distribución"><button type="button" className="secondary" aria-pressed={view === "envelopes"} onClick={() => setView("envelopes")}>Por sobres</button><button type="button" className="secondary" aria-pressed={view === "agenda"} onClick={() => setView("agenda")}>Cronograma de pagos</button></div>
-    {view === "agenda" ? <div className={styles.items}>{options.length ? options.map(option => renderOption(option, true)) : <p className="empty-state">No hay metas ni pagos pendientes. Puedes asignar montos desde Por sobres.</p>}</div> : envelopes.filter(envelope => !envelope.archived).map(envelope => {
+    {view === "envelopes" && activeEnvelopes.length > 0 && <button type="button" className="secondary" onClick={() => setExpanded(allExpanded ? [] : activeEnvelopes.map(envelope => envelope.id))}>{allExpanded ? "Contraer todos" : "Expandir todos"}</button>}
+    {view === "agenda" ? <div className={styles.items}>{options.length ? options.map(option => renderOption(option, true)) : <p className="empty-state">No hay metas ni pagos pendientes. Puedes asignar montos desde Por sobres.</p>}</div> : activeEnvelopes.map(envelope => {
       const items = options.filter(option => option.envelopeId === envelope.id), open = expanded.includes(envelope.id);
       const subtotal = plan.allocations.find(allocation => allocation.id === envelope.id)?.amount ?? 0;
       return <section className={styles.envelope} key={envelope.id}><button type="button" className={styles.heading} aria-expanded={open} aria-controls={`${id}-${envelope.id}`} onClick={() => setExpanded(open ? expanded.filter(value => value !== envelope.id) : [...expanded, envelope.id])}><span>{envelope.icon} {envelope.name}<small>{items.length} {items.length===1?"obligación":"obligaciones"} · Asignar {display(subtotal)}</small></span><span aria-hidden="true">{open ? "⌃" : "⌄"}</span></button>

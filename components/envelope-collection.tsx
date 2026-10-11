@@ -1,5 +1,8 @@
 "use client";
 
+import { createPortal } from "react-dom";
+import ViewListOutlined from "@mui/icons-material/ViewListOutlined";
+import GridViewOutlined from "@mui/icons-material/GridViewOutlined";
 import { useThemeMode } from "@/components/theme-provider";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { canShowThreeColumns, envelopeGridColumns, isAdaptiveEnvelopeGrid, type EnvelopeView } from "@/lib/envelope-view";
@@ -13,7 +16,8 @@ type EnvelopeItem = { id: string; name: string; icon: string; color: string; bal
 type Drag = { id: string; ids: string[]; original: string[]; keyboard: boolean };
 type PendingPress = { x: number; y: number; pointerId: number; timer: ReturnType<typeof setTimeout> };
 
-export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, onNewMovement, showProximity = true }: {
+export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, onNewMovement, showProximity = true, viewAnchor }: {
+  viewAnchor?: HTMLDivElement | null;
   showProximity?: boolean;
   envelopes: EnvelopeItem[];
   view: EnvelopeView;
@@ -153,16 +157,18 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
     if (event.key in targets) { event.preventDefault(); moveTo(targets[event.key]); }
   }
 
-  return <div ref={container} className={styles.wrapper} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => finish(false)} onLostPointerCapture={event => { if (event.target === event.currentTarget && pending.current) finish(false); }}>
-    <div className="view-switch" role="group" aria-label="Vista de sobres">
-      <button type="button" aria-pressed={!grid} className={!grid ? "selected" : ""} onClick={onList}>Lista</button>
+  const viewSelector = <div className="view-switch" role="group" aria-label="Vista de sobres">
+      <button type="button" aria-pressed={!grid} className={!grid ? "selected" : ""} onClick={onList} aria-label="Vista de sobres: lista" title="Lista"><ViewListOutlined aria-hidden="true"/><span className="view-label">Lista</span></button>
       <button type="button" aria-pressed={grid} className={grid ? "selected" : ""} onClick={onGrid} disabled={blockedNext}
         aria-describedby={blockedNext ? `${id}-width-hint` : undefined}
         aria-label={`Cuadrícula${grid ? ` de ${columns} columnas` : ""}. Cambiar a ${adaptive ? `vista ${nextDensity}, ${nextVisibleColumns}` : nextColumns} columnas`}
         title={blockedNext ? "Gira el teléfono o utiliza una pantalla más ancha para mostrar tres columnas" : `Toca para mostrar ${nextVisibleColumns} sobres por fila${adaptive ? ` en vista ${nextDensity}` : ""}`}>
-        Cuadrícula {grid && <span className="grid-column-count" aria-hidden="true">{columns}</span>}
+        <GridViewOutlined aria-hidden="true"/><span className="view-label">Cuadrícula</span> {grid && <span className="grid-column-count" aria-hidden="true">{columns}</span>}
       </button>
-    </div>
+    </div>;
+
+  return <div ref={container} className={styles.wrapper} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => finish(false)} onLostPointerCapture={event => { if (event.target === event.currentTarget && pending.current) finish(false); }}>
+    {viewAnchor ? createPortal(viewSelector, viewAnchor) : viewSelector}
     {grid && !blockedNext && !unavailableGrid && <p className="view-hint">{columns} sobres por fila{adaptive ? ` · Vista ${density}, adaptada al ancho disponible. Toca Cuadrícula para cambiar a ${nextDensity}.` : ` · Toca Cuadrícula para cambiar a ${nextColumns}.`}</p>}
     {blockedNext && <p id={`${id}-width-hint`} className="view-hint">Para ver tres columnas, gira el teléfono o utiliza una pantalla más ancha.</p>}
     <p id={`${id}-sort-hint`} className={styles.sortHint}>Para ordenar, mantén pulsado el icono y arrastra.<span className={styles.srOnly}> Con teclado: Enter para empezar, flechas para mover, Enter para guardar y Escape para cancelar.</span></p>

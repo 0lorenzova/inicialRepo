@@ -285,3 +285,8 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - Navegador offline: creado producto ficticio en Hogar, abierto desde catálogo, estado sin compras correcto a 320 px; diálogo 281 px de contenido y ancho, sin overflow. Modo privado comprobado, gráfico y cantidades ocultos. Captura .next/comparacion-productos.png. Los escenarios con compras de varios meses tienen prueba automática; no se repitieron manualmente en navegador esta ronda.
 - SQL: ninguno. Retomar plantillas de distribución, fotos/almacenamiento, déficit separado y correcciones compensatorias históricas. La comparación mensual queda implementada; ampliar QA visual con compras reales de varios meses en una futura revisión. No afirmar que se haya terminado todo el backlog.
 - Publicar ahora con margen de cupo, por instrucción permanente del propietario.
+
+## Entrega incremental — 10 octubre 2026
+- Ver docs/actualizacion-interfaz-2026-10-10.md: matriz completa de 19 requisitos, complemento del menú, pagos desde avisos, pruebas y pendientes. No afirmar que el prompt completo está implementado.
+- Publicación anterior de comparación de productos a6c16ef confirmada success en GitHub/Vercel.
+- Publicar esta entrega; priorizar próximos bloques de cobertura, ocultación global, ingresos y calendario. Sin SQL nuevo.

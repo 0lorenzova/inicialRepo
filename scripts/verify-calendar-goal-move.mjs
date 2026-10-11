@@ -33,9 +33,9 @@ assert.equal(JSON.stringify(envelopes),original);
 console.log('OK: calendar leap/year/week boundaries, shared schedules, snoozing, paid exclusion; stable goal move, optional recurrence, no balance change or overwritten goals.');
 
 const {interfaceScale,nextInterfaceSize,normalizeInterfaceSize}=await import('../lib/interface-size.ts');
-assert.deepEqual([0,1,2].map(interfaceScale),[1,1.12,1.25]);
-assert.equal(nextInterfaceSize(nextInterfaceSize(nextInterfaceSize(0))),0);
-assert.equal(normalizeInterfaceSize('2'),2);assert.equal(normalizeInterfaceSize('unknown'),0);
+assert.deepEqual([0,1,2,3].map(interfaceScale),[1,1.12,1.25,1.4]);
+assert.equal(nextInterfaceSize(nextInterfaceSize(nextInterfaceSize(nextInterfaceSize(0)))),0);
+assert.equal(normalizeInterfaceSize('3'),3);assert.equal(normalizeInterfaceSize('2'),2);assert.equal(normalizeInterfaceSize('unknown'),0);
 console.log('OK: interface sizing levels, cycle and persisted normalization.');
 
 assert.equal(calendarRange("9999-12-31","Semana").to,"9999-12-31");

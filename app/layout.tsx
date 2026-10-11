@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   applicationName: "Finanzas",
-  title: "Finanzas | Tu dinero, con intención",
+  title: "Finanzas | Tu dinero, con propósito",
   description: "Organiza ingresos, gastos y sobres desde un solo lugar.",
   appleWebApp: { capable: true, title: "Finanzas", statusBarStyle: "default" },
 };

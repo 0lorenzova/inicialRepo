@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import NotificationsOutlined from "@mui/icons-material/NotificationsOutlined";
 import { TemporalDot } from "@/components/temporal-indicator";
 import { FinanceDialog } from "@/components/finance-dialog";
@@ -33,8 +33,9 @@ const serverCapabilities = () => "unsupported|silent";
 
 export function FinanceNotifications({
   state, onChange, movements, envelopes, today, ready = true, privateMode = false,
-  onNavigate, open, onOpen, onClose,
+  onNavigate, open, onOpen, onClose, renderPayment,
 }: {
+  renderPayment: (destination: NotificationDestination) => ReactNode;
   state: NotificationState;
   onChange: NotificationUpdate;
   movements: LedgerMovement[];
@@ -127,6 +128,7 @@ export function FinanceNotifications({
                 <span>{privateMode ? "Los detalles están ocultos por privacidad." : `${event.detail} · ${money(event.amount)}`}</span>
                 <small>{dateLabel(event.date)} · Abrir {event.destination.page.toLowerCase()}</small>
               </button>
+              {renderPayment(event.destination)}
               <div className={styles.itemActions}>
                 <button type="button" onClick={() => updateState(current => read.has(event.id) ? { ...current, readIds: current.readIds.filter(id => id !== event.id) } : markNotifications(current, "readIds", [event.id]))}>{read.has(event.id) ? "Marcar sin leer" : "Marcar leída"}</button>
                 <button type="button" onClick={() => updateState(current => markNotifications(current, "dismissedIds", [event.id]))}>Descartar</button>

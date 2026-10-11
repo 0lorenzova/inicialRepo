@@ -5,7 +5,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import type { ReactNode } from "react";
 
-export type EnvelopeMenuAction = { label: string; onSelect: () => void; danger?: boolean; content?: ReactNode; key?: string };
+export type EnvelopeMenuAction = { label: string; onSelect: () => void; danger?: boolean; icon?: ReactNode; content?: ReactNode; key?: string };
 
 export function EnvelopeContextMenu({ anchor, name, onClose, actions, title, menuId = "envelope-context-menu", closeOnSelect = true }: {
   anchor: HTMLElement;
@@ -60,7 +60,7 @@ export function EnvelopeContextMenu({ anchor, name, onClose, actions, title, men
           onClick={() => { if (closeOnSelect) onClose(); action.onSelect(); }}
           sx={{ minHeight: `${44*scale}px !important`, px: "10px", py: "8px", borderRadius: "6px", fontSize: `${12*scale}px`, whiteSpace: "normal", color: action.danger ? "error.main" : "text.primary" }}
         >
-          {action.content ?? action.label}
+          {action.icon && <span aria-hidden="true" style={{display:"inline-flex",flex:"0 0 24px",marginRight:10}}>{action.icon}</span>}<span style={{minWidth:0,overflowWrap:"anywhere"}}>{action.content ?? action.label}</span>
         </MenuItem>
       ))}
     </Menu>
