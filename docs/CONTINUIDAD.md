@@ -296,3 +296,13 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - Matriz vigente y pruebas: docs/actualizacion-interfaz-2026-10-10.md. Las entradas antiguas que indican estos puntos pendientes quedan sustituidas.
 - SQL: ninguno para esta entrega. No ejecutar migración RPC antigua aisladamente.
 - Retomar: déficit separado de dinero real, compensaciones históricas y vistas de historial; fotos requieren decisión de almacenamiento. Prioridad configurable en empates, multimoneda y avisos con app cerrada siguen pendientes de definición.
+
+## Entrega — historial contextual de sobres (11 octubre 2026)
+- Implementadas vistas Ingresos y gastos / Cronología al filtrar por sobre o entrar desde su menú. Comparten filtros, registros y enlaces de trazabilidad existentes; no hay otra fuente de datos.
+- Corregido el importe del historial de un sobre: muestra su asignación real dentro del ingreso/gasto dividido, no el total global. Signo según origen/destino en transferencias, préstamos y devoluciones. Datos antiguos ambiguos se indican sin inventar dirección.
+- Ingresos/asignaciones, gastos y operaciones internas se agrupan por separado; transferencias y préstamos no se presentan como gastos. Cronología por fecha civil de Costa Rica, recientes primero. Actividad reciente reutiliza el mismo ordenador temporal.
+- Archivos: components/envelope-history.tsx, components/movement-list.tsx (extraído y reutilizado), lib/finance-history.ts, app/page.tsx, app/globals.css y scripts/verify-envelope-history.mjs.
+- Pruebas dirigidas: siete operaciones reales del motor con datos ficticios, importes parciales, signos, suma de efectos igual al saldo, grupos sin duplicados, ambiguos e inmutabilidad; verify-finance-history, TypeScript, lint y build aprobados.
+- Navegador offline: historial de Hogar muestra 1100 de un ingreso total1500 y 1000 de un ingreso5000; ambas vistas y vacío con búsqueda comprobados. A320 px: documento305, botones44px; a1280: documento1265, sin overflow. Captura .next/historial-movil.png. No hubo nuevas escrituras financieras de navegador ni pruebas en producción. No se repitieron lista/cuadrícula u otras vistas sin cambios.
+- No requiere SQL. Mantener pendiente migración RPC anterior; no ejecutarla sin cliente compatible, prueba, respaldo y autorización.
+- Retomar: déficit separado del dinero real, correcciones con movimientos compensatorios, fotos/almacenamiento. Requieren definición/confirmación: multimoneda, avisos con app cerrada, vencimientos propios de préstamos y prioridad configurable para fechas empatadas. Pendiente QA visual de comparación de productos con varios meses, cuatro colores futuros en una misma fecha y arrastre físico.

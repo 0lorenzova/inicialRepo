@@ -299,3 +299,9 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 .distribution-templates>div { display:grid; gap:8px; min-width:0; }
 .distribution-templates :is(input,select) { width:100%; min-width:0; }
 .distribution-templates p { overflow-wrap:anywhere; }
+
+.history-view-switch { display:flex; gap:8px; margin:16px 0 10px; }
+.history-view-switch button { flex:1; min-width:0; min-height:44px; height:auto; padding:8px; white-space:normal; }
+.history-view-switch button[aria-pressed="true"] { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.envelope-history .subhead { overflow-wrap:anywhere; font-size:calc(13px * var(--ui-scale,1)); }
+.movement-scope { display:block; margin-top:4px; color:var(--muted); font-size:calc(9px * var(--ui-scale,1)); font-weight:400; }

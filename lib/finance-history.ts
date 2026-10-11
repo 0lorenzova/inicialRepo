@@ -12,6 +12,24 @@ export function movementDay(value: string): string {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 export type HistoryFilters = { type?: string; envelopeId?: string | null; movementId?: string | null; search?: string; from?: string; to?: string };
+// Read the recorded allocation, never the whole transaction as an envelope amount.
+// Internal operations record source first and destination second, including repayments.
+export function envelopeMovementEffect(movement: LedgerMovement, envelopeId: string): number | null {
+  const allocations = movement.allocations.filter(item => item.envelopeId === envelopeId);
+  if (!allocations.length) return null;
+  if (movement.type === "Ingreso" || movement.type === "Asignación") return allocations.reduce((sum,item)=>sum+item.amount,0);
+  if (movement.type === "Gasto" || movement.type === "Desasignación") return -allocations.reduce((sum,item)=>sum+item.amount,0);
+  if (movement.allocations.length !== 2 || allocations.length !== 1 || !movement.allocations.every(item=>item.envelopeId) || movement.allocations[0].envelopeId === movement.allocations[1].envelopeId) return null;
+  return allocations[0].amount * (movement.allocations[0].envelopeId === envelopeId ? -1 : 1);
+}
+
+export function envelopeHistorySections(items: LedgerMovement[]) {
+  return [
+    { title: "Ingresos y asignaciones", items: items.filter(item=>item.type === "Ingreso" || item.type === "Asignación") },
+    { title: "Gastos", items: items.filter(item=>item.type === "Gasto") },
+    { title: "Transferencias, préstamos y otros movimientos", items: items.filter(item=>item.type !== "Ingreso" && item.type !== "Asignación" && item.type !== "Gasto") },
+  ];
+}
 export function historyRangeError(from?: string, to?: string): string | null {
   for (const date of [from, to]) {
     if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date.startsWith("0000") || Number.isNaN(Date.parse(date)) || new Date(`${date}T12:00:00Z`).toISOString().slice(0,10) !== date)) return "Selecciona una fecha válida.";
