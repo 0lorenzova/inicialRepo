@@ -312,3 +312,6 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 .correction-row span { overflow-wrap:anywhere; }
 .correction-row small,.trace-row small { display:block; margin-top:4px; color:var(--muted); }
 .income-correction>small { color:var(--muted); overflow-wrap:anywhere; }
+
+/* Home-only pin: keeps its natural height, including wrapped controls at large text sizes. */
+.app-header.home-header-pinned { position:sticky; top:0; z-index:2; box-shadow:0 3px 10px #00000012; }

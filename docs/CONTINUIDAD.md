@@ -334,3 +334,11 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - Gastos clasifican sobres y categorías con importes exactos, un único movimiento; edición/asociación de categorías por sobre sin cambiar historia. Ruta del ingreso desplegable con regreso contextual y botones de escritorio intercambiados.
 - Informe completo, archivos conceptuales y pruebas: docs/actualizacion-complementaria-2026-10-11.md. Sin SQL nuevo. No ejecutar RPC antigua aisladamente.
 - Retomar: prueba táctil física y backlog anterior descrito en el informe. Publicar al cerrar esta entrega según autorización del propietario.
+
+## Encabezado configurable de Inicio — 12 octubre 2026
+- Nueva sección Configuración → Inicio con «Mantener fijo el encabezado». Activado por defecto; no se añadió casilla a la pantalla principal.
+- Preferencia opcional homeHeaderPinned guardada por el store existente (Supabase JSON y copia local). Solo fija la barra superior en Inicio; conserva A+, tema, privacidad, calendario, notificaciones y estado de sincronización.
+- CSS sticky conserva altura natural y controles adaptables. No cambia los otros bloques fijables ni las demás vistas.
+- Archivos: app/page.tsx, app/globals.css y este informe. Sin SQL nuevo.
+- Verificado: lint, compilación de producción; móvil360x800 y escritorio1280x650 sin overflow, encabezado en top0 al desplazar; desactivado top negativo y persistido tras recarga; vista Sobres continúa estática. Configuración accesible mediante interruptor con etiqueta y descripción. Pruebas locales con Supabase desactivado.
+- Captura: visualizaciones/configuracion-inicio.png. Esta petición está completa; permanecen los pendientes anteriores del informe complementario (QA táctil física, déficit separado, fotos/almacenamiento y decisiones ya documentadas).
