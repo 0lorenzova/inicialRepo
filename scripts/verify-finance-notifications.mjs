@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { normalizeNotificationState, deriveFinanceNotifications, initializeNotifications, visibleNotifications, pendingNotificationDelivery, markNotifications, saveNotificationUpdate } from "../lib/finance-notifications.ts";
+import { normalizeNotificationState, notificationDetail, deriveFinanceNotifications, initializeNotifications, visibleNotifications, pendingNotificationDelivery, markNotifications, saveNotificationUpdate } from "../lib/finance-notifications.ts";
 const today="2026-10-08", thresholds={green:15,yellow:8,red:5};
 const movement={id:"income",type:"Ingreso",name:"Salario",date:`${today}T10:00`,amount:10000,allocations:[]};
 assert.deepEqual(deriveFinanceNotifications([movement],[],today),[],"Ordinary movements never create notifications");
@@ -36,3 +36,18 @@ assert.equal(JSON.stringify(envelope),seed);
 assert.match(saveNotificationUpdate(()=>{throw new Error("storage");},s=>s),/No se pudo guardar/);
 assert.equal(normalizeNotificationState({tone:"unknown"}).tone,"Suave");
 console.log("OK: attention-only notifications, purple/today/critical transitions, recurrence, paid exclusion, stable IDs, read/dismiss and immutable financial data.");
+
+assert.equal(defaults.showResponsibilityAmount,false);
+assert.equal(normalizeNotificationState({showResponsibilityAmount:"true"}).showResponsibilityAmount,false);
+const amountsEnabled=normalizeNotificationState({...state,showResponsibilityAmount:true});
+assert.equal(normalizeNotificationState(JSON.parse(JSON.stringify(amountsEnabled))).showResponsibilityAmount,true);
+assert.equal(notificationDetail(events[0],false,false),events[0].detail);
+assert.match(notificationDetail(events[0],true,false),/Importe pendiente:/);
+assert.ok(notificationDetail(events[0],true,false).includes(new Intl.NumberFormat("es-CR",{style:"currency",currency:"CRC",maximumFractionDigits:0}).format(events[0].amount)));
+assert.equal(notificationDetail(events[0],true,true),"Los detalles están ocultos por privacidad.");
+assert.equal(notificationDetail(events[0],false,true),notificationDetail(events[0],true,true));
+const covered=deriveFinanceNotifications([], [{...envelope,balance:999999}],today);
+assert.equal(covered[0].amount,events[0].amount,"Notification amount is obligation amount, not envelope balance or coverage shortfall");
+assert.deepEqual(covered.map(event=>event.id),events.map(event=>event.id));
+assert.equal(JSON.stringify(envelope),seed);
+console.log("OK: amounts hidden by default, preference persistence, global privacy precedence, obligation amount independent of coverage and unchanged notification IDs.");

@@ -30,3 +30,8 @@
 .toneRow select { flex:1; min-width:110px; min-height:44px; padding:8px; border:1px solid var(--line); border-radius:9px; background:var(--paper); color:var(--ink); }
 .hint { margin:0; color:var(--muted); font-size:calc(11px * var(--ui-scale, 1)); line-height:1.6; }
 .status { margin:0; font-size:calc(12px * var(--ui-scale, 1)); line-height:1.5; color:var(--ink); }
+
+.amountPreference { display:flex; align-items:center; gap:10px; min-height:44px; cursor:pointer; font-size:calc(12px * var(--ui-scale,1)); }
+.amountPreference input { flex:none; width:20px; height:20px; margin:0; accent-color:var(--green); }
+.amountPreference span { min-width:0; overflow-wrap:anywhere; }
+.amountPreference small { display:block; margin-top:6px; font-size:calc(11px * var(--ui-scale,1)); color:var(--muted); line-height:1.5; }

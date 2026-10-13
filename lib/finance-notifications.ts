@@ -7,6 +7,7 @@ export const notificationTones = ["Suave", "Campana", "Breve"] as const;
 export type NotificationTone = (typeof notificationTones)[number];
 export type NotificationState = {
   internal: boolean;
+  showResponsibilityAmount?: boolean;
   system: boolean;
   sound: boolean;
   tone: NotificationTone;
@@ -45,6 +46,7 @@ const ids = (value: unknown) => Array.isArray(value) ? [...new Set(value.filter(
 export function normalizeNotificationState(value?: Partial<NotificationState> | null): NotificationState {
   return {
     internal: typeof value?.internal === "boolean" ? value.internal : true,
+    showResponsibilityAmount: value?.showResponsibilityAmount === true,
     system: value?.system === true,
     sound: value?.sound === true,
     tone: notificationTones.includes(value?.tone as NotificationTone) ? value!.tone! : "Suave",
@@ -104,4 +106,12 @@ export function pendingNotificationDelivery(state: NotificationState, events: Fi
 
 export function markNotifications(state: NotificationState, field: "readIds" | "dismissedIds" | "deliveredIds", eventIds: string[]): NotificationState {
   return { ...state, [field]: [...new Set([...state[field], ...eventIds])] };
+}
+
+// The amount belongs to the pending obligation, never to its envelope balance or coverage shortfall.
+export function notificationDetail(event:FinanceNotification, showAmount:boolean, privateMode:boolean):string {
+  if(privateMode)return "Los detalles están ocultos por privacidad.";
+  if(!showAmount)return event.detail;
+  const amount=new Intl.NumberFormat("es-CR",{style:"currency",currency:"CRC",maximumFractionDigits:0}).format(event.amount);
+  return `${event.detail} · Importe pendiente: ${amount}`;
 }
