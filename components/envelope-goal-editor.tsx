@@ -108,7 +108,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
           {date && timing && <>
             <TemporalThresholdFields values={{green, yellow, red}} onChange={(tone, value) => ({green:setGreen, yellow:setYellow, red:setRed})[tone](value)} />
           </>}
-          {progress.active && <div className={styles.preview} aria-live="polite"><strong>{progressLabel}</strong><span>{envelope.balanceHidden ? "••••••" : money(envelope.balance)} de {money(progress.amount)}</span>{progress.temporal && <span className={styles.temporalPreview}><TemporalDot tone={progress.temporal.tone} /><span>{progress.temporal.label}. {progress.temporal.explanation}</span></span>}{progress.daysRemaining !== null && !progress.temporal && <span>El indicador aparecerá {green} días antes de la fecha límite.</span>}</div>}
+          {progress.active && <div className={styles.preview} aria-live="polite"><strong>{progressLabel}</strong><span>{envelope.balanceHidden ? "••••••" : money(envelope.balance)} de {money(progress.amount)}</span>{progress.temporal && <span className={styles.temporalPreview}><TemporalDot tone={progress.temporal.tone} alert /><span>{progress.temporal.label}. {progress.temporal.explanation}</span></span>}{progress.daysRemaining !== null && !progress.temporal && <span>El indicador aparecerá {green} días antes de la fecha límite.</span>}</div>}
         </>}
         <section className={styles.recurrence} aria-labelledby={`${id}-recurrence`}>
           <h3 id={`${id}-recurrence`}>Aporte recurrente</h3>

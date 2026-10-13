@@ -1,5 +1,5 @@
 export const appViews = ["Inicio", "Movimientos", "Sobres", "Cuentas", "Préstamos", "Reportes", "Recordatorios", "Configuración", "Cronograma", "Sin asignar"] as const;
-const overlays = ["new", "envelope", "goal", "account", "repay", "action", "postpone", "notifications", "feedback", "planning", "planningDetail", "scheduled", "incomeTrace", "assignIncome", "proximity", "reset", "products"] as const;
+const overlays = ["new", "envelope", "goal", "account", "repay", "action", "postpone", "notifications", "feedback", "planning", "planningDetail", "scheduled", "incomeTrace", "assignIncome", "proximity", "reset", "products", "expenseCategories"] as const;
 export type AppNavigation = {
   view: string;
   flow: "Ingreso" | "Gasto" | null;
@@ -14,6 +14,7 @@ export type AppNavigation = {
   flowEnvelopeId?: string | null;
   movementEnvelopeId?: string | null;
   movementId?: string | null;
+  returnToIncome?: string | null;
   reminderEnvelopeId?: string | null;
 };
 export type NavigationEntry = { scope: string; session: string; index: number; base: number; value: AppNavigation };
@@ -29,6 +30,7 @@ export function baseNavigation(scope: string, session: string, view: unknown = "
 export function nextNavigation(previous: NavigationEntry, patch: Partial<AppNavigation>, replace = false): NavigationEntry {
   const value = { ...previous.value, ...patch };
   value.view = safeNavigationView(value.view);
+  if(patch.view!==undefined&&patch.returnToIncome===undefined)value.returnToIncome=null;
   if (!value.flow && !value.overlay) value.context = null;
   const index = replace ? previous.index : previous.index + 1;
   return { scope: previous.scope, session: previous.session, index, base: value.flow || value.overlay ? previous.base : index, value };
@@ -51,9 +53,9 @@ export function restoreNavigation(saved: unknown, scope: string, session: string
   const validFlow = value?.flow === null || value?.flow === "Ingreso" || value?.flow === "Gasto";
   const validOverlay = value?.overlay === null || overlays.some(overlay => overlay === value?.overlay);
   const validStep = Number.isSafeInteger(value?.step) && value!.step >= 0 && value!.step <= (value?.flow === "Gasto" ? 2 : value?.flow === "Ingreso" ? 1 : 0);
-  const needsContext = ["goal", "repay", "action", "postpone", "planning", "planningDetail", "scheduled", "incomeTrace", "assignIncome", "proximity", "reset", "products"].some(overlay => overlay === value?.overlay);
+  const needsContext = ["goal", "repay", "action", "postpone", "planning", "planningDetail", "scheduled", "incomeTrace", "assignIncome", "proximity", "reset", "products", "expenseCategories"].some(overlay => overlay === value?.overlay);
   const validContext = !needsContext || (value?.context !== null && typeof value?.context === "object");
-  const validFilters = [value?.calendarDate, value?.historyFrom, value?.historyTo, value?.reportMonth, value?.flowEnvelopeId, value?.movementEnvelopeId, value?.movementId, value?.reminderEnvelopeId].every(id => id == null || typeof id === "string");
+  const validFilters = [value?.calendarDate, value?.historyFrom, value?.historyTo, value?.reportMonth, value?.flowEnvelopeId, value?.movementEnvelopeId, value?.movementId, value?.returnToIncome, value?.reminderEnvelopeId].every(id => id == null || typeof id === "string");
   if (candidate.scope !== scope || candidate.session !== session || !validIndices || !validView || !validFlow || !validOverlay || !validStep || !validContext || !validFilters || (value?.calendarScale !== undefined && !["Día","Semana","Mes","Año"].includes(value.calendarScale))) {
     return { entry: baseNavigation(scope, session, view), replace: true };
   }

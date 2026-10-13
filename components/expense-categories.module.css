@@ -9,3 +9,11 @@
 .inline { min-width:0; }
 .inline > summary { min-height:44px; padding:12px 0; color:var(--ink); cursor:pointer; font-size:calc(13px * var(--ui-scale,1)); }
 .notice { margin:0; color:var(--muted); font-size:calc(12px * var(--ui-scale,1)); }
+.envelope { display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:12px; min-width:0; }
+.selection { display:flex; align-items:center; gap:10px; min-height:44px; margin:0; cursor:pointer; }
+.selection input[type="checkbox"] { flex:none; width:20px; height:20px; margin:0; accent-color:var(--green); }
+.selection span { min-width:0; overflow-wrap:anywhere; }
+.selection small { display:block; color:var(--muted); margin-top:4px; }
+.categoryRow { display:grid; gap:6px; margin:6px 0 12px; min-width:0; }
+.manager label { min-width:0; overflow-wrap:anywhere; }
+.manager input:not([type="checkbox"]), .manager select { width:100%; min-width:0; max-width:100%; }

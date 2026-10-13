@@ -328,3 +328,9 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - Inicio móvil: título Filtrar por proximidad arriba, cinco sobres en una fila debajo, casilla Activar filtro y Ver todos a su derecha. Desactivar impide abrir filtros por color; Ver todos sigue accesible. No oculta obligaciones ni desactiva alertas. Estado de la casilla durante la sesión del componente; no se agregó preferencia persistente.
 - Un solo botón de vista en Inicio/Sobres: Lista → cuadrícula cómoda → compacta → Lista. Muestra icono y número de columnas de la siguiente vista. En teléfono demasiado angosto se omite la cuadrícula de tres columnas; escritorio conserva la cantidad adaptable. Preferencias existentes conservadas.
 - TypeScript y lint dirigidos; sin nueva prueba visual interactiva de estos dos ajustes. Sin SQL. Publicar con el margen restante según instrucción del propietario.
+
+## Entrega complementaria — Inicio, menú y categorías (11 octubre 2026)
+- Sustituye la casilla temporal «Activar filtro» por preferencia local persistente de Inicio; resto de ámbitos independiente. Doble clic/doble toque del icono ahora abre menú personal. Nuevo gasto primero con icono propio.
+- Gastos clasifican sobres y categorías con importes exactos, un único movimiento; edición/asociación de categorías por sobre sin cambiar historia. Ruta del ingreso desplegable con regreso contextual y botones de escritorio intercambiados.
+- Informe completo, archivos conceptuales y pruebas: docs/actualizacion-complementaria-2026-10-11.md. Sin SQL nuevo. No ejecutar RPC antigua aisladamente.
+- Retomar: prueba táctil física y backlog anterior descrito en el informe. Publicar al cerrar esta entrega según autorización del propietario.

@@ -64,8 +64,8 @@ export function financialReport(movements: LedgerMovement[], month?: string) {
   const categories = new Map<string,number>();
   const envelopes = new Map<string,{ id: string; name: string; spent: number }>();
   for (const expense of expenses) {
-    const category = expense.category || "Sin categoría";
-    categories.set(category,(categories.get(category) ?? 0)+expense.amount);
+    const breakdown=expense.categoryAllocations?.length?expense.categoryAllocations:[{name:expense.category||"Sin categoría",amount:expense.amount}];
+    for(const category of breakdown)categories.set(category.name,(categories.get(category.name)??0)+category.amount);
     for (const allocation of expense.allocations) {
       // Old ambiguous names are reported without assigning a made-up envelope ID.
       const id = allocation.envelopeId || `legacy:${allocation.name}`;

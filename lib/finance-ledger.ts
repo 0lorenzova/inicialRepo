@@ -1,3 +1,4 @@
+import { validateExpenseClassification, type ExpenseClassification } from "./expense-classification";
 import { normalizeIncomeMethod } from "./income-preferences";
 import { normalizeExpenseDetails } from "./expense-details";
 import { validatePurchaseProducts, type PurchaseProduct } from "./finance-products";
@@ -6,7 +7,7 @@ export type Account = { id: string; name: string; type: string; balance: number;
 export type LedgerEnvelope = { id: string; name: string; balance: number; archived?: boolean; goal?: number };
 export type Loan = { id: string; sourceId: string; sourceName: string; targetId: string; targetName: string; amount: number; outstanding: number; status: "Pendiente" | "Parcial" | "Devuelto"; date: string };
 export type LedgerAllocation = { envelopeId?: string; name: string; amount: number };
-export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; description?: string; merchant?: string; reference?: string; paymentMethod?: string; tags?: string[]; allocations: LedgerAllocation[]; loanId?: string; products?:PurchaseProduct[]; incomeSources?: IncomeSource[]; scheduledAmountId?: string; distributionCorrection?: { incomeId: string; batchId: string; reason: string }; fundingTargets?: { envelopeId: string; itemId: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string }[] };
+export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; categoryAllocations?: ExpenseClassification[]; description?: string; merchant?: string; reference?: string; paymentMethod?: string; tags?: string[]; allocations: LedgerAllocation[]; loanId?: string; products?:PurchaseProduct[]; incomeSources?: IncomeSource[]; scheduledAmountId?: string; distributionCorrection?: { incomeId: string; batchId: string; reason: string }; fundingTargets?: { envelopeId: string; itemId: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string }[] };
 export type Ledger = { accounts: Account[]; envelopes: LedgerEnvelope[]; loans: Loan[]; movements: LedgerMovement[] };
 const validAmount=(amount:number)=>Number.isSafeInteger(amount)&&amount>0;
 
@@ -142,7 +143,7 @@ export function repay(ledger: Ledger, loanId: string, amount: number, date: stri
   return commit(ledger, { id, type: "Devolución", name: `Devolución de ${target.name} a ${source.name}`, amount, date, allocations: [{ envelopeId: target.id, name: target.name, amount }, { envelopeId: source.id, name: source.name, amount }], loanId }, ledger.accounts, ledger.envelopes.map((item) => item.id === target.id ? { ...item, balance: item.balance - amount } : item.id === source.id ? { ...item, balance: item.balance + amount } : item), nextLoans);
 }
 
-export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingreso" | "Gasto"; amount: number; accountId: string; envelopeAllocations: { id: string; amount: number }[]; date: string; name: string; category?: string; description?: string; merchant?: string; reference?: string; paymentMethod?: string; tags?: string[]; products?:PurchaseProduct[] }): Ledger {
+export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingreso" | "Gasto"; amount: number; accountId: string; envelopeAllocations: { id: string; amount: number }[]; date: string; name: string; category?: string; categoryAllocations?: ExpenseClassification[]; description?: string; merchant?: string; reference?: string; paymentMethod?: string; tags?: string[]; products?:PurchaseProduct[] }): Ledger {
   const account = ledger.accounts.find((item) => item.id === input.accountId && item.active);
   if (!account || !validAmount(input.amount)) throw new Error("Selecciona una cuenta activa y un monto entero válido.");
   if (!validMovementDate(input.date)) throw new Error("Selecciona una fecha y hora válidas para el movimiento.");
@@ -153,6 +154,7 @@ export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingres
   if (input.products?.some((product) => product.amount > 0 && !product.name.trim())) throw new Error("Escribe el nombre del producto que tiene un monto registrado.");
   if (input.type === "Gasto" && (input.products?.reduce((sum, product) => sum + product.amount, 0) ?? 0) > input.amount) throw new Error("El total de productos no puede superar el monto del gasto.");
   if (input.type === "Gasto") validatePurchaseProducts(input.products ?? [], input.envelopeAllocations, ledger.envelopes);
+  if(input.type==="Gasto"&&input.categoryAllocations)validateExpenseClassification(input.categoryAllocations,input.amount,input.envelopeAllocations);
   const delta = input.type === "Ingreso" ? input.amount : -input.amount;
   if (input.type === "Gasto") {
     if (account.balance < input.amount) throw new Error("La cuenta no tiene saldo suficiente para este gasto.");
@@ -168,6 +170,6 @@ export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingres
     return { ...item, balance: item.balance + (input.type === "Ingreso" ? allocation : -allocation) };
   });
   const accountName = account.name;
-  const movement: LedgerMovement = { ...(input.type === "Gasto" ? normalizeExpenseDetails(input.paymentMethod, input.tags) : normalizeIncomeMethod(input.paymentMethod)), id: input.id || crypto.randomUUID(), type: input.type, name: input.name, amount: input.amount, date: input.date, accountId: account.id, accountName, category: input.category, description: input.description, reference: input.reference, merchant: input.merchant?.trim() || undefined, products:input.products, allocations: input.envelopeAllocations.map((allocation) => ({ envelopeId: allocation.id, name: ledger.envelopes.find((item) => item.id === allocation.id)!.name, amount: allocation.amount })) };
+  const movement: LedgerMovement = { ...(input.type === "Gasto" ? normalizeExpenseDetails(input.paymentMethod, input.tags) : normalizeIncomeMethod(input.paymentMethod)), id: input.id || crypto.randomUUID(), type: input.type, name: input.name, amount: input.amount, date: input.date, accountId: account.id, accountName, category: input.category, ...(input.type==="Gasto"&&input.categoryAllocations?{categoryAllocations:input.categoryAllocations.map(item=>({...item}))}:{}), description: input.description, reference: input.reference, merchant: input.merchant?.trim() || undefined, products:input.products, allocations: input.envelopeAllocations.map((allocation) => ({ envelopeId: allocation.id, name: ledger.envelopes.find((item) => item.id === allocation.id)!.name, amount: allocation.amount })) };
   return commit(ledger, movement, ledger.accounts.map((item) => item.id === account.id ? { ...item, balance: item.balance + delta } : item), envelopes);
 }

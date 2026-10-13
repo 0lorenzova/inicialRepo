@@ -124,7 +124,7 @@ export function FinanceNotifications({
             {!visible.length && <p>No tienes avisos que requieran atención. Aquí aparecerán vencimientos, obligaciones críticas y aportes pendientes.</p>}
             <ul className={styles.list}>{visible.slice(0, pageSize).map(event => <li className={`${styles.item} ${!read.has(event.id) ? styles.unread : ""}`} key={event.id}>
               <button type="button" className={styles.open} onClick={() => openEvent(event)}>
-                <strong>{event.tone&&<TemporalDot tone={event.tone} covered={event.covered}/>} {privateMode ? (event.kind === "reminder" ? "Recordatorio pendiente" : "Obligación pendiente") : event.title} · {read.has(event.id) ? "Leída" : "Sin leer"}</strong>
+                <strong>{event.tone&&<TemporalDot tone={event.tone} alert covered={event.covered}/>} {privateMode ? (event.kind === "reminder" ? "Recordatorio pendiente" : "Obligación pendiente") : event.title} · {read.has(event.id) ? "Leída" : "Sin leer"}</strong>
                 <span>{privateMode ? "Los detalles están ocultos por privacidad." : `${event.detail} · ${money(event.amount)}`}</span>
                 <small>{dateLabel(event.date)} · Abrir {event.destination.page.toLowerCase()}</small>
               </button>

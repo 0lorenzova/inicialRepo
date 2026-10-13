@@ -14,9 +14,9 @@ import styles from "./envelope-collection.module.css";
 
 type EnvelopeItem = { id: string; name: string; icon: string; color: string; balance: number; recurrence?: Recurrence } & GoalSettings & EnvelopePlanning;
 type Drag = { id: string; ids: string[]; original: string[]; keyboard: boolean };
-type PendingPress = { x: number; y: number; pointerId: number; timer: ReturnType<typeof setTimeout> };
+type PendingPress = { x: number; y: number; pointerId: number; envelopeId: string; anchor: HTMLButtonElement; started: number; timer: ReturnType<typeof setTimeout> };
 
-export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, onNewMovement, showProximity = true, viewAnchor }: {
+export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, showProximity = true, viewAnchor }: {
   viewAnchor?: HTMLDivElement | null;
   showProximity?: boolean;
   envelopes: EnvelopeItem[];
@@ -31,7 +31,6 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
   onPlanning: (id: string, anchor: HTMLButtonElement, filter?: ProximityFilter) => void;
   planningId?: string;
   onCreate: () => void;
-  onNewMovement: (id: string) => void;
   onReorder: (ids: string[]) => void;
 }) {
   const {scale}=useThemeMode();
@@ -40,6 +39,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
   const pending = useRef<PendingPress | null>(null);
   const drag = useRef<Drag | null>(null);
   const pointerType = useRef("mouse");
+  const lastTap = useRef<{id:string;time:number;x:number;y:number}|null>(null);
   const [preview, setPreview] = useState<Drag | null>(null);
   const [width, setWidth] = useState<number | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -117,8 +117,8 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
     // Keep short clicks on the icon; capture switches to the collection only when sorting.
     event.currentTarget.setPointerCapture(event.pointerId);
     pending.current = {
-      x: event.clientX, y: event.clientY, pointerId: event.pointerId,
-      timer: setTimeout(() => { container.current?.setPointerCapture(event.pointerId); start(envelopeId, false); }, 350),
+      x: event.clientX, y: event.clientY, pointerId: event.pointerId, envelopeId, anchor:event.currentTarget, started:event.timeStamp,
+      timer: setTimeout(() => { container.current?.setPointerCapture(event.pointerId); lastTap.current=null; start(envelopeId, false); }, 350),
     };
   }
 
@@ -126,7 +126,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
     const press = pending.current;
     if (!press || press.pointerId !== event.pointerId) return;
     if (!drag.current) {
-      if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) finish(false);
+      if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) {lastTap.current=null; finish(false); }
       return;
     }
     const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-envelope-id]");
@@ -137,7 +137,16 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
 
   function pointerUp(event: PointerEvent<HTMLDivElement>) {
     if (pending.current?.pointerId !== event.pointerId) return;
+    const press=pending.current;
+    const stamp=event.timeStamp;
+    const tap=event.pointerType==="touch"&&!drag.current&&stamp-press.started<350;
+    const previous=lastTap.current;
     finish(true);
+    if(tap) {
+      if(previous?.id===press.envelopeId&&stamp-previous.time<350&&Math.hypot(event.clientX-previous.x,event.clientY-previous.y)<24) {
+        lastTap.current=null; onMenu(press.envelopeId,press.anchor);
+      } else lastTap.current={id:press.envelopeId,time:stamp,x:event.clientX,y:event.clientY};
+    } else lastTap.current=null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }
 
@@ -167,7 +176,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
     </button>
   </div>;
 
-  return <div ref={container} className={styles.wrapper} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => finish(false)} onLostPointerCapture={event => { if (event.target === event.currentTarget && pending.current) finish(false); }}>
+  return <div ref={container} className={styles.wrapper} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => {lastTap.current=null;finish(false);}} onLostPointerCapture={event => { if (event.target === event.currentTarget && pending.current) finish(false); }}>
     {viewAnchor ? createPortal(viewSelector, viewAnchor) : viewSelector}
     {grid && !unavailableGrid && <p className="view-hint">{columns} sobres por fila{adaptive?` · Vista ${density}, adaptada al ancho disponible.`:""} · Siguiente vista: {nextViewLabel}.</p>}
     {blockedNext && <p id={`${id}-width-hint`} className="view-hint">Para ver tres columnas, gira el teléfono o utiliza una pantalla más ancha.</p>}
@@ -186,9 +195,9 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
           const indicators = showProximity ? planningIndicators(plans.filter(item=>item.timingEnabled)) : [];
           return <div className={`${styles.card} ${preview?.id === envelope.id ? styles.dragging : ""}`} key={envelope.id} data-envelope-id={envelope.id} data-goal={showGoal}>
             <button type="button" className={`emoji ${envelope.color} ${styles.dragHandle}`} aria-label={`Ordenar ${envelope.name}`} aria-describedby={`${id}-sort-hint`} aria-pressed={preview?.id === envelope.id}
-              onDoubleClick={event => { event.stopPropagation(); if (pointerType.current === "touch") return; finish(false); onNewMovement(envelope.id); }}
+              onDoubleClick={event => { event.stopPropagation(); if (pointerType.current === "touch") return; finish(false); onMenu(envelope.id,event.currentTarget); }}
               onPointerDown={event => pointerDown(event, envelope.id)}
-              onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title="Doble clic: Entrada / Salida. Mantén pulsado para ordenar"><span aria-hidden="true">{envelope.icon}</span></button>
+              onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title="Doble clic o doble toque: menú del sobre. Mantén pulsado para ordenar"><span aria-hidden="true">{envelope.icon}</span></button>
             <span className={styles.name}>{envelope.name}</span>
             <b className={styles.balance}><small className={styles.balanceLabel}>Saldo actual</small>{(privateMode || envelope.balanceHidden) ? "••••••" : display(envelope.balance)}</b>
             <div className={`envelope-actions ${styles.actions}`}><button type="button" aria-label={`Opciones de ${envelope.name}`} aria-haspopup="menu"
@@ -197,7 +206,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
             {(envelope.recurrence || showGoal || indicators.length > 0) && <div className={styles.details}>
               {envelope.recurrence && <small>Próximo aporte: {privateMode ? "••••" : display(envelope.recurrence.amount)} · {new Date(`${envelope.recurrence.nextDate}T12:00:00`).toLocaleDateString("es-CR", { day: "numeric", month: "short", timeZone: "America/Costa_Rica" })}</small>}
               {showGoal && <span className={styles.progressLabel} aria-label={`Meta de ${envelope.name}: ${percentage} por ciento. ${goal.reached ? "Meta alcanzada." : ""}`}>{progressText}</span>}
-              <div className={styles.indicators}>{indicators.map(tone => <button key={tone} className={styles.statusButton} type="button" aria-label={`Metas e importes de ${envelope.name}: ${proximityLabels[tone]}, ${counts[tone]} elementos`} aria-haspopup="dialog" aria-expanded={planningId === envelope.id} aria-controls={planningId === envelope.id ? "envelope-planning-menu" : undefined} onClick={event => onPlanning(envelope.id, event.currentTarget, tone)}><TemporalDot tone={tone} covered={envelope.balanceHidden?undefined:planningCoverage(plans.filter(item=>item.timingEnabled&&planningTone(item)===tone))}/>{<span>{counts[tone]}</span>}</button>)}</div>
+              <div className={styles.indicators}>{indicators.map(tone => <button key={tone} className={styles.statusButton} type="button" aria-label={`Metas e importes de ${envelope.name}: ${proximityLabels[tone]}, ${counts[tone]} elementos`} aria-haspopup="dialog" aria-expanded={planningId === envelope.id} aria-controls={planningId === envelope.id ? "envelope-planning-menu" : undefined} onClick={event => onPlanning(envelope.id, event.currentTarget, tone)}><TemporalDot tone={tone} alert={counts[tone]>0} covered={envelope.balanceHidden?undefined:planningCoverage(plans.filter(item=>item.timingEnabled&&planningTone(item)===tone))}/>{<span>{counts[tone]}</span>}</button>)}</div>
             </div>}
             {showGoal && <div className={styles.progressTrack} aria-hidden="true"><span style={{ height: `${goal.fillPercentage}%` }} /></div>}
           </div>;
