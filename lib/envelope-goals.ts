@@ -5,6 +5,7 @@ export type GoalSettings = {
   goal?: number;
   goalEnabled?: boolean;
   goalDate?: string;
+  goalPlannedPaymentDate?: string;
   goalTimingEnabled?: boolean;
   goalProgressVisible?: boolean;
   goalDisplay?: "percentage" | "reached" | "surplus";
@@ -56,6 +57,10 @@ export function validateGoalSettings(settings: GoalSettings): void {
     throw new Error("Ingresa un monto objetivo entero mayor que cero.");
   }
   if (settings.goalDate) civilDate(settings.goalDate);
+  if (settings.goalPlannedPaymentDate) {
+    try { civilDate(settings.goalPlannedPaymentDate); }
+    catch { throw new Error("Selecciona una fecha prevista de pago válida."); }
+  }
   if (settings.goalDisplay && !["percentage", "reached", "surplus"].includes(settings.goalDisplay)) {
     throw new Error("Selecciona cómo quieres mostrar la meta alcanzada.");
   }

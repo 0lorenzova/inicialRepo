@@ -2,7 +2,7 @@ import { validateGoalSettings, type GoalSettings } from "./envelope-goals";
 import { validateRecurrence, type Recurrence } from "./finance-recurrence";
 
 type GoalEnvelope = GoalSettings & { id:string; name:string; balance:number; archived?:boolean; recurrence?:Recurrence };
-const fields = ["goalId","goalName","goal","goalEnabled","goalDate","goalTimingEnabled","goalProgressVisible","goalDisplay","goalThresholds"] as const;
+const fields = ["goalId","goalName","goal","goalEnabled","goalDate","goalPlannedPaymentDate","goalTimingEnabled","goalProgressVisible","goalDisplay","goalThresholds"] as const;
 const signature = (value:GoalSettings) => JSON.stringify(fields.map(field=>field==="goalThresholds" ? [value.goalThresholds?.green,value.goalThresholds?.yellow,value.goalThresholds?.red] : value[field]));
 const recurrenceSignature = (value?:Recurrence) => value ? JSON.stringify([value.amount,value.frequency,value.nextDate,value.snoozedUntil,value.intervalDays]) : "";
 

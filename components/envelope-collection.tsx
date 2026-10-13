@@ -8,7 +8,7 @@ import { useThemeMode } from "@/components/theme-provider";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { canShowThreeColumns, envelopeGridColumns, isAdaptiveEnvelopeGrid, type EnvelopeView } from "@/lib/envelope-view";
 import { getEnvelopeGoal, type GoalSettings } from "@/lib/envelope-goals";
-import { planningItems, planningCoverage, planningTone, planningIndicators, proximityLabels, proximityCounts, type ProximityFilter, type EnvelopePlanning } from "@/lib/envelope-planning";
+import { plannedPaymentDelay, planningItems, planningCoverage, planningTone, planningIndicators, proximityLabels, proximityCounts, type ProximityFilter, type EnvelopePlanning } from "@/lib/envelope-planning";
 import { TemporalDot } from "@/components/temporal-indicator";
 import type { Recurrence } from "@/lib/finance-recurrence";
 import styles from "./envelope-collection.module.css";
@@ -193,13 +193,14 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
           const progressText = goal.reached && envelope.goalDisplay === "reached" ? "Meta alcanzada" : goal.reached && envelope.goalDisplay === "surplus" ? `Excedente: ${display(goal.surplus)}` : `${percentage}%`;
           const plans = planningItems(envelope, today);
           const counts = proximityCounts(plans);
+          const latePayment = plans.some(item => plannedPaymentDelay(item) > 0);
           const indicators = showProximity ? planningIndicators(plans.filter(item=>item.timingEnabled)) : [];
           return <div className={`${styles.card} ${preview?.id === envelope.id ? styles.dragging : ""}`} key={envelope.id} data-envelope-id={envelope.id} data-goal={showGoal}>
             <button type="button" className={`emoji ${envelope.color} ${styles.dragHandle}`} aria-label={`Ordenar ${envelope.name}`} aria-describedby={`${id}-sort-hint`} aria-pressed={preview?.id === envelope.id}
               onDoubleClick={event => { event.stopPropagation(); if (pointerType.current === "touch") return; finish(false); onMenu(envelope.id,event.currentTarget); }}
               onPointerDown={event => pointerDown(event, envelope.id)}
-              onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title="Doble clic o doble toque: menú del sobre. Mantén pulsado para ordenar"><span aria-hidden="true">{envelope.icon}</span></button>
-            <span className={styles.name}>{envelopeLabel(envelope.name)}</span>
+              onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title={latePayment ? "Pago previsto con atraso. Doble clic: menú del sobre." : "Doble clic o doble toque: menú del sobre. Mantén pulsado para ordenar"}><span className={latePayment ? styles.latePaymentIcon : undefined} data-planned-late={latePayment || undefined} aria-hidden="true">{envelope.icon}</span></button>
+            <span className={styles.name}>{envelopeLabel(envelope.name)}{latePayment && <small className={styles.latePaymentNotice}>Pago previsto con atraso</small>}</span>
             <b className={styles.balance}><small className={styles.balanceLabel}>Saldo actual</small>{(privateMode || envelope.balanceHidden) ? "••••••" : display(envelope.balance)}</b>
             <div className={`envelope-actions ${styles.actions}`}><button type="button" aria-label={`Opciones de ${envelope.name}`} aria-haspopup="menu"
               aria-expanded={menuId === envelope.id} aria-controls={menuId === envelope.id ? "envelope-context-menu" : undefined}

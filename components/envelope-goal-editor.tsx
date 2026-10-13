@@ -1,5 +1,6 @@
 "use client";
 
+import { PlannedPaymentField } from "./planned-payment-field";
 import { envelopeLabel } from "@/lib/envelope-label";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { TemporalDot, TemporalThresholdFields } from "@/components/temporal-indicator";
@@ -24,6 +25,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
   const [goalName, setGoalName] = useState(envelope.goalName ?? "");
   const [amount, setAmount] = useState(envelope.goal?.toString() ?? "");
   const [date, setDate] = useState(envelope.goalDate ?? "");
+  const [plannedDate, setPlannedDate] = useState(envelope.goalPlannedPaymentDate ?? "");
   const [display, setDisplay] = useState<NonNullable<GoalSettings["goalDisplay"]>>(envelope.goalDisplay ?? "percentage");
   const [timing, setTiming] = useState(envelope.goalTimingEnabled ?? Boolean(envelope.goalDate));
   const [progressVisible, setProgressVisible] = useState(envelope.goalProgressVisible ?? true);
@@ -45,6 +47,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
     goalEnabled: enabled,
     goal: amount.trim() ? numeric(amount) : undefined,
     goalDate: date || undefined,
+    goalPlannedPaymentDate: plannedDate || undefined,
     goalDisplay: display,
     goalTimingEnabled: timing,
     goalProgressVisible: progressVisible,
@@ -99,6 +102,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
           <div className="currency-input"><span aria-hidden="true">₡</span><input id={`${id}-amount`} inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="100000" /></div>
           <label htmlFor={`${id}-date`}>Fecha límite (opcional)</label>
           <input id={`${id}-date`} type="date" value={date} onChange={event => { setDate(event.target.value); if (!date && event.target.value) setTiming(true); }} />
+          <PlannedPaymentField value={plannedDate} deadline={date} onChange={setPlannedDate}/>
           <label htmlFor={`${id}-display`}>Al alcanzar o superar la meta</label>
           <select id={`${id}-display`} value={display} onChange={event => setDisplay(event.target.value as typeof display)}><option value="percentage">Mostrar porcentaje real</option><option value="reached">Mostrar «Meta alcanzada»</option><option value="surplus">Mostrar excedente</option></select>
           <p className={styles.hint}>La barra representa el dinero acumulado. El porcentaje puede superar 100%.</p>

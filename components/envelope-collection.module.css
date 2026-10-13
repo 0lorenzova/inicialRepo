@@ -38,3 +38,9 @@
 .grid .progressLabel { flex-basis: 100%; }
 
 .balanceLabel { display:block; color:var(--muted); font-size:calc(9px * var(--ui-scale,1)); font-weight:400; line-height:1.2; }
+
+/* Rotate only the graphic; the drag/tap target remains stationary. */
+.latePaymentIcon { display:inline-block; animation:planned-payment-turn 2s linear infinite; }
+@keyframes planned-payment-turn { to { transform:rotate(360deg); } }
+.latePaymentNotice { display:block; color:var(--muted); font-size:calc(10px * var(--ui-scale,1)); font-weight:400; line-height:1.4; }
+@media (prefers-reduced-motion: reduce) { .latePaymentIcon { animation:none; } }

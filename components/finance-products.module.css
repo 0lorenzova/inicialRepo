@@ -17,3 +17,9 @@
 .monthlySeries small { grid-column:1 / -1; color:var(--muted); }
 .monthlyTrack { grid-column:1 / -1; height:8px; border-radius:6px; background:var(--line); overflow:hidden; }
 .monthlyTrack span { display:block; height:100%; border-radius:inherit; background:var(--green); }
+
+.catalog[data-selected="true"] { border-color:var(--green); background:var(--pale); }
+.catalog .productSelection { flex:1 1 100%; display:flex; gap:10px; cursor:pointer; color:var(--ink); }
+.productSelection input { width:20px; height:20px; flex:0 0 20px; accent-color:var(--green-dark); }
+.productSelection span { min-width:0; }
+.productSelection small { display:block; margin-top:3px; color:var(--muted); }

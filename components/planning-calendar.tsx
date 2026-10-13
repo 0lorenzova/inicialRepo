@@ -1,6 +1,7 @@
 "use client";
+import { isoWeek } from "@/lib/iso-week";
 import { envelopeLabel } from "@/lib/envelope-label";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Tooltip from "@mui/material/Tooltip";
 import { calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
 import { proximityTones, planningCoverage } from "@/lib/envelope-planning";
@@ -16,6 +17,8 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
 }) {
   const {visible:showProximity}=useTemporalDisplay();
   const [todayPhase,setTodayPhase]=useState(false);
+  const [navigationOpen,setNavigationOpen]=useState(false);
+  const navigationId=useId();
   const entries=calendarEntries(envelopes,today).filter(entry=>!selection||entry.item), range=calendarRange(date,scale);
   const overdue=calendarOverdueEntries(entries,today),hasOverdue=overdue.length>0;
   useEffect(()=>{
@@ -27,7 +30,7 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
     return ()=>{if(timer)clearInterval(timer);motion.removeEventListener("change",start);};
   },[hasOverdue]);
   const earlier=scale==="Día"?calendarOverdueEntries(entries,today,date):[];
-  const hintProps={arrow:true,describeChild:true,enterDelay:250,slotProps:{tooltip:{sx:{maxWidth:280,fontSize:12,backgroundColor:"#142a23",color:"#fff"}},popper:{sx:{zIndex:1600}}}};
+  const hintProps={arrow:true,describeChild:true,disableInteractive:false,enterDelay:250,leaveDelay:200,slotProps:{tooltip:{sx:{maxWidth:280,fontSize:12,backgroundColor:"#142a23",color:"#fff"}},popper:{sx:{zIndex:1600}}}};
   const changeCalendar=(value:string,nextScale:CalendarScale)=>{onChange(value,nextScale);};
   const visible=entries.filter(entry=>entry.date>=range.from&&entry.date<=range.to);
   const months = scale === "Semana" ? [...new Set([range.from.slice(0,7),range.to.slice(0,7)])] : [date.slice(0,7)];
@@ -49,9 +52,12 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
     })}</div>;
   }
   return <section className={`${embedded?"":"section page-panel"} ${styles.calendar}`} data-today-phase={todayPhase}>
-    <div className={styles.shortcuts} role="group" aria-label="Consultar período">{([ ["Hoy","Día"], ["Esta semana","Semana"], ["Este mes","Mes"], ["Año","Año"] ] as const).map(([name,value])=><button type="button" className="secondary" key={value} aria-pressed={scale===value && calendarRange(today,value).from===range.from} onClick={()=>changeCalendar(today,value)}>{name}</button>)}</div>
-    <div className={styles.controls}><label>Vista<select value={scale} onChange={event=>changeCalendar(date,event.target.value as CalendarScale)}>{calendarScales.map(value=><option key={value}>{value}</option>)}</select></label><label>Fecha<input type="date" min="0001-01-01" max="9999-12-31" value={date} onChange={event=>{const value=event.target.value;if(!value)return;try{calendarRange(value,scale);}catch{return;}changeCalendar(value,scale);}}/></label></div>
-    <div className={styles.period}><button className="secondary" aria-label="Período anterior" onClick={()=>changeCalendar(shiftCalendar(date,scale,-1),scale)}>‹</button><h2>{scale==="Año"?date.slice(0,4):scale==="Semana"?`${label(range.from,{day:"numeric",month:"short"})} – ${label(range.to,{day:"numeric",month:"short",year:"numeric"})}`:label(date,scale==="Mes"?{month:"long",year:"numeric"}:{day:"numeric",month:"long",year:"numeric"})}</h2><button className="secondary" aria-label="Período siguiente" onClick={()=>changeCalendar(shiftCalendar(date,scale,1),scale)}>›</button></div>
+    <button type="button" className={`text-btn ${styles.navigationToggle}`} aria-expanded={navigationOpen} aria-controls={navigationId} onClick={()=>setNavigationOpen(!navigationOpen)}>{navigationOpen?"Ocultar navegación":"Ver navegación"} <span aria-hidden="true">{navigationOpen?"⌃":"⌄"}</span></button>
+    <div id={navigationId} className={styles.navigation} hidden={!navigationOpen}>
+    <div className={styles.shortcuts} role="group" aria-label="Consultar período">{([ ["Hoy","Día"], ["Esta semana","Semana"], ["Este mes","Mes"], ["Este año","Año"] ] as const).map(([name,value])=><button type="button" className="secondary" key={value} aria-pressed={scale===value && calendarRange(today,value).from===range.from} onClick={()=>changeCalendar(today,value)}>{name}</button>)}</div>
+    <div className={styles.controls}><label>Navegación<select value={scale} onChange={event=>changeCalendar(date,event.target.value as CalendarScale)}>{calendarScales.map(value=><option key={value}>{value}</option>)}</select></label><label>Fecha<input type="date" min="0001-01-01" max="9999-12-31" value={date} onChange={event=>{const value=event.target.value;if(!value)return;try{calendarRange(value,scale);}catch{return;}changeCalendar(value,scale);}}/></label></div>
+    </div>
+    <div className={styles.period}><button className="secondary" aria-label="Período anterior" onClick={()=>changeCalendar(shiftCalendar(date,scale,-1),scale)}>‹</button><h2>{scale==="Año"?date.slice(0,4):scale==="Semana"?`Semana ${isoWeek(date).week} · ${label(date,{month:"long",year:"numeric"})}`:label(date,scale==="Mes"?{month:"long",year:"numeric"}:{day:"numeric",month:"long",year:"numeric"})}</h2><button className="secondary" aria-label="Período siguiente" onClick={()=>changeCalendar(shiftCalendar(date,scale,1),scale)}>›</button></div>
     <details className={styles.guide}><summary>Cómo leer el calendario</summary>
     <p className="flow-intro">Fechas pendientes guardadas en tus sobres. Las repeticiones muestran su próxima ocurrencia registrada; ningún aporte ni pago se realiza automáticamente.</p>
     {showProximity&&<div className={styles.legend} aria-label="Significado de los indicadores de proximidad">{proximityTones.map(tone=><Tooltip key={tone} {...hintProps} title={calendarDotDescription(entries,tone,today,privateMode)}><span><TemporalDot tone={tone}/>{calendarProximityMeanings[tone]}</span></Tooltip>)}</div>}

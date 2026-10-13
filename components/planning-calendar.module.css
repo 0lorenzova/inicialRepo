@@ -1,6 +1,6 @@
 .calendar { min-width:0; }
-.shortcuts { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
-.shortcuts button { flex:1 1 85px; height:auto; min-height:44px; white-space:normal; }
+.shortcuts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; margin-bottom:12px; }
+.shortcuts button { min-width:0; padding:8px 4px; font-size:calc(12px * var(--ui-scale,1)); height:auto; min-height:44px; white-space:normal; }
 .shortcuts button[aria-pressed="true"] { border-color:var(--green); background:var(--pale); color:var(--ink); }
 .legend { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; font-size:calc(11px * var(--ui-scale,1)); }
 .legend>span,.dots { display:flex; align-items:center; justify-content:center; gap:4px; }
@@ -28,8 +28,8 @@
 /* One shared phase moves the visual reminder; records and counts stay put. */
 .dotHint { display:inline-flex; align-items:center; justify-content:center; min-width:12px; min-height:16px; border-radius:4px; }
 .dotHint:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
-.calendar[data-today-phase="false"] .echo,
-.calendar[data-today-phase="true"] .origin { opacity:0; }
+.calendar[data-today-phase="false"] .echo [data-tone="purple"],
+.calendar[data-today-phase="true"] .origin [data-tone="purple"] { opacity:0; }
 .overdue { margin-top:18px; padding-top:12px; border-top:1px solid var(--line); }
 @media (prefers-reduced-motion: reduce) {
   .calendar .origin, .calendar .echo, .calendar .entry [data-tone="purple"] { opacity:1 !important; }
@@ -37,6 +37,7 @@
 
 /* Cell indicators use the shared origin/today phase instead of a second blink. */
 .calendar .dotHint [data-tone="purple"] { animation:none; opacity:1; }
+@media (prefers-reduced-motion: reduce) { .calendar .dotHint [data-tone="purple"] { opacity:1 !important; } }
 
 /* Calendar hierarchy uses theme surfaces; proximity tones keep their shared semantics. */
 .shortcuts { padding:5px; border-radius:14px; background:var(--canvas); }
@@ -68,7 +69,13 @@ button.entry:hover { border-color:var(--green); background:var(--pale); }
 .guide { margin:10px 0 16px; color:var(--muted); font-size:calc(12px * var(--ui-scale,1)); }
 .guide>summary { cursor:pointer; min-height:44px; padding:12px 0; color:var(--ink); }
 @media(max-width:600px) {
-  .shortcuts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+
   .shortcuts button { min-width:0; }
   .controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 }
+
+.navigation[hidden] { display:none; }
+.navigationToggle { min-height:44px; display:flex; gap:8px; align-items:center; }
+.navigation:not([hidden]) { animation:navigation-reveal .12s ease-out; }
+@keyframes navigation-reveal { from {opacity:0;} to {opacity:1;} }
+@media (prefers-reduced-motion: reduce) { .navigation:not([hidden]) { animation:none; } }
