@@ -56,8 +56,11 @@ export function monthRange(month: string): { from: string; to: string } {
   end.setUTCMonth(end.getUTCMonth()+1,0);
   return { from: `${month}-01`, to: end.toISOString().slice(0,10) };
 }
+export function reportMovements(movements: LedgerMovement[], month?: string, type?: "Ingreso" | "Gasto") {
+  return filterHistory(movements, { ...(month ? monthRange(month) : {}), type });
+}
 export function financialReport(movements: LedgerMovement[], month?: string) {
-  const items = filterHistory(movements, month ? monthRange(month) : {});
+  const items = reportMovements(movements, month);
   const income = items.filter(m=>m.type === "Ingreso").reduce((sum,m)=>sum+m.amount,0);
   const expenses = items.filter(m=>m.type === "Gasto");
   const spent = expenses.reduce((sum,m)=>sum+m.amount,0);

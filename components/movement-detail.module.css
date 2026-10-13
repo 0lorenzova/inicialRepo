@@ -1,0 +1,12 @@
+.detail { display:grid; gap:14px; min-width:0; }
+.detail h3,.detail h4,.detail p { margin:0; overflow-wrap:anywhere; }
+.detail h3 { font-size:calc(17px * var(--ui-scale,1)); }
+.detail h4 { font-size:calc(13px * var(--ui-scale,1)); margin-bottom:8px; }
+.amount { font-size:clamp(24px,6vw,34px); letter-spacing:-.5px; overflow-wrap:anywhere; }
+.fields { margin:0; }
+.fields>div { display:grid; grid-template-columns:minmax(100px,38%) minmax(0,1fr); gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:calc(13px * var(--ui-scale,1)); line-height:1.5; }
+.fields dt { color:var(--muted); }
+.fields dd { margin:0; color:var(--ink); font-weight:500; white-space:pre-wrap; }
+.fields dt,.fields dd { overflow-wrap:anywhere; min-width:0; }
+.detail small { display:block; margin-top:4px; color:var(--muted); line-height:1.5; }
+@media(max-width:360px) { .fields>div { gap:8px; grid-template-columns:minmax(85px,38%) minmax(0,1fr); } }

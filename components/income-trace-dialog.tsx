@@ -1,5 +1,6 @@
 "use client";
 import { envelopeLabel } from "@/lib/envelope-label";
+import { MovementDetails } from "./movement-detail";
 import { useState } from "react";
 import { IncomeCorrectionEditor } from "./income-correction";
 import { correctionSnapshot, type IncomeCorrection } from "@/lib/income-correction";
@@ -24,7 +25,7 @@ export function IncomeTraceDialog({ledger,movementId,display,hidden,onIncome,onE
     grouped.set(key,{...allocation,amount:(previous?.amount??0)+allocation.amount});
   }
   return <FinanceDialog label="Ruta del ingreso" onClose={onBack}><section className="flow-modal"><header><button type="button" aria-label="Volver al movimiento" onClick={onBack}>‹</button><h2>{trace?"Ruta del ingreso":"Ingreso de origen"}</h2></header><div className="flow-body">
-    <h3 className="trace-name">{hidden?movement?.type:movement?.name}</h3><b>{display(movement?.amount??0)}</b>
+    {movement&&<MovementDetails movement={movement} hidden={hidden} allocations={false}/>}
     {trace?<><p className="flow-intro">Distribución registrada de este ingreso. Los saldos actuales de los sobres pueden haber cambiado.</p>{[...grouped.values()].map((a,index)=>{
       const envelope=envelopes.find(item=>item.id===a.envelopeId);
       const items=envelope?planningItems(envelope,today):[];

@@ -13,9 +13,9 @@
 .controls button,.period button { min-width:44px; min-height:44px; }
 .period { display:flex; align-items:center; gap:12px; margin:18px 0 12px; }
 .period h2 { flex:1; min-width:0; text-align:center; font-size:calc(18px * var(--ui-scale, 1)); overflow-wrap:anywhere; margin:0; }
-.month { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; }
+.month { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
 .weekday { text-align:center; font-size:calc(12px * var(--ui-scale, 1)); padding:8px 0; }
-.day { display:flex; flex-direction:column; gap:3px; align-items:center; justify-content:center; min-width:0; min-height:52px; padding:4px 0; border:1px solid var(--line); border-radius:7px; background:var(--paper); color:var(--ink); }
+.day { display:flex; flex-direction:column; gap:3px; align-items:center; justify-content:center; min-width:0; min-height:74px; padding:6px 2px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); }
 .day[data-today="true"] { border-color:var(--green); box-shadow:inset 0 0 0 1px var(--green); }
 .day small { background:var(--pale); color:var(--ink); border-radius:8px; padding:0 5px; }
 .year { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; }
@@ -37,3 +37,38 @@
 
 /* Cell indicators use the shared origin/today phase instead of a second blink. */
 .calendar .dotHint [data-tone="purple"] { animation:none; opacity:1; }
+
+/* Calendar hierarchy uses theme surfaces; proximity tones keep their shared semantics. */
+.shortcuts { padding:5px; border-radius:14px; background:var(--canvas); }
+.shortcuts button { border-color:transparent; background:transparent; }
+.shortcuts button[aria-pressed="true"] { box-shadow:0 2px 5px #0001; border-color:var(--green); }
+.period { padding-block:10px; border-bottom:1px solid var(--line); }
+.weekday { color:var(--muted); font-weight:700; }
+.day { transition:background .15s,box-shadow .15s; justify-content:flex-start; }
+.dayNumber { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; font-size:calc(13px * var(--ui-scale,1)); }
+.day[data-today="true"] .dayNumber { background:var(--green-dark); color:#fff; }
+.day[data-selected="true"] { outline:2px solid var(--ink); outline-offset:-2px; }
+.day[data-events="true"] { background:color-mix(in srgb,var(--paper) 80%,var(--pale)); }
+.day[data-selected="true"] { background:var(--pale); }
+.day:hover,.year button:hover { box-shadow:inset 0 0 0 1px var(--green); }
+.legend { gap:6px 12px; padding:12px; background:var(--canvas); border-radius:12px; line-height:1.5; }
+.legend>span { justify-content:flex-start; gap:6px; }
+.year button { min-height:100px; padding:14px; align-content:start; text-transform:capitalize; }
+.agendaTitle { font-size:calc(15px * var(--ui-scale,1)); padding-top:16px; border-top:1px solid var(--line); }
+.entry { gap:12px; padding:14px; box-shadow:0 3px 10px #0000000c; align-content:start; background:color-mix(in srgb,var(--paper) 92%,var(--pale)); }
+button.entry:hover { border-color:var(--green); background:var(--pale); }
+.entry:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+.entryContext { display:flex; justify-content:space-between; gap:10px; border-bottom:1px solid var(--line); padding-bottom:10px; align-items:start; }
+.entryContext small { color:var(--muted); font-weight:600; min-width:0; }
+.entryContext time { font-size:calc(11px * var(--ui-scale,1)); white-space:nowrap; color:var(--ink); }
+.entry strong { font-size:calc(14px * var(--ui-scale,1)); }
+@media(min-width:700px) { .day { min-height:88px; gap:6px; } .month { gap:7px; } }
+@media(max-width:380px) { .month { gap:2px; } .day { border-radius:7px; min-height:72px; } .dayNumber { width:24px; height:24px; } .legend { padding:8px; } .entry { padding:12px; } }
+
+.guide { margin:10px 0 16px; color:var(--muted); font-size:calc(12px * var(--ui-scale,1)); }
+.guide>summary { cursor:pointer; min-height:44px; padding:12px 0; color:var(--ink); }
+@media(max-width:600px) {
+  .shortcuts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .shortcuts button { min-width:0; }
+  .controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+}
