@@ -1,5 +1,6 @@
 "use client";
 
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useTemporalDisplay, TemporalDot } from "./temporal-indicator";
 import { PlanningItemSummary } from "./envelope-planning";
 import { FinanceDialog } from "./finance-dialog";
@@ -26,7 +27,7 @@ export function GlobalPlanningDialog({ envelopes, today, filter, onFilter, displ
     <ProximityControls envelopes={envelopes} today={today} value={filter} onChange={onFilter} />
     <p className="flow-intro">Metas y pagos pendientes de todos los sobres, ordenados por fecha. Blanco indica contenido fuera de los períodos de seguimiento; púrpura indica fecha vencida. Los pagos realizados se conservan en el historial.</p>
     <div className={styles.results}>{items.map(({ envelopeId, envelopeName, item }) => <button className={styles.result} type="button" key={`${envelopeId}:${item.id}`} onClick={() => onSelect(envelopeId, item)}>
-      <span className={styles.envelope}>{envelopeName}</span><PlanningItemSummary item={item} today={today} display={display} privateMode={privateMode} />
+      <span className={styles.envelope}>{envelopeLabel(envelopeName)}</span><PlanningItemSummary item={item} today={today} display={display} privateMode={privateMode} />
     </button>)}</div>
     {!items.length && <p className="empty-state">No hay metas ni pagos pendientes en este rango.</p>}
   </div></section></FinanceDialog>;

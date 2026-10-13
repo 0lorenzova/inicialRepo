@@ -1,5 +1,6 @@
 "use client";
 
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { TemporalDot, TemporalThresholdFields } from "@/components/temporal-indicator";
 import { FinanceDialog } from "@/components/finance-dialog";
@@ -88,7 +89,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
 
   return <FinanceDialog label={`Configurar meta de ${envelope.name}`} onClose={onClose}>
     <div className="flow-modal">
-      <header><div><h2>Configurar meta</h2><p className={styles.context}>{envelope.name}</p></div><button type="button" aria-label="Cerrar configuración de meta" onClick={onClose}>×</button></header>
+      <header><div><h2>Configurar meta</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div><button type="button" aria-label="Cerrar configuración de meta" onClick={onClose}>×</button></header>
       <form className={`flow-body ${styles.form}`} onSubmit={submit} noValidate onChange={() => setError("")}>
         <label className={`check-label ${styles.toggle}`}><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} />Activar meta</label>
         {enabled && <>

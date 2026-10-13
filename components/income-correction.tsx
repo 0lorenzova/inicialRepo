@@ -1,4 +1,5 @@
 "use client";
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useState } from "react";
 import { correctionSnapshot, type IncomeCorrection } from "@/lib/income-correction";
 import type { Ledger } from "@/lib/finance-ledger";
@@ -25,9 +26,9 @@ export function IncomeCorrectionEditor({ledger,incomeId,display,onSave,onCancel}
     <h3>Corregir distribución</h3>
     <p className="flow-intro">El ingreso original se conserva. Se registrarán cargas y descargas vinculadas a él, con los saldos actuales. No se registran pagos ni se mueve dinero entre cuentas.</p>
     {!review?<>
-      {envelopes.map(envelope=><label key={envelope.id} className="correction-row"><span>{envelope.name}{envelope.archived?" (archivado)":""}<small>Distribuido: {display(snapshot.amounts[envelope.id]||0)} · Saldo actual: {display(envelope.balance)}</small></span><input aria-label={`Nueva distribución en ${envelope.name}`} type="number" inputMode="numeric" min="0" step="1" disabled={envelope.archived} value={amounts[envelope.id]??""} placeholder="0" onChange={event=>setAmounts({...amounts,[envelope.id]:event.target.value})}/></label>)}
+      {envelopes.map(envelope=><label key={envelope.id} className="correction-row"><span>{envelopeLabel(envelope.name)}{envelope.archived?" (archivado)":""}<small>Distribuido: {display(snapshot.amounts[envelope.id]||0)} · Saldo actual: {display(envelope.balance)}</small></span><input aria-label={`Nueva distribución en ${envelope.name}`} type="number" inputMode="numeric" min="0" step="1" disabled={envelope.archived} value={amounts[envelope.id]??""} placeholder="0" onChange={event=>setAmounts({...amounts,[envelope.id]:event.target.value})}/></label>)}
       <label htmlFor="correction-reason">Motivo de la corrección</label><textarea id="correction-reason" maxLength={300} value={reason} onChange={event=>setReason(event.target.value)}/>
-    </>:<><h4>Revisar cambios</h4>{changes.map(envelope=><div className="trace-row" key={envelope.id}><span>{envelope.name}</span><b>{display(snapshot.amounts[envelope.id]||0)} → {display(Number(amounts[envelope.id]||0))}</b></div>)}<p>{reason}</p></>}
+    </>:<><h4>Revisar cambios</h4>{changes.map(envelope=><div className="trace-row" key={envelope.id}><span>{envelopeLabel(envelope.name)}</span><b>{display(snapshot.amounts[envelope.id]||0)} → {display(Number(amounts[envelope.id]||0))}</b></div>)}<p>{reason}</p></>}
     <div className="review-box"><span>Total distribuido: {display(Number.isFinite(total)?total:0)}</span><span>Quedará sin asignar de este ingreso: {display(Number.isFinite(total)?snapshot.available-total:0)}</span></div>
     <small>El dinero usado fuera de esta distribución no está disponible para corregir. Tampoco se puede retirar más del saldo actual de un sobre.</small>
     {error&&<p className="form-error" role="alert">{error}</p>}

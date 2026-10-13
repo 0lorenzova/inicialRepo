@@ -1,3 +1,4 @@
+import { envelopeLabel } from "./envelope-label";
 import { globalPlanningItems, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
 import { getTemporalState, type GoalTemporalState } from "./envelope-goals";
 import type { LedgerMovement } from "./finance-ledger";
@@ -67,7 +68,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
     if (!item.temporal || !["red","purple"].includes(item.temporal.tone)) continue;
     const stage = item.deadline === today ? "today" : item.temporal.tone;
     const id = `attention:${encodeURIComponent(envelopeId)}:${item.kind}:${encodeURIComponent(item.id)}:${item.deadline}:${stage}`;
-    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeName}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.amount,kind:"attention",tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
+    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.amount,kind:"attention",tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
   }
   for (const envelope of envelopes) {
     if (!isRecurrenceDue(envelope, today) || !envelope.recurrence) continue;
@@ -75,7 +76,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
     const temporal = getTemporalState(dueDate,today).temporal!;
     const id = `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:${temporal.tone}`;
     result.set(id, {
-      id, title: "Aporte pendiente", detail: `${envelope.name}. ${temporal.explanation}`, tone: temporal.tone,
+      id, title: "Aporte pendiente", detail: `${envelopeLabel(envelope.name)}. ${temporal.explanation}`, tone: temporal.tone,
       amount: envelope.recurrence.amount, date: `${dueDate}T00:00`, kind: "reminder",
       destination: { page: "Recordatorios", envelopeId: envelope.id },
     });

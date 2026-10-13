@@ -1,5 +1,6 @@
 "use client";
 
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { TemporalDot, TemporalThresholdFields } from "@/components/temporal-indicator";
@@ -44,7 +45,7 @@ export function ScheduledAmountEditor({ envelopeName, original, today, onSave, o
   }
 
   return <FinanceDialog label="Asignar pago a este sobre" onClose={onClose}><section className="flow-modal">
-    <header><div><h2>{original ? "Configurar importe" : "Programar importe"}</h2><p className={styles.context}>{envelopeName}</p></div><button type="button" onClick={onClose} aria-label="Volver sin guardar">‹</button></header>
+    <header><div><h2>{original ? "Configurar importe" : "Programar importe"}</h2><p className={styles.context}>{envelopeLabel(envelopeName)}</p></div><button type="button" onClick={onClose} aria-label="Volver sin guardar">‹</button></header>
     <form className={`flow-body ${styles.form}`} noValidate onSubmit={submit} onChange={() => setError("")}>
       <p className={styles.hint}>Es un importe previsto para la fecha límite. Guardarlo no mueve dinero; marcarlo Pagado registra un gasto.</p>
       <label htmlFor={`${id}-name`}>Nombre del importe</label><input id={`${id}-name`} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Bono anual" />

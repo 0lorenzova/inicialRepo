@@ -1,4 +1,5 @@
 "use client";
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useState } from "react";
 import { ExpenseCategoryManager } from "./expense-categories";
 import { categoriesForEnvelope, type ExpenseCategory } from "@/lib/expense-categories";
@@ -48,9 +49,9 @@ export function ExpenseClassificationEditor({envelopes,amount,allocations,drafts
       const choices=drafts[envelope.id]??{};
       const count=Object.keys(choices).length;
       return <section className={styles.envelope} key={envelope.id}>
-        <label className={styles.selection}><input type="checkbox" checked={chosen} onChange={event=>toggle(envelope.id,event.target.checked)}/><span>{envelope.icon} {envelope.name}<small>Disponible {display(envelope.balance)}</small></span></label>
-        {chosen&&<><label>Importe de {envelope.name}<input type="number" min="1" step="1" max={amount} value={allocations[envelope.id]} onChange={event=>onAllocations({...allocations,[envelope.id]:event.target.value})}/></label>
-          <details className={styles.inline} open><summary>Categorías de {envelope.name}</summary>
+        <label className={styles.selection}><input type="checkbox" checked={chosen} onChange={event=>toggle(envelope.id,event.target.checked)}/><span>{envelope.icon} {envelopeLabel(envelope.name)}<small>Disponible {display(envelope.balance)}</small></span></label>
+        {chosen&&<><label>Importe de {envelopeLabel(envelope.name)}<input type="number" min="1" step="1" max={amount} value={allocations[envelope.id]} onChange={event=>onAllocations({...allocations,[envelope.id]:event.target.value})}/></label>
+          <details className={styles.inline} open><summary>Categorías de {envelopeLabel(envelope.name)}</summary>
             {categoriesForEnvelope(categories,envelope.id).filter(category=>!category.archived).map(category=><div key={category.id} className={styles.categoryRow}>
               <label className={styles.selection}><input type="checkbox" checked={Object.hasOwn(choices,category.id)} onChange={event=>changeCategory(envelope.id,category.id,event.target.checked)}/><span>{category.name}</span></label>
               {Object.hasOwn(choices,category.id)&&(count>1?<label>Importe · {category.name}<input type="number" min="1" step="1" value={choices[category.id]} onChange={event=>onDrafts({...drafts,[envelope.id]:{...choices,[category.id]:event.target.value}})}/></label>:<small>{display(Number(allocations[envelope.id])||0)}</small>)}

@@ -1,5 +1,6 @@
 "use client";
 
+import { envelopeLabel } from "@/lib/envelope-label";
 import { createPortal } from "react-dom";
 import ViewListOutlined from "@mui/icons-material/ViewListOutlined";
 import GridViewOutlined from "@mui/icons-material/GridViewOutlined";
@@ -198,7 +199,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
               onDoubleClick={event => { event.stopPropagation(); if (pointerType.current === "touch") return; finish(false); onMenu(envelope.id,event.currentTarget); }}
               onPointerDown={event => pointerDown(event, envelope.id)}
               onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title="Doble clic o doble toque: menú del sobre. Mantén pulsado para ordenar"><span aria-hidden="true">{envelope.icon}</span></button>
-            <span className={styles.name}>{envelope.name}</span>
+            <span className={styles.name}>{envelopeLabel(envelope.name)}</span>
             <b className={styles.balance}><small className={styles.balanceLabel}>Saldo actual</small>{(privateMode || envelope.balanceHidden) ? "••••••" : display(envelope.balance)}</b>
             <div className={`envelope-actions ${styles.actions}`}><button type="button" aria-label={`Opciones de ${envelope.name}`} aria-haspopup="menu"
               aria-expanded={menuId === envelope.id} aria-controls={menuId === envelope.id ? "envelope-context-menu" : undefined}

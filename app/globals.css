@@ -345,3 +345,4 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 :is(.theme-dark,.theme-silver,.theme-organic) .setting-row small { color:var(--muted); }
 :is(.theme-dark,.theme-silver,.theme-organic) .switch { background:var(--surface-raised); color:var(--ink); border:1px solid var(--line); }
 :is(.theme-dark,.theme-silver,.theme-organic) .switch.on { background:var(--green-dark); color:#fff; }
+:is(.theme-dark,.theme-silver,.theme-organic) .money-banner b { color:var(--ink); }

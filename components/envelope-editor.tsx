@@ -1,5 +1,6 @@
 "use client";
 
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { suggestEnvelopeIcons, validateEnvelopeIdentity } from "@/lib/envelope-icons";
@@ -49,7 +50,7 @@ export function EnvelopeEditor({ envelope, onSave, onClose }: {
         <label htmlFor={`${id}-icon`}>Icono personalizado</label>
         <input id={`${id}-icon`} value={icon} onChange={event => { setManualIcon(event.target.value); setError(""); }} aria-describedby={`${id}-hint`} autoComplete="off" required />
         <p id={`${id}-hint`} className={styles.hint}>Puedes elegir una sugerencia o escribir cualquier emoji.</p>
-        <div className={styles.preview} aria-label="Vista previa del sobre"><span className={styles.previewIcon} aria-hidden="true">{previewIcon}</span><strong className={styles.previewName}>{name.trim() || "Nuevo sobre"}</strong></div>
+        <div className={styles.preview} aria-label="Vista previa del sobre"><span className={styles.previewIcon} aria-hidden="true">{previewIcon}</span><strong className={styles.previewName}>{envelopeLabel(name.trim() || "Nuevo sobre")}</strong></div>
         {error && <p className={styles.error} role="alert">{error}</p>}
         <div className={styles.actions}><button className="primary" type="submit">{envelope ? "Guardar cambios en el sobre" : "Crear sobre"}</button><button className="secondary" type="button" onClick={onClose}>Cancelar</button></div>
       </form>

@@ -1,4 +1,5 @@
 "use client";
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useState } from "react";
 import { ProductMonthlyComparison } from "./product-monthly-comparison";
 import { FinanceDialog } from "./finance-dialog";
@@ -14,7 +15,7 @@ export function PurchaseProductsEditor({items,onChange,envelopes,total}: {items:
   const update=(key:string,patch:Partial<ProductDraft>)=>onChange(items.map(p=>p.key===key?{...p,...patch}:p));
   const used=items.reduce((sum,p)=>sum+(Number(p.amount)||0),0);
   return <div className={styles.editor}><h3>Productos en este gasto (opcional)</h3>{items.map((p,index)=><fieldset className={styles.card} key={p.key}><legend>Producto {index+1}</legend>
-    <label>Sobre del producto<select aria-label="Sobre del producto" value={p.envelopeId} onChange={event=>update(p.key,{envelopeId:event.target.value,productId:""})}><option value="">Sin vincular a un sobre</option>{envelopes.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></label>
+    <label>Sobre del producto<select aria-label="Sobre del producto" value={p.envelopeId} onChange={event=>update(p.key,{envelopeId:event.target.value,productId:""})}><option value="">Sin vincular a un sobre</option>{envelopes.map(e=><option key={e.id} value={e.id}>{envelopeLabel(e.name)}</option>)}</select></label>
     {(envelopes.find(e=>e.id===p.envelopeId)?.products??[]).some(product=>product.tracking)&&<label>Producto en seguimiento<select aria-label="Producto en seguimiento" value={p.productId} onChange={event=>{const product=envelopes.find(e=>e.id===p.envelopeId)?.products?.find(v=>v.id===event.target.value);update(p.key,{productId:product?.id??"",...(product?{name:product.name}:{})});}}><option value="">Escribir otro producto</option>{envelopes.find(e=>e.id===p.envelopeId)?.products?.filter(v=>v.tracking||v.id===p.productId).map(v=><option key={v.id} value={v.id}>{v.icon} {v.name}</option>)}</select></label>}
     <label>Nombre del producto<input value={p.name} readOnly={Boolean(p.productId)} onChange={event=>update(p.key,{name:event.target.value})}/></label>
     <div className={styles.row}><label>Monto del producto<input type="number" inputMode="numeric" min="0" value={p.amount} onChange={event=>update(p.key,{amount:event.target.value})}/></label><label>Cantidad (opcional)<input type="number" inputMode="decimal" min="0" step="any" value={p.quantity} onChange={event=>update(p.key,{quantity:event.target.value})}/></label></div>
@@ -29,7 +30,7 @@ export function EnvelopeProductsDialog({envelope,movements,today,display,private
   let report;try {report=productReport(movements,envelope.id,month);}catch {report=null;}
   const row=report?.products.find(p=>p.id===detail);
   const save=(product:TrackedProduct)=>{try{onSave(product);setEditing(null);setError("");}catch(cause){setError(cause instanceof Error?cause.message:"No se pudo guardar el producto.");}};
-  return <FinanceDialog label="Productos del sobre" onClose={onClose}><section className="flow-modal"><header><div><h2>Productos</h2><p>{envelope.name}</p></div><button type="button" aria-label="Cerrar productos" onClick={onClose}>×</button></header><div className="flow-body">
+  return <FinanceDialog label="Productos del sobre" onClose={onClose}><section className="flow-modal"><header><div><h2>Productos</h2><p>{envelopeLabel(envelope.name)}</p></div><button type="button" aria-label="Cerrar productos" onClick={onClose}>×</button></header><div className="flow-body">
     {error&&<p className="form-error" role="alert">{error}</p>}
     {editing ? <form className={styles.editor} noValidate onSubmit={event=>{event.preventDefault();save(editing);}}><label>Nombre del producto<input value={editing.name} onChange={event=>setEditing({...editing,name:event.target.value})}/></label><label>Icono del producto<select aria-label="Icono del producto" value={editing.icon} onChange={event=>setEditing({...editing,icon:event.target.value})}>{["📦","🛒","🍷","🍽️","☕","🍫","🍕","🍎"].map(icon=><option key={icon}>{icon}</option>)}</select></label><label className="check-label"><input type="checkbox" checked={editing.tracking} onChange={event=>setEditing({...editing,tracking:event.target.checked})}/>Seguimiento</label><button type="submit" className="primary">Guardar producto</button><button type="button" className="secondary" onClick={()=>{setEditing(null);setError("");}}>Cancelar</button></form> : <>
       <button className="secondary wide" onClick={()=>{setEditing({id:crypto.randomUUID(),name:"",icon:"📦",tracking:true});setDetail(null);}}>＋ Nuevo producto</button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { previewPostponement, type PostponeOption, type Recurrence } from "@/lib/finance-recurrence";
@@ -46,7 +47,7 @@ export function PostponeEditor({ envelope, today, onSave, onClose }: {
 
   return <FinanceDialog label={`Posponer aporte de ${envelope.name}`} onClose={onClose}>
     <div className="flow-modal">
-      <header><div><h2>Posponer aporte</h2><p className={styles.context}>{envelope.name}</p></div><button type="button" aria-label="Cerrar posposición" onClick={onClose}>×</button></header>
+      <header><div><h2>Posponer aporte</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div><button type="button" aria-label="Cerrar posposición" onClick={onClose}>×</button></header>
       <form className={`flow-body ${styles.form}`} onSubmit={submit} noValidate>
         <p className={styles.hint}>El plazo se cuenta desde hoy: {dateLabel(today)}.</p>
         <fieldset className={styles.choices}><legend>¿Cuánto tiempo quieres posponerlo?</legend>{choices.map(choice => <button type="button" key={choice.key} aria-pressed={selected === choice.key} onClick={() => { setSelected(choice.key); setError(""); }}>{choice.label}</button>)}</fieldset>

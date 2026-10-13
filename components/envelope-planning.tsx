@@ -1,5 +1,6 @@
 "use client";
 
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useId, useRef, useState } from "react";
 import type { Recurrence } from "@/lib/finance-recurrence";
 import type { Account } from "@/lib/finance-ledger";
@@ -36,7 +37,7 @@ export function EnvelopePlanningMenu({ envelope, today, display, privateMode, on
   const all = planningItems(envelope, today);
   const items = all.filter(item => !visible || !filter || (planningTone(item) === filter && !item.payment));
   return <FinanceDialog label="Metas e importes de este sobre" maxWidth={960} onClose={onClose}><section className={`flow-modal ${styles.planningDialog}`}>
-    <header><div><h2>Metas e importes de este sobre</h2><p className={styles.context}>{envelope.name}</p></div><button type="button" aria-label="Agregar meta o importe a este sobre" aria-expanded={adding} onClick={()=>setAdding(!adding)}>＋</button><button type="button" aria-label="Cerrar diálogo" onClick={onClose}>×</button></header>
+    <header><div><h2>Metas e importes de este sobre</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div><button type="button" aria-label="Agregar meta o importe a este sobre" aria-expanded={adding} onClick={()=>setAdding(!adding)}>＋</button><button type="button" aria-label="Cerrar diálogo" onClick={onClose}>×</button></header>
     <div className="flow-body">
       {adding && <div className={styles.addActions}><button className="secondary" onClick={()=>onAdd("goal")}>Configurar meta</button><button className="secondary" onClick={()=>onAdd("scheduled")}>Nuevo importe</button></div>}
       {filter && <button className="text-btn" onClick={onAll}>Ver todos</button>}
@@ -62,7 +63,7 @@ export function EnvelopePlanningDetail({ envelope, itemId, kind, today, display,
   const item = planningItems(envelope, today).find(value => value.id === itemId && value.kind === kind);
   const goal = kind === "goal" ? getEnvelopeGoal(envelope, today) : null;
   return <FinanceDialog label="Detalle de meta o importe" onClose={onBack}><section className="flow-modal">
-    <header><button type="button" aria-label={backLabel} onClick={onBack}>‹</button><div><h2>{item ? itemType(item) : "Elemento no disponible"}</h2><p className={styles.context}>{envelope.name}</p></div></header>
+    <header><button type="button" aria-label={backLabel} onClick={onBack}>‹</button><div><h2>{item ? itemType(item) : "Elemento no disponible"}</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div></header>
     <div className="flow-body">{item ? <>
       <h3 className={styles.name}>{privateMode ? itemType(item) : item.name}</h3>
       <div className="review-box"><b>{display(item.amount)}</b><span>Fecha límite: {dateLabel(item.deadline)}</span><span className={styles.heading}>{!item.payment&&item.timingEnabled&&<TemporalBadge tone={planningTone(item)} covered={privateMode||item.coverageHidden?undefined:item.covered} date={item.deadline} today={today} />}{stateText(item)}</span></div>
@@ -78,7 +79,7 @@ export function EnvelopePlanningDetail({ envelope, itemId, kind, today, display,
         {paying && <form className={styles.payment} noValidate onSubmit={event=>{event.preventDefault();if(submitting.current)return;submitting.current=true;try{onPay(Number(amount),accountId);}catch(cause){setError(cause instanceof Error?cause.message:"No se pudo registrar el pago.");submitting.current=false;}}}>
           <label htmlFor={`${id}-paid`}>¿Monto pagado?</label><div className="currency-input"><span>₡</span><input id={`${id}-paid`} type="number" inputMode="numeric" min="1" step="1" value={amount} onChange={event=>setAmount(event.target.value)} /></div>
           <AccountSelector label="Cuenta de pago" accounts={accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/>
-          <p className={styles.context}>Se descontará el monto de {envelope.name} y de la cuenta seleccionada. Confirma el monto real pagado; puede diferir del programado.</p>
+          <p className={styles.context}>Se descontará el monto de {envelopeLabel(envelope.name)} y de la cuenta seleccionada. Confirma el monto real pagado; puede diferir del programado.</p>
           {error && <p className="form-error" role="alert">{error}</p>}<button className="primary wide" type="submit">Confirmar pago</button>
         </form>}
       </>)}

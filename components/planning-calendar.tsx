@@ -1,4 +1,5 @@
 "use client";
+import { envelopeLabel } from "@/lib/envelope-label";
 import { useEffect, useState } from "react";
 import Tooltip from "@mui/material/Tooltip";
 import { calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
@@ -41,7 +42,7 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
   function renderEntries(items:CalendarEntry[]) {
     return <div className={styles.entries}>{items.map(entry=>{
       const tone=calendarEntryTone(entry,today);
-      const content=<><small>{privateMode?"Sobre":entry.envelopeName} · {label(entry.date,{day:"numeric",month:"short"})}</small>{entry.item?<PlanningItemSummary item={entry.item} today={today} display={display} privateMode={privateMode}/>:<><b>Aporte recurrente</b><TemporalBadge tone={tone} date={entry.date} today={today}/><span>{display(entry.amount)}</span><small>Requiere confirmar el aporte</small></>}</>;
+      const content=<><small>{envelopeLabel(privateMode?"Sobre":entry.envelopeName)} · {label(entry.date,{day:"numeric",month:"short"})}</small>{entry.item?<PlanningItemSummary item={entry.item} today={today} display={display} privateMode={privateMode}/>:<><b>Aporte recurrente</b><TemporalBadge tone={tone} date={entry.date} today={today}/><span>{display(entry.amount)}</span><small>Requiere confirmar el aporte</small></>}</>;
       const className=styles.entry;
       if(selection)return <article key={entry.key} className={className}><label className="check-label"><input type="checkbox" checked={selection.isSelected(entry)} onChange={()=>selection.onToggle(entry)} aria-label={`Asignar para ${privateMode?"esta obligación":`${entry.name} · ${entry.envelopeName}`}`}/>Seleccionar para distribuir</label>{content}</article>;
       return onSelect?<button key={entry.key} type="button" className={className} onClick={()=>onSelect(entry)}>{content}</button>:<article key={entry.key} className={className}>{content}</article>;
