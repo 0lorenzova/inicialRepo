@@ -1,5 +1,5 @@
 import {movementDay} from "./finance-history";
-import {postSalaryPayment,salaryState,saveSalaryPeriod,type SalaryLedger,type SalaryApplication} from "./salary-tracking";
+import {postHistoricalSalaryPayment,postSalaryPayment,salaryState,saveSalaryPeriod,type SalaryLedger,type SalaryApplication} from "./salary-tracking";
 import type {SalaryImportDraft} from "./salary-xlsx";
 import type {SalaryImportPeriod} from "./salary-xlsx";
 
@@ -31,11 +31,12 @@ export function importSalaryPeriods<T extends SalaryLedger>(ledger:T,draft:Salar
     const concepts=period.concepts.filter(c=>c.included).map(c=>({id:`${periodId}:${c.id}`,name:c.name,amount:importAmount(c.amount,c.name)}));
     next=saveSalaryPeriod(next,{id:periodId,configId,start:period.start,end:period.end,payDate:period.payDate,earned:period.earned,concepts,notes:period.notes,source},null,today,`Importación revisada de Hoja1, fila ${period.row}`);
     for(const receipt of period.receipts){
-      if(receipt.mode!=="existing"||!receipt.movementId)throw new Error(`Fila ${period.row}, abono ${receipt.column}: selecciona el ingreso existente que corresponde. Los cobros sin conciliar no se importan como deuda impagada.`);
-      const movement=ledger.movements.find(m=>m.id===receipt.movementId&&m.type==="Ingreso");
-      if(!movement?.accountId)throw new Error("El ingreso elegido no existe o no identifica su cuenta.");
-      if(receipt.date!==movementDay(movement.date))throw new Error(`Fila ${period.row}, abono ${receipt.column}: confirma la fecha real del ingreso.`);
-      const group=groups.get(movement.id)??{applications:[],sources:[]};
+      if(receipt.mode!=="existing"&&receipt.mode!=="historical")throw new Error(`Fila ${period.row}, abono ${receipt.column}: selecciona un ingreso existente o confirma que es un pago histórico sin ingreso en la app.`);
+      const movement=receipt.mode==="existing"?ledger.movements.find(m=>m.id===receipt.movementId&&m.type==="Ingreso"):undefined;
+      if(receipt.mode==="existing"&&!movement?.accountId)throw new Error("El ingreso elegido no existe o no identifica su cuenta.");
+      if(movement&&receipt.date!==movementDay(movement.date))throw new Error(`Fila ${period.row}, abono ${receipt.column}: confirma la fecha real del ingreso.`);
+      if(receipt.mode==="historical"&&receipt.movementId)throw new Error("Un pago histórico no debe tener un ingreso vinculado.");
+      const group=(movement?groups.get(movement.id):undefined)??{applications:[],sources:[]};
       for(const [conceptId,value] of Object.entries(receipt.amounts)){
         const amount=importAmount(value,`Abono ${receipt.column}`);
         if(!amount)continue;
@@ -44,7 +45,9 @@ export function importSalaryPeriods<T extends SalaryLedger>(ledger:T,draft:Salar
         const id=`${periodId}:${conceptId}`,existing=group.applications.find(a=>a.periodId===periodId&&a.conceptId===id);
         if(existing)existing.amount+=amount;else group.applications.push({periodId:periodId,conceptId:id,amount});
       }
-      group.sources.push(`${source}:${receipt.column}`);groups.set(movement.id,group);
+      group.sources.push(`${source}:${receipt.column}`);
+      if(movement)groups.set(movement.id,group);
+      else next=postHistoricalSalaryPayment(next,{id:`historical:${source}:${receipt.column}`,configId,date:receipt.date,source:`${source}:${receipt.column}`,notes:`Pago histórico revisado · Hoja1, fila ${period.row}, columna ${receipt.column}`,applications:group.applications},today);
     }
   }
   for(const [movementId,group] of groups){

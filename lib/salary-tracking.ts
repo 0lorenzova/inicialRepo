@@ -6,7 +6,7 @@ export type SalaryConfig = { id:string; employer:string; name:string; currency:"
 export type SalaryConcept = { id:string; name:string; amount:number };
 export type SalaryPeriod = { id:string; configId:string; start:string; end:string; payDate:string; earned:boolean; concepts:SalaryConcept[]; notes:string; source?:string };
 export type SalaryApplication = { periodId:string; conceptId:string; amount:number };
-export type SalaryPayment = { id:string; configId:string; movementId:string; amount:number; date:string; accountId:string; method:string; reference:string; notes:string; applications:SalaryApplication[]; voidReason?:string };
+export type SalaryPayment = { id:string; configId:string; movementId:string; amount:number; date:string; accountId:string; method:string; reference:string; notes:string; applications:SalaryApplication[]; voidReason?:string; historical?:{source:string;recordedAt:string} };
 export type SalaryAudit = { id:string; date:string; action:string; entityId:string; reason:string; before?:unknown };
 export type SalaryState = { configs:SalaryConfig[]; periods:SalaryPeriod[]; payments:SalaryPayment[]; audit:SalaryAudit[] };
 export type SalaryLedger = Ledger & { salary?:SalaryState };
@@ -19,6 +19,7 @@ function total(values:number[]) { const n=values.reduce((s,v)=>s+v,0);ensure(amo
 function audit(state:SalaryState,entityId:string,action:string,reason:string,before?:unknown):SalaryAudit[] { return [...state.audit,{id:crypto.randomUUID(),date:new Date().toISOString(),entityId,action,reason,before}]; }
 export function salaryPaymentValid(ledger:SalaryLedger,payment:SalaryPayment) {
   if(payment.voidReason)return false;
+  if(payment.historical)return Boolean(payment.historical.source&&!payment.movementId&&!payment.accountId&&amountValid(payment.amount)&&payment.amount>0&&validMovementDate(`${payment.date}T12:00`));
   const m=ledger.movements.find(m=>m.id===payment.movementId);
   return Boolean(m&&m.type==="Ingreso"&&m.amount===payment.amount&&m.accountId===payment.accountId&&m.date===payment.date);
 }
@@ -83,18 +84,34 @@ export function saveSalaryPeriod<T extends SalaryLedger>(ledger:T,requested:Sala
   return {...ledger,salary:{...state,periods:original?state.periods.map(p=>p.id===value.id?value:p):[...state.periods,value],audit:audit(state,value.id,"Guardar período",reason.trim(),original)}};
 }
 export type SalaryPaymentInput = { id:string; configId:string; date:string; amount:number; accountId:string; method:string; reference:string; notes:string; applications:SalaryApplication[]; existingMovementId?:string; manual?:Record<string,string>; selections?:FundingSelection[] };
+function validateSalaryApplications(ledger:SalaryLedger,configId:string,applications:SalaryApplication[],amount:number) {
+  const state=salaryState(ledger);
+  ensure(applications.length>0&&new Set(applications.map(a=>`${a.periodId}:${a.conceptId}`)).size===applications.length,"Selecciona los conceptos sin repetirlos.");
+  for(const a of applications) {
+    const p=state.periods.find(p=>p.id===a.periodId&&p.configId===configId&&p.earned),c=p?.concepts.find(c=>c.id===a.conceptId);
+    ensure(c&&amountValid(a.amount)&&a.amount>0&&a.amount<=c.amount-salaryConceptPaid(ledger,a.periodId,a.conceptId),"Una aplicación supera la deuda pendiente o el período no está devengado.");
+  }
+  ensure(total(applications.map(a=>a.amount))===amount,"Distribuye el abono completo entre los conceptos y períodos seleccionados.");
+}
+
+export function postHistoricalSalaryPayment<T extends SalaryLedger>(ledger:T,input:{id:string;configId:string;date:string;source:string;notes:string;applications:SalaryApplication[]},today:string):T {
+  const state=salaryState(ledger);
+  ensure(state.configs.some(c=>c.id===input.configId),"Selecciona un empleador.");
+  ensure(input.id&&input.source.trim()&&!state.payments.some(p=>p.id===input.id||p.historical?.source===input.source),"Este pago histórico ya fue registrado o no identifica su origen.");
+  ensure(salaryDay(input.date)<=salaryDay(today),"Un pago histórico necesita su fecha real, igual o anterior a hoy.");
+  const amount=total(input.applications.map(a=>a.amount));
+  ensure(amount>0,"El pago histórico debe ser mayor que cero.");
+  validateSalaryApplications(ledger,input.configId,input.applications,amount);
+  const payment:SalaryPayment={id:input.id,configId:input.configId,date:input.date,amount,movementId:"",accountId:"",method:"Histórico",reference:"",notes:input.notes,applications:input.applications.map(a=>({...a})),historical:{source:input.source,recordedAt:new Date().toISOString()}};
+  return {...ledger,salary:{...state,payments:[...state.payments,payment],audit:audit(state,payment.id,"Registrar pago histórico","Cobro anterior confirmado; reduce deuda salarial sin crear ingresos ni modificar cuentas o sobres")}};
+}
 export function postSalaryPayment<T extends SalaryLedger>(ledger:T,input:SalaryPaymentInput,today:string):T {
   const state=salaryState(ledger),config=state.configs.find(c=>c.id===input.configId);
   ensure(config,"Selecciona un empleador.");
   ensure(input.id&&!state.payments.some(p=>p.id===input.id),"Este abono ya fue registrado. No se duplicó.");
   ensure(amountValid(input.amount)&&input.amount>0,"El abono debe ser un importe entero mayor que cero.");
   ensure(validMovementDate(input.date)&&input.date.slice(0,10)<=salaryDay(today),"Selecciona la fecha real del cobro, no una fecha futura.");
-  ensure(input.applications.length>0&&new Set(input.applications.map(a=>`${a.periodId}:${a.conceptId}`)).size===input.applications.length,"Selecciona los conceptos sin repetirlos.");
-  for(const a of input.applications) {
-    const p=state.periods.find(p=>p.id===a.periodId&&p.configId===config.id&&p.earned),c=p?.concepts.find(c=>c.id===a.conceptId);
-    ensure(c&&amountValid(a.amount)&&a.amount>0&&a.amount<=c.amount-salaryConceptPaid(ledger,a.periodId,a.conceptId),"Una aplicación supera la deuda pendiente o el período no está devengado.");
-  }
-  ensure(total(input.applications.map(a=>a.amount))===input.amount,"Distribuye el abono completo entre los conceptos y períodos seleccionados.");
+  validateSalaryApplications(ledger,config.id,input.applications,input.amount);
   const movementId=input.existingMovementId||`salary-income:${input.id}`;
   ensure(!state.payments.some(p=>!p.voidReason&&p.movementId===movementId),"Este ingreso ya está vinculado a un abono salarial.");
   let next:Ledger=ledger;
@@ -112,5 +129,5 @@ export function postSalaryPayment<T extends SalaryLedger>(ledger:T,input:SalaryP
 export function unlinkSalaryPayment<T extends SalaryLedger>(ledger:T,paymentId:string,reason:string):T {
   const state=salaryState(ledger),payment=state.payments.find(p=>p.id===paymentId&&!p.voidReason);
   ensure(payment&&reason.trim(),"Selecciona un abono activo y explica la corrección.");
-  return {...ledger,salary:{...state,payments:state.payments.map(p=>p.id===paymentId?{...p,voidReason:reason.trim()}:p),audit:audit(state,paymentId,"Desvincular abono",reason,payment)}};
+  return {...ledger,salary:{...state,payments:state.payments.map(p=>p.id===paymentId?{...p,voidReason:reason.trim()}:p),audit:audit(state,paymentId,payment.historical?"Anular pago histórico":"Desvincular abono",reason,payment)}};
 }

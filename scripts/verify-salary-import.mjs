@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {salarySheetPreview,salaryZipEntries,excelCivilDate} from '../lib/salary-xlsx.ts';
 import {importSalaryPeriods,importPreviewTotals} from '../lib/salary-import.ts';
-import {saveSalaryConfig,salaryPeriodTotals} from '../lib/salary-tracking.ts';
+import {saveSalaryConfig,salaryPeriodTotals,salaryPaymentValid,unlinkSalaryPayment,postHistoricalSalaryPayment} from '../lib/salary-tracking.ts';
 import {postMovement,totals} from '../lib/finance-ledger.ts';
 const raw={F31:'2025-11-01',G31:'2025-11-07',H31:'Salario',I31:'1200',J31:'100',H32:'Moto',I32:'200',J32:'100',J30:'2025-11-08',N31:'999',F37:'2025-11-08',G37:'2025-11-14',H37:'Salario',H38:'Moto'};
 const sheet=Object.fromEntries(Object.entries(raw).map(([k,value])=>[k,{value,numeric:/^\d+$/.test(value),formula:false}]));
@@ -33,6 +33,27 @@ assert.throws(()=>importSalaryPeriods(imported,reviewed,'c',today),/ya fue impor
 for(const change of [p=>p.concepts[0].amount='',p=>p.concepts[0].amount='1.5',p=>p.receipts[0].date='2025-11-09',p=>p.receipts[0].amounts[p.concepts[0].id]='201',p=>p.earned=false]){
   const bad=structuredClone(reviewed);change(bad.periods[0]);assert.throws(()=>importSalaryPeriods(ledger,bad,'c',today));assert.equal(JSON.stringify(ledger),original);
 }
+const historical=structuredClone(reviewed);
+historical.periods[0].receipts[0].mode='historical';historical.periods[0].receipts[0].movementId='';
+const history=importSalaryPeriods(ledger,historical,'c',today);
+assert.equal(history.salary.payments[0].historical.source,`${historical.periods[0].id}:J`);
+assert.equal(history.salary.payments[0].date,'2025-11-08');
+assert.equal(history.salary.payments[0].movementId,'');assert.equal(history.salary.payments[0].accountId,'');
+assert.deepEqual(history.accounts,ledger.accounts);assert.deepEqual(history.envelopes,ledger.envelopes);assert.deepEqual(history.movements,ledger.movements);
+assert.equal(salaryPeriodTotals(history,history.salary.periods[0]).pending,1200);
+const restored=JSON.parse(JSON.stringify(history));assert.equal(salaryPaymentValid(restored,restored.salary.payments[0]),true);
+assert.equal(salaryPeriodTotals(restored,restored.salary.periods[0]).received,200);
+const voided=unlinkSalaryPayment(restored,restored.salary.payments[0].id,'Importe histórico equivocado');
+assert.equal(salaryPeriodTotals(voided,voided.salary.periods[0]).pending,1400);assert.deepEqual(totals(voided),totals(ledger));assert.equal(voided.salary.payments.length,1);
+assert.throws(()=>importSalaryPeriods(history,historical,'c',today),/ya fue importado/);
+for(const change of [p=>p.receipts[0].date='',p=>p.receipts[0].date='2028-01-01',p=>p.receipts[0].movementId='income',p=>p.receipts[0].amounts[p.concepts[0].id]='2000',p=>p.earned=false]) {
+ const bad=structuredClone(historical);change(bad.periods[0]);assert.throws(()=>importSalaryPeriods(ledger,bad,'c',today));assert.equal(JSON.stringify(ledger),original);
+}
+const historicPayment=history.salary.payments[0];
+assert.throws(()=>postHistoricalSalaryPayment(history,{id:'repeat',configId:'c',date:historicPayment.date,source:historicPayment.historical.source,notes:'',applications:historicPayment.applications},today),/ya fue registrado/);
+const mixed=structuredClone(reviewed);mixed.periods[0].receipts.push({...historical.periods[0].receipts[0],id:'extra',column:'K',amounts:{[mixed.periods[0].concepts[0].id]:'100'}});
+const combined=importSalaryPeriods(ledger,mixed,'c',today);
+assert.equal(combined.salary.payments.length,2);assert.equal(salaryPeriodTotals(combined,combined.salary.periods[0]).received,300);assert.deepEqual(totals(combined),totals(ledger));assert.deepEqual(combined.movements,ledger.movements);
 const formula=salarySheetPreview({...sheet,K31:{value:'',numeric:true,formula:true}},hash,'fixture.xlsx');
 assert.equal(formula.periods[0].receipts.length,2,'Formula without cached result must not disappear');
 assert.equal(importPreviewTotals(formula.periods[0]),null);
@@ -47,4 +68,4 @@ const unzipped=await salaryZipEntries(buf);assert.equal(new TextDecoder().decode
 await assert.rejects(()=>salaryZipEntries(new ArrayBuffer(23)));
 const damaged=Buffer.from(fixture);damaged.writeUInt32LE(0xffffffff,damaged.length-6);await assert.rejects(()=>salaryZipEntries(damaged.buffer.slice(damaged.byteOffset,damaged.byteOffset+damaged.byteLength)));
 if(process.argv.includes('--fixture')){const path=join(tmpdir(),'finanzas-salary-import-fixture.xlsx');await writeFile(path,fixture);console.log(`Fixture local: ${path}`);}
-console.log('OK: preview preserves blanks/formulas, dates, discrepancies, explicit confirmation, atomic linking without new money, duplicate protection and bounded XLSX decompression.');
+console.log('OK: historical payments without bank changes, mixed reconciliation, annulment/audit, persistence, duplicate guards; preview preserves blanks/formulas, dates, discrepancies, explicit confirmation, atomic linking without new money, duplicate protection and bounded XLSX decompression.');
