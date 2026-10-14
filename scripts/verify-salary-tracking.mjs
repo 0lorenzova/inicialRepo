@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { saveSalaryConfig, generateSalaryPeriods, saveSalaryPeriod, postSalaryPayment, salaryPeriodTotals, salaryPaymentValid, unlinkSalaryPayment } from '../lib/salary-tracking.ts';
+import { salaryPeriodApplications, saveSalaryConfig, generateSalaryPeriods, saveSalaryPeriod, postSalaryPayment, salaryPeriodTotals, salaryPaymentValid, unlinkSalaryPayment } from '../lib/salary-tracking.ts';
 import { totals } from '../lib/finance-ledger.ts';
 import { resetFinanceData } from '../lib/finance-reset.ts';
 const today='2026-10-14';
@@ -61,3 +61,21 @@ const months=generateSalaryPeriods(monthly,'c',3).salary.periods;
 assert.deepEqual(months.map(p=>p.start),['2028-01-31','2028-02-29','2028-03-31']);
 assert.throws(()=>saveSalaryPeriod(monthly,{...months[0],earned:true},null,today,'devengo'),/futuro/);
 console.log('OK: salary projections, earned concepts, partial/multiple payments, old debt, atomic distribution, linking without duplicates, corrections, config snapshots, reset, month anchors and JSON persistence.');
+
+// Entry and Salary use the same atomic posting operation.
+let entry=saveSalaryConfig(initial,config,null);
+assert.throws(()=>saveSalaryConfig(entry,{...config,id:'duplicate',employer:' EJEMPLO   LOCAL ',name:' semanal '},null),/Ya existe un ingreso con estos mismos datos\./);
+entry=generateSalaryPeriods(entry,'c',2);
+for(const p of entry.salary.periods.slice())entry=saveSalaryPeriod(entry,{...p,earned:true},p,today,'Devengado');
+const period=entry.salary.periods[0];
+assert.throws(()=>saveSalaryPeriod(entry,{...period,id:'duplicate-period'},null,today,'Intento repetido'),/superpone/);
+const input={id:'entry-payment',configId:'c',date:'2026-10-14T09:00',amount:100,accountId:'a',method:'Transferencia',reference:'REF-123',notes:'',name:'Salario semanal',applications:salaryPeriodApplications(entry,'c',period.id,100),manual:{e:'50'}};
+entry=postSalaryPayment(entry,input,today);
+assert.equal(entry.movements.length,1);assert.equal(entry.movements[0].name,'Salario semanal');assert.equal(salaryPeriodTotals(entry,entry.salary.periods[0]).pending,900);assert.deepEqual(totals(entry),{accounts:100,assigned:50,unassigned:50});
+assert.throws(()=>postSalaryPayment(entry,input,today),/ya fue registrado/);
+assert.throws(()=>postSalaryPayment(entry,{...input,id:'retry-new-id'},today),/mismo período/);
+entry=postSalaryPayment(entry,{...input,id:'another-date',date:'2026-10-13T09:00',manual:{}},today);
+entry=postSalaryPayment(entry,{...input,id:'another-period',applications:salaryPeriodApplications(entry,'c',entry.salary.periods[1].id,100),manual:{}},today);
+assert.equal(entry.movements.length,3);assert.equal(entry.salary.payments.length,3);
+assert.throws(()=>salaryPeriodApplications(entry,'c',period.id,9999),/supera/);
+console.log('OK: Entry integration, normalized config duplicates, period duplicates, partial application, exact-reference retry, legitimate repeated weekly salary and different payment dates.');
