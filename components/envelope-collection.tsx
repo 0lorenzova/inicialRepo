@@ -8,7 +8,7 @@ import { useThemeMode } from "@/components/theme-provider";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { canShowThreeColumns, envelopeGridColumns, isAdaptiveEnvelopeGrid, type EnvelopeView } from "@/lib/envelope-view";
 import { getEnvelopeGoal, type GoalSettings } from "@/lib/envelope-goals";
-import { planningIndicatorGroups, planningItems, planningCoverage, proximityLabels, type ProximityFilter, type EnvelopePlanning } from "@/lib/envelope-planning";
+import { planningIndicatorGroups, plannedPaymentWarnings, planningItems, planningCoverage, proximityLabels, type ProximityFilter, type EnvelopePlanning } from "@/lib/envelope-planning";
 import { TemporalDot } from "@/components/temporal-indicator";
 import type { Recurrence } from "@/lib/finance-recurrence";
 import styles from "./envelope-collection.module.css";
@@ -206,7 +206,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
             {(envelope.recurrence || showGoal || indicators.length > 0) && <div className={styles.details}>
               {envelope.recurrence && <small>Próximo aporte: {privateMode ? "••••" : display(envelope.recurrence.amount)} · {new Date(`${envelope.recurrence.nextDate}T12:00:00`).toLocaleDateString("es-CR", { day: "numeric", month: "short", timeZone: "America/Costa_Rica" })}</small>}
               {showGoal && <span className={styles.progressLabel} aria-label={`Meta de ${envelope.name}: ${percentage} por ciento. ${goal.reached ? "Meta alcanzada." : ""}`}>{progressText}</span>}
-              <div className={styles.indicators}>{indicators.map(({tone,late,items}) => <button key={`${tone}-${late}`} className={styles.statusButton} type="button" aria-label={`Metas e importes de ${envelope.name}: ${proximityLabels[tone]}, ${items.length} elementos${late?", pago previsto con atraso":""}`} aria-haspopup="dialog" aria-expanded={planningId === envelope.id} aria-controls={planningId === envelope.id ? "envelope-planning-menu" : undefined} onClick={event => onPlanning(envelope.id, event.currentTarget, tone)}><TemporalDot tone={tone} alert late={late} covered={envelope.balanceHidden?undefined:planningCoverage(items)}/><span>{items.length}</span></button>)}</div>
+              <div className={styles.indicators}>{indicators.map(({tone,late,items}) => <button key={`${tone}-${late}`} className={styles.statusButton} type="button" aria-label={`Metas e importes de ${envelope.name}: ${proximityLabels[tone]}, ${items.length} elementos${late?`, ${plannedPaymentWarnings(items)}`:""}`} aria-haspopup="dialog" aria-expanded={planningId === envelope.id} aria-controls={planningId === envelope.id ? "envelope-planning-menu" : undefined} onClick={event => onPlanning(envelope.id, event.currentTarget, tone)}><TemporalDot tone={tone} alert late={late} lateLabel={plannedPaymentWarnings(items)} covered={envelope.balanceHidden?undefined:planningCoverage(items)}/><span>{items.length}</span></button>)}</div>
             </div>}
             {showGoal && <div className={styles.progressTrack} aria-hidden="true"><span style={{ height: `${goal.fillPercentage}%` }} /></div>}
           </div>;

@@ -166,3 +166,11 @@ export function planningIndicatorGroups(items: PlanningItem[]) {
     return matches.length ? [{tone,late,items:matches}] : [];
   }));
 }
+
+/** Describes planned lateness, independently of today's proximity state. */
+export function plannedPaymentDelayText(days: number): string {
+  return days > 0 ? `Pago previsto con ${days} ${days === 1 ? "día" : "días"} de atraso` : "";
+}
+export function plannedPaymentWarnings(items: Pick<PlanningItem, "deadline" | "plannedPaymentDate" | "payment">[]): string {
+  return [...new Set(items.map(plannedPaymentDelay).filter(days=>days>0))].sort((a,b)=>a-b).map(plannedPaymentDelayText).join("; ");
+}

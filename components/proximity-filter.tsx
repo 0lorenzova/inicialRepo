@@ -4,7 +4,7 @@ import { envelopeLabel } from "@/lib/envelope-label";
 import { useTemporalDisplay, TemporalDot } from "./temporal-indicator";
 import { PlanningItemSummary } from "./envelope-planning";
 import { FinanceDialog } from "./finance-dialog";
-import { globalPlanningItems, planningCoverage, planningTone, proximityLabels, proximityCounts, proximityTones, type PlanningEnvelope, type PlanningItem, type ProximityFilter } from "@/lib/envelope-planning";
+import { globalPlanningItems, plannedPaymentWarnings, planningCoverage, planningTone, proximityLabels, proximityCounts, proximityTones, type PlanningEnvelope, type PlanningItem, type ProximityFilter } from "@/lib/envelope-planning";
 import styles from "./proximity-filter.module.css";
 
 export function ProximityControls({ value, onChange, envelopes, today, home = false, enabled = true, onEnabledChange }: { envelopes: PlanningEnvelope[]; today: string; value?: ProximityFilter; onChange: (value?: ProximityFilter) => void; home?: boolean; enabled?: boolean; onEnabledChange?: (enabled:boolean)=>void }) {
@@ -13,7 +13,7 @@ export function ProximityControls({ value, onChange, envelopes, today, home = fa
   const counts = proximityCounts(all);
   if(!visible)return null;
   return <div className={`${styles.controls} ${home?styles.home:""}`} role="group" aria-label="Filtrar por proximidad">{home?<label className={styles.enable}><span>Filtrar por proximidad</span><input type="checkbox" checked={enabled} onChange={event=>onEnabledChange?.(event.target.checked)}/></label>:<span className={styles.label}>Filtrar por proximidad</span>}{(!home||enabled)&&<div className={styles.colors}>
-    {proximityTones.map(tone => <button key={tone} type="button" aria-label={`Filtrar proximidad: ${proximityLabels[tone]}, ${counts[tone]} elementos`} aria-pressed={value === tone} onClick={() => onChange(tone)}><TemporalDot tone={tone} alert={counts[tone]>0} covered={planningCoverage(all.filter(item=>planningTone(item)===tone))}/><small>{counts[tone]}</small></button>)}
+    {proximityTones.map(tone => <button key={tone} type="button" aria-label={`Filtrar proximidad: ${proximityLabels[tone]}, ${counts[tone]} elementos`} aria-pressed={value === tone} onClick={() => onChange(tone)}><TemporalDot tone={tone} late={Boolean(plannedPaymentWarnings(all.filter(item=>planningTone(item)===tone)))} lateLabel={plannedPaymentWarnings(all.filter(item=>planningTone(item)===tone))} alert={counts[tone]>0} covered={planningCoverage(all.filter(item=>planningTone(item)===tone))}/><small>{counts[tone]}</small></button>)}
   </div>}<button className={styles.all} type="button" aria-pressed={!value} onClick={() => onChange()}>Ver todos</button></div>;
 }
 

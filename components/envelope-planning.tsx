@@ -8,7 +8,7 @@ import { AccountSelector } from "@/components/account-selector";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { useTemporalDisplay, TemporalBadge } from "@/components/temporal-indicator";
 import { getEnvelopeGoal } from "@/lib/envelope-goals";
-import { plannedPaymentDelay, planningItems, planningTone, planningStateText, type PlanningEnvelope, type PlanningItem, type ProximityFilter } from "@/lib/envelope-planning";
+import { plannedPaymentDelay, plannedPaymentDelayText, planningItems, planningTone, planningStateText, type PlanningEnvelope, type PlanningItem, type ProximityFilter } from "@/lib/envelope-planning";
 import styles from "./envelope-planning.module.css";
 
 const dateLabel = (date?: string) => {
@@ -22,8 +22,8 @@ const stateText = planningStateText;
 export function PlanningItemSummary({ item, today, display, privateMode }: { item: PlanningItem; today: string; display: (value: number) => string; privateMode: boolean }) {
   const {visible}=useTemporalDisplay();
   return <span className={styles.item}>
-      <span className={styles.heading}><strong>{privateMode ? itemType(item) : item.name}</strong>{!item.payment&&item.timingEnabled&&<TemporalBadge tone={planningTone(item)} late={plannedPaymentDelay(item)>0} covered={privateMode||item.coverageHidden?undefined:item.covered} date={item.deadline} today={today} />}</span>
-      <span>{itemType(item)} · {display(item.amount)}</span>{item.recurrent&&<small>↻ Recurrente</small>}<span>Fecha límite: {dateLabel(item.deadline)}</span>{item.plannedPaymentDate&&<small>Pago previsto: {dateLabel(item.plannedPaymentDate)}{plannedPaymentDelay(item)>0?" · Pago previsto con atraso":""}</small>}<small>{stateText(item)}</small>{visible&&!privateMode&&!item.coverageHidden&&!item.payment&&item.covered!==undefined&&<small>{item.covered?"Cubierto por el saldo del sobre":"Sin cobertura completa"} · {item.covered?"Aún no pagado":`Faltan ${display(item.shortfall??item.amount)}`}</small>}
+      <span className={styles.heading}><strong>{privateMode ? itemType(item) : item.name}</strong>{!item.payment&&item.timingEnabled&&<TemporalBadge tone={planningTone(item)} late={plannedPaymentDelay(item)>0} lateLabel={plannedPaymentDelayText(plannedPaymentDelay(item))} covered={privateMode||item.coverageHidden?undefined:item.covered} date={item.deadline} today={today} />}</span>
+      <span>{itemType(item)} · {display(item.amount)}</span>{item.recurrent&&<small>↻ Recurrente</small>}<span>Fecha límite: {dateLabel(item.deadline)}</span>{item.plannedPaymentDate&&<small>Pago previsto: {dateLabel(item.plannedPaymentDate)}{plannedPaymentDelay(item)>0?` · ${plannedPaymentDelayText(plannedPaymentDelay(item))}`:""}</small>}<small>{stateText(item)}</small>{visible&&!privateMode&&!item.coverageHidden&&!item.payment&&item.covered!==undefined&&<small>{item.covered?"Cubierto por el saldo del sobre":"Sin cobertura completa"} · {item.covered?"Aún no pagado":`Faltan ${display(item.shortfall??item.amount)}`}</small>}
     </span>;
 }
 
@@ -66,7 +66,7 @@ export function EnvelopePlanningDetail({ envelope, itemId, kind, today, display,
     <header><button type="button" aria-label={backLabel} onClick={onBack}>‹</button><div><h2>{item ? itemType(item) : "Elemento no disponible"}</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div></header>
     <div className="flow-body">{item ? <>
       <h3 className={styles.name}>{privateMode ? itemType(item) : item.name}</h3>
-      <div className="review-box"><b>{display(item.amount)}</b>{item.recurrent&&<span>↻ Recurrente</span>}<span>Fecha límite: {dateLabel(item.deadline)}</span>{item.plannedPaymentDate&&<span>Pago previsto: {dateLabel(item.plannedPaymentDate)}{plannedPaymentDelay(item)>0?" · Pago previsto con atraso":""}</span>}<span className={styles.heading}>{!item.payment&&item.timingEnabled&&<TemporalBadge tone={planningTone(item)} late={plannedPaymentDelay(item)>0} covered={privateMode||item.coverageHidden?undefined:item.covered} date={item.deadline} today={today} />}{stateText(item)}</span></div>
+      <div className="review-box"><b>{display(item.amount)}</b>{item.recurrent&&<span>↻ Recurrente</span>}<span>Fecha límite: {dateLabel(item.deadline)}</span>{item.plannedPaymentDate&&<span>Pago previsto: {dateLabel(item.plannedPaymentDate)}{plannedPaymentDelay(item)>0?` · ${plannedPaymentDelayText(plannedPaymentDelay(item))}`:""}</span>}<span className={styles.heading}>{!item.payment&&item.timingEnabled&&<TemporalBadge tone={planningTone(item)} late={plannedPaymentDelay(item)>0} lateLabel={plannedPaymentDelayText(plannedPaymentDelay(item))} covered={privateMode||item.coverageHidden?undefined:item.covered} date={item.deadline} today={today} />}{stateText(item)}</span></div>
       {goal && <p className={styles.context}>{privateMode ? "Progreso oculto" : `${new Intl.NumberFormat("es-CR", { maximumFractionDigits: 1 }).format(goal.percentage)}% · ${envelope.balanceHidden ? "••••••" : display(envelope.balance)} de ${display(goal.amount)}`}</p>}
       {kind === "scheduled" && !item.payment && <p className={styles.context}>Al seleccionar Pagar se registrará un gasto en este sobre y en la cuenta que elijas.</p>}
       {!item.payment && <button className="primary wide" type="button" onClick={onEdit}>{kind === "goal" ? "Configurar meta" : "Modificar importe"}</button>}

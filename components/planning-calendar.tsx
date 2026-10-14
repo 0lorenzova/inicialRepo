@@ -4,7 +4,7 @@ import { envelopeLabel } from "@/lib/envelope-label";
 import { useEffect, useId, useMemo, useState } from "react";
 import Tooltip from "@mui/material/Tooltip";
 import { calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
-import { proximityTones, planningCoverage, plannedPaymentDelay } from "@/lib/envelope-planning";
+import { proximityTones, planningCoverage, plannedPaymentWarnings, plannedPaymentDelay } from "@/lib/envelope-planning";
 import { calendarProximityMeanings } from "@/lib/planning-calendar";
 import { useTemporalDisplay, TemporalDot, TemporalBadge } from "./temporal-indicator";
 import { PlanningItemSummary } from "./envelope-planning";
@@ -46,8 +46,9 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
     {tonesFor(items).flatMap(tone=>[false,true].map(late=>{
       const group=items.filter(entry=>calendarEntryTone(entry,today)===tone && Boolean(entry.item&&plannedPaymentDelay(entry.item)>0)===late);
       if(!group.length)return null;
-      const hint=calendarDotDescription(group,tone,today,privateMode)+(late?" Pago previsto con atraso.":"");
-      return <Tooltip key={`${tone}-${late}`} {...hintProps} title={hint}><span tabIndex={0} className={`${styles.dotHint} ${tone==="purple"&&!late?styles.origin:""}`} aria-label={hint}><TemporalDot tone={tone} alert late={late} covered={coverage(group)}/></span></Tooltip>;
+      const lateLabel=plannedPaymentWarnings(group.flatMap(entry=>entry.item?[entry.item]:[]));
+      const hint=calendarDotDescription(group,tone,today,privateMode)+(late?` ${lateLabel}.`:"");
+      return <Tooltip key={`${tone}-${late}`} {...hintProps} title={hint}><span tabIndex={0} className={`${styles.dotHint} ${tone==="purple"&&!late?styles.origin:""}`} aria-label={hint}><TemporalDot tone={tone} alert late={late} lateLabel={lateLabel} covered={coverage(group)}/></span></Tooltip>;
     }))}
     {includesToday&&hasOverdue&&<Tooltip {...hintProps} title={calendarDotDescription(overdue,"purple",today,privateMode,true)}><span tabIndex={0} className={`${styles.dotHint} ${styles.echo}`} aria-label={calendarDotDescription(overdue,"purple",today,privateMode,true)}><TemporalDot tone="purple" alert covered={coverage(overdue)}/></span></Tooltip>}
   </span>:null;
