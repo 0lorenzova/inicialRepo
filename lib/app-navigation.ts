@@ -1,4 +1,4 @@
-export const appViews = ["Inicio", "Movimientos", "Sobres", "Cuentas", "Préstamos", "Reportes", "Recordatorios", "Configuración", "Cronograma", "Sin asignar"] as const;
+export const appViews = ["Inicio", "Movimientos", "Sobres", "Cuentas", "Préstamos", "Reportes", "Recordatorios", "Configuración", "Cronograma", "Sin asignar", "Salarios"] as const;
 const overlays = ["new", "envelope", "goal", "account", "repay", "action", "postpone", "notifications", "feedback", "planning", "planningDetail", "scheduled", "incomeTrace", "assignIncome", "proximity", "reset", "products", "expenseCategories", "movementDetail"] as const;
 export type AppNavigation = {
   view: string;

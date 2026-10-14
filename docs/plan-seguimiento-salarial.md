@@ -57,3 +57,8 @@ Leídos los tres pedidos: correcciones/auditoría `fd447b8e`, motor salarial `75
 3. Pantallas y filtros reutilizando el modelo; verificar móvil/PC, privacidad y regreso contextual.
 4. Importador con vista previa, incidencias, confirmación e idempotencia. No importar datos reales durante pruebas.
 5. Publicar un bloque utilizable; informar límites exactos. No declarar completado el módulo con solo este documento.
+
+
+## Implementación incremental del 14 octubre
+Ya implementados modelo puro, integración JSON por usuario, interfaz en Movimientos → Seguimiento de salarios, proyecciones explícitas, confirmación de devengo, conceptos, abonos parciales/multiperíodo, ingreso nuevo o vinculado, distribución existente, filtros y detalle, ajustes auditados y restablecimiento coherente. Las secciones anteriores describen el alcance original; ya no todo está pendiente.
+Pendientes: importador Excel con vista previa e incidencias, decisión de históricos y precisión/multimoneda. No se cargaron datos del archivo real ni se necesita SQL para estas colecciones JSON. Primera versión restringida explícitamente a CRC entero.

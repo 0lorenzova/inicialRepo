@@ -1,5 +1,5 @@
 import { envelopeLabel } from "./envelope-label";
-import { planningItems, planningTone, validateScheduledAmount, type ScheduledAmount, type ProximityFilter, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
+import { planningItems, planningTone, plannedPaymentWarnings, proximityTones, validateScheduledAmount, type ScheduledAmount, type ProximityFilter, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
 import { temporalDistance, getTemporalState, DEFAULT_GOAL_THRESHOLDS } from "./envelope-goals";
 import { validateRecurrence, recurrenceDueDate, contributionStep, recurrenceDates, type Recurrence } from "./finance-recurrence";
 
@@ -9,6 +9,18 @@ export type CalendarEnvelope = PlanningEnvelope & { recurrence?: Recurrence };
 export type CalendarEntry = { key: string; envelopeId: string; envelopeName: string; date: string; name: string; amount: number; item?: PlanningItem; recurrent?: boolean; virtual?: boolean };
 export function calendarEntryTone(entry: CalendarEntry, today: string): ProximityFilter {
   return entry.item ? planningTone(entry.item) : getTemporalState(entry.date, today, DEFAULT_GOAL_THRESHOLDS).temporal?.tone ?? "white";
+}
+
+// A color represents all its members; a late member changes the representative,
+// never creates a second indicator of the same color.
+export function calendarIndicatorGroups(items:CalendarEntry[], today:string, reminders:CalendarEntry[] = []) {
+  const represented=[...new Map([...items,...reminders].map(entry=>[entry.key,entry])).values()];
+  return proximityTones.flatMap(tone=>{
+    const entries=represented.filter(entry=>calendarEntryTone(entry,today)===tone);
+    if(!entries.length)return [];
+    const lateLabel=plannedPaymentWarnings(entries.flatMap(entry=>entry.item?[entry.item]:[]));
+    return [{tone,entries,late:Boolean(lateLabel),lateLabel,echo:reminders.length>0&&tone==="purple"&&!items.some(entry=>calendarEntryTone(entry,today)===tone)}];
+  });
 }
 
 export function calendarOverdueEntries(entries: CalendarEntry[], today: string, before = today) {

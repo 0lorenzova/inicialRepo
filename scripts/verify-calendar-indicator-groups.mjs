@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import {calendarEntries,calendarIndicatorGroups,calendarEntryTone} from '../lib/planning-calendar.ts';
+import {plannedPaymentDelay} from '../lib/envelope-planning.ts';
+const today='2026-10-14';
+const responsibilities=Array.from({length:4},(_,i)=>({id:`r${i}`,name:`Responsabilidad ${i}`,amount:100,deadline:'2026-10-24',active:true,timingEnabled:true,...(i===2?{plannedPaymentDate:'2026-10-27'}:{})}));
+// Field name below intentionally matches the persistent scheduling model.
+const envelope={id:'e',name:'Hogar',balance:1000,scheduledAmounts:responsibilities};
+const entries=calendarEntries([envelope],today);
+assert.equal(entries.length,4);
+const groups=calendarIndicatorGroups(entries,today);
+assert.equal(groups.length,1,'One representative per color, not per rotation state');
+assert.equal(groups[0].entries.length,4);
+assert.equal(groups[0].late,true);
+assert.match(groups[0].lateLabel,/3 días/);
+assert.equal(entries.filter(e=>plannedPaymentDelay(e.item)>0).length,1,'Individual detail retains the responsible member');
+const ordinary=entries.filter(e=>plannedPaymentDelay(e.item)===0);
+assert.equal(calendarIndicatorGroups(ordinary,today)[0].late,false);
+const purple={key:'purple',envelopeId:'other',envelopeName:'Otro',name:'Vencido',date:'2026-10-13',amount:50};
+assert.equal(calendarEntryTone(purple,today),'purple');
+const combined=calendarIndicatorGroups([...entries,purple],today,[purple]);
+assert.equal(combined.length,2);assert.equal(combined.find(g=>g.tone==='purple').entries.length,1);
+assert.equal(calendarIndicatorGroups([],today,[purple])[0].echo,true);
+assert.equal(calendarIndicatorGroups([purple],today,[purple])[0].echo,false);
+console.log('OK: four responsibilities / one rotating representative, individual warning, cleared warning, deduplicated overdue echo.');

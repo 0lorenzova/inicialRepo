@@ -1,8 +1,9 @@
 import type { Ledger } from "./finance-ledger";
 import type { EnvelopePlanning, ScheduledAmount } from "./envelope-planning";
 import type { NotificationState } from "./finance-notifications";
+import type { SalaryState } from "./salary-tracking";
 
-type ResettableData = Ledger & { bank: number; notifications: NotificationState };
+type ResettableData = Ledger & { bank: number; notifications: NotificationState; salary?:SalaryState };
 
 // Keep only the current configuration of each recurring series. Paid history
 // and payment references belong to the ledger being cleared, not preferences.
@@ -21,6 +22,7 @@ export function resetFinanceData<T extends ResettableData>(current: T, initial: 
   const copy = structuredClone(current);
   return {
     ...copy, bank: 0, movements: [], loans: [],
+    ...(copy.salary?{salary:{configs:copy.salary.configs,periods:[],payments:[],audit:[]}}:{}),
     accounts: copy.accounts.map(account => ({ ...account, balance: 0 })),
     envelopes: copy.envelopes.map(envelope => ({ ...envelope, balance: 0,
       ...((envelope as EnvelopePlanning).scheduledAmounts ? { scheduledAmounts: resetPlanning((envelope as EnvelopePlanning).scheduledAmounts) } : {}),

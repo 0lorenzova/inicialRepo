@@ -3,8 +3,8 @@ import { isoWeek } from "@/lib/iso-week";
 import { envelopeLabel } from "@/lib/envelope-label";
 import { useEffect, useId, useMemo, useState } from "react";
 import Tooltip from "@mui/material/Tooltip";
-import { calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
-import { proximityTones, planningCoverage, plannedPaymentWarnings, plannedPaymentDelay } from "@/lib/envelope-planning";
+import { calendarIndicatorGroups, calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
+import { proximityTones, planningCoverage, plannedPaymentDelay } from "@/lib/envelope-planning";
 import { calendarProximityMeanings } from "@/lib/planning-calendar";
 import { useTemporalDisplay, TemporalDot, TemporalBadge } from "./temporal-indicator";
 import { PlanningItemSummary } from "./envelope-planning";
@@ -42,16 +42,13 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
   const months = scale === "Semana" ? [...new Set([range.from.slice(0,7),range.to.slice(0,7)])] : [date.slice(0,7)];
   const tonesFor=(items:CalendarEntry[])=>proximityTones.filter(tone=>items.some(entry=>calendarEntryTone(entry,today)===tone));
   const coverage=(items:CalendarEntry[])=>items.length&&items.every(entry=>entry.item&&!entry.virtual)?planningCoverage(items.map(entry=>entry.item!)):undefined;
-  const dots=(items:CalendarEntry[], includesToday=false)=>showProximity? <span className={styles.dots}>
-    {tonesFor(items).flatMap(tone=>[false,true].map(late=>{
-      const group=items.filter(entry=>calendarEntryTone(entry,today)===tone && Boolean(entry.item&&plannedPaymentDelay(entry.item)>0)===late);
-      if(!group.length)return null;
-      const lateLabel=plannedPaymentWarnings(group.flatMap(entry=>entry.item?[entry.item]:[]));
-      const hint=calendarDotDescription(group,tone,today,privateMode)+(late?` ${lateLabel}.`:"");
-      return <Tooltip key={`${tone}-${late}`} {...hintProps} title={hint}><span tabIndex={0} className={`${styles.dotHint} ${tone==="purple"&&!late?styles.origin:""}`} aria-label={hint}><TemporalDot tone={tone} alert late={late} lateLabel={lateLabel} covered={coverage(group)}/></span></Tooltip>;
-    }))}
-    {includesToday&&hasOverdue&&<Tooltip {...hintProps} title={calendarDotDescription(overdue,"purple",today,privateMode,true)}><span tabIndex={0} className={`${styles.dotHint} ${styles.echo}`} aria-label={calendarDotDescription(overdue,"purple",today,privateMode,true)}><TemporalDot tone="purple" alert covered={coverage(overdue)}/></span></Tooltip>}
-  </span>:null;
+  const dots=(items:CalendarEntry[], includesToday=false)=> {
+    // A calendar cell has one representative per color, even when only one member is late.
+    return showProximity?<span className={styles.dots}>{calendarIndicatorGroups(items,today,includesToday?overdue:[]).map(({tone,entries:group,lateLabel,late,echo})=>{
+      const hint=calendarDotDescription(group,tone,today,privateMode,echo)+(late?` ${lateLabel}.`:"");
+      return <Tooltip key={tone} {...hintProps} title={hint}><span tabIndex={0} className={`${styles.dotHint} ${tone==="purple"&&!late?(echo?styles.echo:includesToday?"":styles.origin):""}`} aria-label={hint}><TemporalDot tone={tone} alert late={late} lateLabel={lateLabel} covered={coverage(group)}/></span></Tooltip>;
+    })}</span>:null;
+  };
   const toneLabel=(items:CalendarEntry[])=>tonesFor(items).map(tone=>`${items.filter(entry=>calendarEntryTone(entry,today)===tone).length} ${calendarProximityMeanings[tone]}`).join(", ");
   const label=(value:string,options:Intl.DateTimeFormatOptions)=>new Intl.DateTimeFormat("es-CR",{timeZone:"America/Costa_Rica",...options}).format(new Date(`${value}T12:00:00Z`));
   function renderEntries(items:CalendarEntry[]) {
