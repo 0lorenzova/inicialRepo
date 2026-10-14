@@ -29,14 +29,14 @@
 .dotHint { display:inline-flex; align-items:center; justify-content:center; min-width:12px; min-height:16px; border-radius:4px; }
 .dotHint:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
 .calendar[data-today-phase="false"] .echo [data-tone="purple"],
-.calendar[data-today-phase="true"] .origin [data-tone="purple"] { opacity:0; }
+.calendar[data-today-phase="true"] .origin [data-tone="purple"]:not([data-late="true"]) { opacity:0; }
 .overdue { margin-top:18px; padding-top:12px; border-top:1px solid var(--line); }
 @media (prefers-reduced-motion: reduce) {
   .calendar .origin, .calendar .echo, .calendar .entry [data-tone="purple"] { opacity:1 !important; }
 }
 
 /* Cell indicators use the shared origin/today phase instead of a second blink. */
-.calendar .dotHint [data-tone="purple"] { animation:none; opacity:1; }
+.calendar .dotHint [data-tone="purple"]:not([data-late="true"]) { animation:none; opacity:1; }
 @media (prefers-reduced-motion: reduce) { .calendar .dotHint [data-tone="purple"] { opacity:1 !important; } }
 
 /* Calendar hierarchy uses theme surfaces; proximity tones keep their shared semantics. */

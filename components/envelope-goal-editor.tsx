@@ -76,6 +76,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
         recurrence = {
           ...envelope.recurrence,
           amount: numeric(recurringAmount), frequency, nextDate,
+          anchorDay: nextDate===envelope.recurrence?.nextDate ? envelope.recurrence.anchorDay : Number(nextDate.slice(-2)),
           intervalDays: frequency === "Personalizado" ? numeric(intervalDays) : undefined,
           snoozedUntil: nextDate === envelope.recurrence?.nextDate ? envelope.recurrence?.snoozedUntil : undefined,
         };
@@ -123,7 +124,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
             <label htmlFor={`${id}-recurring-amount`}>Monto de cada aporte</label>
             <div className="currency-input"><span aria-hidden="true">₡</span><input id={`${id}-recurring-amount`} type="number" inputMode="numeric" min="1" step="1" value={recurringAmount} onChange={event => setRecurringAmount(event.target.value)} /></div>
             <label htmlFor={`${id}-frequency`}>Frecuencia</label>
-            <select id={`${id}-frequency`} value={frequency} onChange={event => { const value = event.target.value as Recurrence["frequency"]; setFrequency(value); proposeDate(value); }}><option value="Semanal">Semanal · cada 7 días</option><option value="Quincenal">Quincenal · cada 15 días</option><option value="Mensual">Mensual</option><option value="Personalizado">Personalizado</option></select>
+            <select id={`${id}-frequency`} value={frequency} onChange={event => { const value = event.target.value as Recurrence["frequency"]; setFrequency(value); proposeDate(value); }}><option value="Semanal">Semanal · cada 7 días</option><option value="Quincenal">Quincenal · cada 15 días</option><option value="Mensual">Mensual</option><option value="Anual">Anual</option><option value="Personalizado">Personalizado</option></select>
             {frequency === "Personalizado" && <><label htmlFor={`${id}-interval`}>Repetir cada cuántos días</label><input id={`${id}-interval`} type="number" inputMode="numeric" min="1" step="1" value={intervalDays} onChange={event => { setIntervalDays(event.target.value); proposeDate(frequency, event.target.value); }} /></>}
             <label htmlFor={`${id}-next-date`}>Próximo aporte</label>
             <input id={`${id}-next-date`} type="date" value={nextDate} onChange={event => setNextDate(event.target.value)} />

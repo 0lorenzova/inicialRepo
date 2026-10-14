@@ -1,10 +1,10 @@
 "use client";
 import { isoWeek } from "@/lib/iso-week";
 import { envelopeLabel } from "@/lib/envelope-label";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Tooltip from "@mui/material/Tooltip";
 import { calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
-import { proximityTones, planningCoverage } from "@/lib/envelope-planning";
+import { proximityTones, planningCoverage, plannedPaymentDelay } from "@/lib/envelope-planning";
 import { calendarProximityMeanings } from "@/lib/planning-calendar";
 import { useTemporalDisplay, TemporalDot, TemporalBadge } from "./temporal-indicator";
 import { PlanningItemSummary } from "./envelope-planning";
@@ -19,8 +19,14 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
   const [todayPhase,setTodayPhase]=useState(false);
   const [navigationOpen,setNavigationOpen]=useState(false);
   const navigationId=useId();
-  const entries=calendarEntries(envelopes,today).filter(entry=>!selection||entry.item), range=calendarRange(date,scale);
-  const overdue=calendarOverdueEntries(entries,today),hasOverdue=overdue.length>0;
+  const range=calendarRange(date,scale);
+  const projected=useMemo(()=>{
+    const period=calendarRange(date,scale);
+    const window=scale==="Semana"?{from:calendarRange(period.from,"Mes").from,to:calendarRange(period.to,"Mes").to}:period;
+    return calendarEntries(envelopes,today,window);
+  },[envelopes,today,date,scale]);
+  const entries=projected.filter(entry=>!selection||entry.item);
+  const overdue=calendarOverdueEntries(entries,today).filter(entry=>!entry.item||plannedPaymentDelay(entry.item)===0),hasOverdue=overdue.length>0;
   useEffect(()=>{
     if(!hasOverdue)return;
     const motion=window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -35,9 +41,14 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
   const visible=entries.filter(entry=>entry.date>=range.from&&entry.date<=range.to);
   const months = scale === "Semana" ? [...new Set([range.from.slice(0,7),range.to.slice(0,7)])] : [date.slice(0,7)];
   const tonesFor=(items:CalendarEntry[])=>proximityTones.filter(tone=>items.some(entry=>calendarEntryTone(entry,today)===tone));
-  const coverage=(items:CalendarEntry[])=>items.length&&items.every(entry=>entry.item)?planningCoverage(items.map(entry=>entry.item!)):undefined;
+  const coverage=(items:CalendarEntry[])=>items.length&&items.every(entry=>entry.item&&!entry.virtual)?planningCoverage(items.map(entry=>entry.item!)):undefined;
   const dots=(items:CalendarEntry[], includesToday=false)=>showProximity? <span className={styles.dots}>
-    {tonesFor(items).map(tone=><Tooltip key={tone} {...hintProps} title={calendarDotDescription(items,tone,today,privateMode)}><span tabIndex={0} className={`${styles.dotHint} ${tone==="purple"?styles.origin:""}`} aria-label={calendarDotDescription(items,tone,today,privateMode)}><TemporalDot tone={tone} alert covered={coverage(items.filter(entry=>calendarEntryTone(entry,today)===tone))}/></span></Tooltip>)}
+    {tonesFor(items).flatMap(tone=>[false,true].map(late=>{
+      const group=items.filter(entry=>calendarEntryTone(entry,today)===tone && Boolean(entry.item&&plannedPaymentDelay(entry.item)>0)===late);
+      if(!group.length)return null;
+      const hint=calendarDotDescription(group,tone,today,privateMode)+(late?" Pago previsto con atraso.":"");
+      return <Tooltip key={`${tone}-${late}`} {...hintProps} title={hint}><span tabIndex={0} className={`${styles.dotHint} ${tone==="purple"&&!late?styles.origin:""}`} aria-label={hint}><TemporalDot tone={tone} alert late={late} covered={coverage(group)}/></span></Tooltip>;
+    }))}
     {includesToday&&hasOverdue&&<Tooltip {...hintProps} title={calendarDotDescription(overdue,"purple",today,privateMode,true)}><span tabIndex={0} className={`${styles.dotHint} ${styles.echo}`} aria-label={calendarDotDescription(overdue,"purple",today,privateMode,true)}><TemporalDot tone="purple" alert covered={coverage(overdue)}/></span></Tooltip>}
   </span>:null;
   const toneLabel=(items:CalendarEntry[])=>tonesFor(items).map(tone=>`${items.filter(entry=>calendarEntryTone(entry,today)===tone).length} ${calendarProximityMeanings[tone]}`).join(", ");
@@ -45,8 +56,9 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
   function renderEntries(items:CalendarEntry[]) {
     return <div className={styles.entries}>{items.map(entry=>{
       const tone=calendarEntryTone(entry,today);
-      const content=<><span className={styles.entryContext}><small>{envelopeLabel(privateMode?"Sobre":entry.envelopeName)}</small><time dateTime={entry.date}>{label(entry.date,{day:"numeric",month:"short"})}</time></span>{entry.item?<PlanningItemSummary item={entry.item} today={today} display={display} privateMode={privateMode}/>:<><b>Aporte recurrente</b><TemporalBadge tone={tone} date={entry.date} today={today}/><span>{display(entry.amount)}</span><small>Requiere confirmar el aporte</small></>}</>;
+      const content=<><span className={styles.entryContext}><small>{envelopeLabel(privateMode?"Sobre":entry.envelopeName)}</small><time dateTime={entry.date}>{label(entry.date,{day:"numeric",month:"short"})}</time></span>{entry.item?<PlanningItemSummary item={entry.item} today={today} display={display} privateMode={privateMode}/>:<><b>↻ Aporte recurrente</b><TemporalBadge tone={tone} date={entry.date} today={today}/><span>{display(entry.amount)}</span><small>{entry.virtual?"Previsión · Recurrente":"Recurrente · Requiere confirmar el aporte"}</small></>}</>;
       const className=styles.entry;
+      if(entry.virtual)return <article key={entry.key} className={className}>{content}<small>Previsión de consulta. No es un pago ni una asignación registrada.</small></article>;
       if(selection)return <article key={entry.key} className={className}><label className="check-label"><input type="checkbox" checked={selection.isSelected(entry)} onChange={()=>selection.onToggle(entry)} aria-label={`Asignar para ${privateMode?"esta obligación":`${entry.name} · ${entry.envelopeName}`}`}/>Seleccionar para distribuir</label>{content}</article>;
       return onSelect?<button key={entry.key} type="button" className={className} onClick={()=>onSelect(entry)}>{content}</button>:<article key={entry.key} className={className}>{content}</article>;
     })}</div>;
@@ -59,10 +71,10 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
     </div>
     <div className={styles.period}><button className="secondary" aria-label="Período anterior" onClick={()=>changeCalendar(shiftCalendar(date,scale,-1),scale)}>‹</button><h2>{scale==="Año"?date.slice(0,4):scale==="Semana"?`Semana ${isoWeek(date).week} · ${label(date,{month:"long",year:"numeric"})}`:label(date,scale==="Mes"?{month:"long",year:"numeric"}:{day:"numeric",month:"long",year:"numeric"})}</h2><button className="secondary" aria-label="Período siguiente" onClick={()=>changeCalendar(shiftCalendar(date,scale,1),scale)}>›</button></div>
     <details className={styles.guide}><summary>Cómo leer el calendario</summary>
-    <p className="flow-intro">Fechas pendientes guardadas en tus sobres. Las repeticiones muestran su próxima ocurrencia registrada; ningún aporte ni pago se realiza automáticamente.</p>
+    <p className="flow-intro">Fechas pendientes guardadas en tus sobres. Las repeticiones incluyen previsiones futuras para el período consultado; ningún aporte ni pago se realiza automáticamente.</p>
     {showProximity&&<div className={styles.legend} aria-label="Significado de los indicadores de proximidad">{proximityTones.map(tone=><Tooltip key={tone} {...hintProps} title={calendarDotDescription(entries,tone,today,privateMode)}><span><TemporalDot tone={tone}/>{calendarProximityMeanings[tone]}</span></Tooltip>)}</div>}
     {showProximity&&!privateMode&&<p className="flow-intro">Sobre cerrado: obligaciones cubiertas. Abierto: falta dinero. La cobertura no significa que estén pagadas. Los aportes recurrentes y las leyendas muestran un icono de referencia.</p>}
-    {showProximity&&hasOverdue&&<p className="flow-intro">El sobre púrpura alterna cada segundo entre su fecha original y hoy como aviso. No cambia las fechas ni suma pagos al día actual.</p>}
+    {showProximity&&hasOverdue&&<p className="flow-intro">El sobre púrpura alterna cada segundo entre su fecha original y hoy como aviso. Si además hay pago previsto con atraso, permanece en su fecha y alterna parpadeo y giro 3D. No cambia fechas ni registra pagos.</p>}
     </details>
     {(scale==="Mes"||scale==="Semana")&&months.map(month=>{const grid=calendarDays(`${month}-01`);return <section key={month}>{scale==="Semana"&&<h3>{label(`${month}-01`,{month:"long",year:"numeric"})}</h3>}<div className={styles.month} aria-label="Calendario mensual">{["L","M","X","J","V","S","D"].map(day=><span className={styles.weekday} key={day} aria-hidden="true">{day}</span>)}{Array.from({length:grid.offset},(_,i)=><span key={`blank-${i}`}/>)}{grid.dates.map(day=>{const items=entries.filter(entry=>entry.date===day);return <button type="button" key={day} className={styles.day} data-today={day===today} data-events={items.length>0} data-selected={scale==="Semana"?day>=range.from&&day<=range.to:day===date} aria-current={day===today?"date":undefined} aria-pressed={scale==="Semana"?day>=range.from&&day<=range.to:day===date} aria-label={`${label(day,{dateStyle:"long"})}: ${items.length} ${items.length===1?"pendiente":"pendientes"}${showProximity&&items.length?`, ${toneLabel(items)}`:""}`} onClick={()=>changeCalendar(day,"Día")}><b className={styles.dayNumber}>{Number(day.slice(-2))}</b>{dots(items,day===today)}{showProximity&&items.length>0&&<small>{items.length}<span className={styles.srOnly}> pendientes</span></small>}</button>;})}</div></section>;})}
     {scale==="Año"&&<div className={styles.year}>{Array.from({length:12},(_,i)=>`${date.slice(0,4)}-${String(i+1).padStart(2,"0")}-01`).map(day=>{const items=entries.filter(entry=>entry.date.slice(0,7)===day.slice(0,7));return <button type="button" className="secondary" key={day} aria-label={`${label(day,{month:"long"})}: ${items.length} ${items.length===1?"pendiente":"pendientes"}${showProximity&&items.length?`, ${toneLabel(items)}`:""}`} onClick={()=>changeCalendar(day,"Mes")}><b>{label(day,{month:"long"})}</b>{dots(items,day.slice(0,7)===today.slice(0,7))}{showProximity&&<small>{items.length} {items.length===1?"pendiente":"pendientes"}</small>}</button>;})}</div>}

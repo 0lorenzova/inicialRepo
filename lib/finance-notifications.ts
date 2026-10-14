@@ -1,5 +1,5 @@
 import { envelopeLabel } from "./envelope-label";
-import { globalPlanningItems, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
+import { globalPlanningItems, plannedPaymentDelay, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
 import { getTemporalState, type GoalTemporalState } from "./envelope-goals";
 import type { LedgerMovement } from "./finance-ledger";
 import { isRecurrenceDue, recurrenceDueDate, type Recurrence } from "./finance-recurrence";
@@ -27,6 +27,7 @@ export type FinanceNotification = {
   kind: "movement" | "reminder" | "attention";
   tone?: GoalTemporalState["tone"];
   covered?: boolean;
+  plannedLate?: boolean;
   destination: NotificationDestination;
 };
 export type NotificationEnvelope = PlanningEnvelope & { recurrence?: Recurrence };
@@ -68,7 +69,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
     if (!item.temporal || !["red","purple"].includes(item.temporal.tone)) continue;
     const stage = item.deadline === today ? "today" : item.temporal.tone;
     const id = `attention:${encodeURIComponent(envelopeId)}:${item.kind}:${encodeURIComponent(item.id)}:${item.deadline}:${stage}`;
-    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.amount,kind:"attention",tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
+    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.amount,kind:"attention",plannedLate:plannedPaymentDelay(item)>0,tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
   }
   for (const envelope of envelopes) {
     if (!isRecurrenceDue(envelope, today) || !envelope.recurrence) continue;

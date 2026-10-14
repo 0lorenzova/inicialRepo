@@ -27,3 +27,18 @@
 @media (prefers-reduced-motion: reduce) {
   .dot[data-tone="purple"][data-alert="true"] { animation:none; opacity:1; }
 }
+
+/* The first two seconds blink; the last two perform one full 3D turn. */
+@keyframes paymentTurn { from { transform:perspective(80px) rotateY(0deg); } to { transform:perspective(80px) rotateY(360deg); } }
+@keyframes blinkThenTurn {
+  0% { opacity:1; transform:perspective(80px) rotateY(0deg); animation-timing-function:steps(1,end); }
+  25% { opacity:0; transform:perspective(80px) rotateY(0deg); animation-timing-function:steps(1,end); }
+  50% { opacity:1; transform:perspective(80px) rotateY(0deg); animation-timing-function:linear; }
+  100% { opacity:1; transform:perspective(80px) rotateY(360deg); }
+}
+.dot[data-late="true"] { animation:paymentTurn 2000ms linear infinite; }
+.dot[data-tone="purple"][data-alert="true"][data-late="true"] { animation:blinkThenTurn 4000ms linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .dot[data-late="true"], .dot[data-tone="purple"][data-alert="true"][data-late="true"] { animation:none; opacity:1; transform:none; }
+  .dot[data-late="true"] { outline:1px dashed currentColor; outline-offset:2px; border-radius:3px; }
+}

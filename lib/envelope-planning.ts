@@ -3,7 +3,7 @@ import { postMovement, type Ledger } from "./finance-ledger";
 import { previewPostponement } from "./finance-recurrence";
 import { temporalDistance } from "./envelope-goals";
 
-export type ScheduledRepetition = { frequency: "daily" | "weekly" | "monthly"; anchorDay: number; seriesId: string };
+export type ScheduledRepetition = { frequency: "daily" | "weekly" | "monthly" | "yearly"; anchorDay: number; seriesId: string; endDate?: string };
 
 export type ScheduledAmount = {
   id: string;
@@ -11,6 +11,7 @@ export type ScheduledAmount = {
   amount: number;
   deadline: string;
   plannedPaymentDate?: string;
+  occurrenceDate?: string;
   thresholds?: GoalThresholds;
   active: boolean;
   timingEnabled: boolean;
@@ -19,7 +20,7 @@ export type ScheduledAmount = {
 };
 export type EnvelopePlanning = { scheduledAmounts?: ScheduledAmount[]; balanceHidden?: boolean };
 export type PlanningEnvelope = GoalSettings & EnvelopePlanning & { id: string; name: string; balance: number; archived?: boolean };
-export type PlanningItem = { id: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string; plannedPaymentDate?: string; temporal: GoalTemporalState | null; timingEnabled: boolean; greenDays?: number; payment?: ScheduledAmount["payment"]; covered?: boolean; coverageHidden?: boolean; fundedAmount?: number; shortfall?: number };
+export type PlanningItem = { id: string; kind: "goal" | "scheduled"; recurrent?: boolean; name: string; amount: number; deadline?: string; plannedPaymentDate?: string; temporal: GoalTemporalState | null; timingEnabled: boolean; greenDays?: number; payment?: ScheduledAmount["payment"]; covered?: boolean; coverageHidden?: boolean; fundedAmount?: number; shortfall?: number };
 export const proximityTones = ["white", "green", "yellow", "red", "purple"] as const;
 export type ProximityFilter = typeof proximityTones[number];
 export const proximityLabels = { white: "Blanco", green: "Verde", yellow: "Amarillo", red: "Rojo", purple: "Púrpura" };
@@ -47,7 +48,7 @@ export function planningItems(envelope: PlanningEnvelope, today: string): Planni
     let temporal: GoalTemporalState | null = null;
     try { if (!item.payment) temporal = getTemporalState(item.deadline, today, item.thresholds ?? DEFAULT_GOAL_THRESHOLDS).temporal; }
     catch { /* Preserve legacy planning data; invalid optional dates never break financial screens. */ }
-    items.push({ id: item.id, kind: "scheduled", name: item.name, amount: item.amount, deadline: item.deadline, plannedPaymentDate: item.plannedPaymentDate, temporal, greenDays: (item.thresholds ?? DEFAULT_GOAL_THRESHOLDS).green, timingEnabled: item.timingEnabled !== false, payment: item.payment });
+    items.push({ id: item.id, kind: "scheduled", recurrent: Boolean(item.repetition), name: item.name, amount: item.amount, deadline: item.deadline, plannedPaymentDate: item.plannedPaymentDate, temporal, greenDays: (item.thresholds ?? DEFAULT_GOAL_THRESHOLDS).green, timingEnabled: item.timingEnabled !== false, payment: item.payment });
   }
   return allocatePlanningCoverage(items.sort((a,b) => (a.deadline || "9999").localeCompare(b.deadline || "9999") || a.id.localeCompare(b.id)), envelope.balance).map(item=>({...item,coverageHidden:envelope.balanceHidden||undefined}));
 }
@@ -91,16 +92,18 @@ export function validateScheduledAmount(item: ScheduledAmount): void {
     catch { throw new Error("Selecciona una fecha prevista de pago válida."); }
   }
   if (item.timingEnabled && item.thresholds) validateTemporalSettings(item.deadline, item.thresholds);
+  if (item.occurrenceDate) temporalDistance(item.occurrenceDate,item.occurrenceDate);
+  if (item.repetition?.endDate) temporalDistance(item.repetition.endDate,item.repetition.endDate);
   if (item.repetition) nextScheduledDate(item);
 }
 
 export function nextScheduledDate(item: ScheduledAmount): string {
   const repeat = item.repetition;
-  if (!repeat || !["daily", "weekly", "monthly"].includes(repeat.frequency) || !repeat.seriesId) throw new Error("Selecciona una frecuencia válida para repetir el importe.");
-  return previewPostponement(item.deadline, { unit: repeat.frequency === "monthly" ? "months" : "days", amount: repeat.frequency === "weekly" ? 7 : 1 }, repeat.anchorDay);
+  if (!repeat || !["daily", "weekly", "monthly", "yearly"].includes(repeat.frequency) || !repeat.seriesId) throw new Error("Selecciona una frecuencia válida para repetir el importe.");
+  return previewPostponement(item.occurrenceDate ?? item.deadline, { unit: ["monthly","yearly"].includes(repeat.frequency) ? "months" : "days", amount: repeat.frequency === "yearly" ? 12 : repeat.frequency === "weekly" ? 7 : 1 }, repeat.anchorDay);
 }
 
-const comparable = (item: ScheduledAmount) => JSON.stringify([item.id, item.name, item.amount, item.deadline, item.plannedPaymentDate, item.active, item.timingEnabled, ...( ["green", "yellow", "red"] as const).map(tone => item.thresholds?.[tone] ?? null), item.repetition?.frequency, item.repetition?.anchorDay, item.repetition?.seriesId]);
+const comparable = (item: ScheduledAmount) => JSON.stringify([item.id, item.name, item.amount, item.deadline, item.plannedPaymentDate, item.occurrenceDate, item.active, item.timingEnabled, ...( ["green", "yellow", "red"] as const).map(tone => item.thresholds?.[tone] ?? null), item.repetition?.frequency, item.repetition?.anchorDay, item.repetition?.seriesId, item.repetition?.endDate]);
 
 // Update only the selected planning item on the current envelope. Never copy a stale balance.
 export function saveScheduledAmount<T extends PlanningEnvelope>(envelopes: T[], envelopeId: string, requested: ScheduledAmount, original: ScheduledAmount | null): T[] {
@@ -113,7 +116,8 @@ export function saveScheduledAmount<T extends PlanningEnvelope>(envelopes: T[], 
   if (original ? !current || original.id !== requested.id || comparable(current) !== comparable(original) : Boolean(current)) {
     throw new Error("El importe cambió mientras lo editabas. Cierra el formulario y vuelve a abrirlo.");
   }
-  const updated = { ...requested, name: requested.name.trim(), thresholds: requested.thresholds ? { ...requested.thresholds } : undefined };
+  const occurrenceDate = requested.occurrenceDate ?? original?.occurrenceDate ?? (original?.repetition ? original.deadline : undefined);
+  const updated = { ...requested, ...(occurrenceDate ? {occurrenceDate} : {}), name: requested.name.trim(), thresholds: requested.thresholds ? { ...requested.thresholds } : undefined };
   return envelopes.map(item => item.id === envelopeId ? { ...item, scheduledAmounts: original ? items.map(existing => existing.id === requested.id ? updated : existing) : [...items, updated] } : item);
 }
 
@@ -122,7 +126,7 @@ export function payScheduledAmount(ledger: Ledger, envelopeId: string, itemId: s
   const item = envelope?.scheduledAmounts?.find(item => item.id === itemId && item.active);
   if (!item) throw new Error("El importe ya no está activo.");
   if (item.payment) throw new Error("Este importe ya está pagado. No se registró otro gasto.");
-  const following = item.repetition ? { ...item, id: `scheduled:${item.repetition.seriesId}:${nextScheduledDate(item)}`, deadline: nextScheduledDate(item), plannedPaymentDate: undefined, payment: undefined } : null;
+  const following = item.repetition && (!item.repetition.endDate || nextScheduledDate(item)<=item.repetition.endDate) ? { ...item, id: `scheduled:${item.repetition.seriesId}:${nextScheduledDate(item)}`, deadline: nextScheduledDate(item), occurrenceDate: nextScheduledDate(item), plannedPaymentDate: undefined, payment: undefined } : null;
   if (following && envelope!.scheduledAmounts!.some(p => p.id === following.id || (p.repetition?.seriesId === item.repetition!.seriesId && p.deadline === following.deadline))) throw new Error("La siguiente ocurrencia ya existe. Revisa la programación antes de pagar.");
   const movementId = `scheduled-payment:${envelopeId}:${itemId}`;
   const next = postMovement(ledger, { id: movementId, type: "Gasto", amount, accountId, envelopeAllocations: [{ id: envelopeId, amount }], date, name: `Pago: ${item.name}`, category: "Importe programado" });
@@ -153,4 +157,12 @@ export function moveScheduledAmount<T extends PlanningEnvelope>(envelopes: T[], 
   if (comparable(current)!==comparable(original)) throw new Error("El importe cambió. Vuelve a abrirlo antes de moverlo.");
   if (target.scheduledAmounts?.some(item=>item.id===current.id || (current.repetition && item.repetition?.seriesId===current.repetition.seriesId && item.deadline===current.deadline))) throw new Error("El destino ya contiene esa programación.");
   return envelopes.map(envelope=>envelope.id===sourceId ? { ...envelope, scheduledAmounts: envelope.scheduledAmounts!.filter(item=>item.id!==current.id) } : envelope.id===targetId ? { ...envelope, scheduledAmounts: [...(envelope.scheduledAmounts??[]),current] } : envelope);
+}
+
+// Separate indicators with different warnings, even when they share a proximity tone.
+export function planningIndicatorGroups(items: PlanningItem[]) {
+  return proximityTones.flatMap(tone => [false,true].flatMap(late => {
+    const matches=items.filter(item=>!item.payment && planningTone(item)===tone && (plannedPaymentDelay(item)>0)===late);
+    return matches.length ? [{tone,late,items:matches}] : [];
+  }));
 }

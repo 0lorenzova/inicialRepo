@@ -14,7 +14,7 @@ const comparable = (field: typeof editableFields[number], value: unknown) => {
   if (field !== "recurrence") return value;
   const r = value as Recurrence;
   // snoozedUntil is not a form field; jsonb may also reorder object keys.
-  return { amount: r.amount, frequency: r.frequency, nextDate: r.nextDate, intervalDays: r.frequency === "Personalizado" ? r.intervalDays : undefined };
+  return { anchorDay:r.anchorDay,endDate:r.endDate,amount: r.amount, frequency: r.frequency, nextDate: r.nextDate, intervalDays: r.frequency === "Personalizado" ? r.intervalDays : undefined };
 };
 
 // A form edits planning fields, never the balance it saw when it opened.

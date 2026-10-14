@@ -2,7 +2,9 @@ import { assign, type Ledger, type LedgerEnvelope } from "./finance-ledger";
 
 export type Recurrence = {
   amount: number;
-  frequency: "Semanal" | "Quincenal" | "Mensual" | "Personalizado";
+  frequency: "Semanal" | "Quincenal" | "Mensual" | "Anual" | "Personalizado";
+  anchorDay?: number;
+  endDate?: string;
   intervalDays?: number;
   nextDate: string;
   snoozedUntil?: string;
@@ -33,11 +35,13 @@ export function validateRecurrence(recurrence: Recurrence): void {
   if (!Number.isSafeInteger(recurrence.amount) || recurrence.amount <= 0) {
     throw new Error("El aporte recurrente debe ser un monto entero mayor que cero.");
   }
-  if (!["Semanal", "Quincenal", "Mensual", "Personalizado"].includes(recurrence.frequency)) {
+  if (!["Semanal", "Quincenal", "Mensual", "Anual", "Personalizado"].includes(recurrence.frequency)) {
     throw new Error("Selecciona una frecuencia válida para el aporte.");
   }
   if (recurrence.frequency === "Personalizado") validateDayInterval(recurrence.intervalDays);
   civilDate(recurrence.nextDate);
+  if (recurrence.endDate) civilDate(recurrence.endDate);
+  if (recurrence.anchorDay !== undefined && (!Number.isInteger(recurrence.anchorDay) || recurrence.anchorDay < 1 || recurrence.anchorDay > 31)) throw new Error("El día de repetición no es válido.");
 }
 
 function validateDayInterval(days: number | undefined): asserts days is number {
@@ -77,7 +81,7 @@ export function isRecurrenceDue(envelope: RecurringEnvelope, todayDate: string):
   try {
     validateRecurrence(envelope.recurrence);
     civilDate(todayDate);
-    return recurrenceDueDate(envelope.recurrence) <= todayDate;
+    return (!envelope.recurrence.endDate || recurrenceDueDate(envelope.recurrence) <= envelope.recurrence.endDate) && recurrenceDueDate(envelope.recurrence) <= todayDate;
   } catch {
     // A malformed saved setting must not make the dashboard unusable.
     // Saving or confirming the configuration reports the validation error.
@@ -97,12 +101,39 @@ function currentRecurrence(ledger: Ledger, envelopeId: string, expectedNextDate:
 }
 
 export function nextContributionDate(referenceDate: string, frequency: Recurrence["frequency"], intervalDays?: number): string {
+  if (frequency === "Anual") return previewPostponement(referenceDate, { unit: "months", amount: 12 });
   if (frequency === "Mensual") return previewPostponement(referenceDate, { unit: "months", amount: 1 });
   if (frequency === "Semanal") return previewPostponement(referenceDate, { unit: "days", amount: 7 });
   if (frequency === "Quincenal") return previewPostponement(referenceDate, { unit: "days", amount: 15 });
   if (frequency !== "Personalizado") throw new Error("Selecciona una frecuencia válida para el aporte.");
   validateDayInterval(intervalDays);
   return previewPostponement(referenceDate, { unit: "days", amount: intervalDays });
+}
+
+export function contributionStep(recurrence: Recurrence): PostponeOption {
+  validateRecurrence(recurrence);
+  if (recurrence.frequency === "Mensual" || recurrence.frequency === "Anual") return {unit:"months",amount:recurrence.frequency === "Anual" ? 12 : 1};
+  return {unit:"days",amount:recurrence.frequency === "Semanal" ? 7 : recurrence.frequency === "Quincenal" ? 15 : recurrence.intervalDays!};
+}
+
+// Bounded, read-only recurrence projection. Jump to the visible period instead of
+// iterating through years of unconfirmed payments. Uses the same civil-date engine.
+export function recurrenceDates(start: string, from: string, to: string, step: PostponeOption, anchorDay?: number, endDate?: string): string[] {
+  const seed=civilDate(start), first=civilDate(from), last=civilDate(to);
+  if (last < first || (last.getTime()-first.getTime())/86400000 > 366) throw new Error("Consulta hasta un año por período.");
+  if (endDate) civilDate(endDate);
+  validateDayInterval(step.amount);
+  const distance=step.unit==="days" ? (first.getTime()-seed.getTime())/86400000 : (first.getUTCFullYear()-seed.getUTCFullYear())*12+first.getUTCMonth()-seed.getUTCMonth();
+  let index=Math.max(1,Math.floor(distance/step.amount));
+  const dates:string[]=[];
+  while (true) {
+    let value:string;
+    try { value=previewPostponement(start,{...step,amount:step.amount*index},anchorDay); } catch { break; }
+    if (value>to || (endDate && value>endDate)) break;
+    if (value>=from) dates.push(value);
+    index++;
+  }
+  return dates;
 }
 
 export function confirmRecurringContribution(
@@ -118,9 +149,11 @@ export function confirmRecurringContribution(
   civilDate(todayDate);
   const recurrence = currentRecurrence(ledger, envelopeId, expectedNextDate);
   if (recurrenceDueDate(recurrence) > todayDate) throw new Error("Este aporte todavía no vence.");
+  if (recurrence.endDate && recurrenceDueDate(recurrence)>recurrence.endDate) throw new Error("La programación de aportes ya finalizó.");
   // Advance from the scheduled contribution, so late confirmation does not
   // silently shift the plan. An overdue next period still needs confirmation.
-  const nextDate = nextContributionDate(recurrence.nextDate, recurrence.frequency, recurrence.intervalDays);
+  const anchorDay=recurrence.anchorDay ?? Number(recurrence.nextDate.slice(-2));
+  const nextDate = previewPostponement(recurrence.nextDate, contributionStep(recurrence), anchorDay);
   // One ID per envelope and due date also protects retries after reloading.
   const movementId = `recurrence:${encodeURIComponent(envelopeId)}:${expectedNextDate}`;
   const next = assign(ledger, envelopeId, recurrence.amount, dateTime, movementId);
@@ -128,7 +161,7 @@ export function confirmRecurringContribution(
     ...next,
     envelopes: next.envelopes.map((envelope) => envelope.id === envelopeId ? {
       ...envelope,
-      recurrence: { ...recurrence, nextDate, snoozedUntil: undefined },
+      recurrence: { ...recurrence, anchorDay, nextDate, snoozedUntil: undefined },
     } : envelope),
     movements: next.movements.map((movement) => movement.id === movementId ? {
       ...movement,

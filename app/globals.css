@@ -313,7 +313,7 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 .correction-row small,.trace-row small { display:block; margin-top:4px; color:var(--muted); }
 .income-correction>small { color:var(--muted); overflow-wrap:anywhere; }
 
-/* Home-only pin: keeps its natural height, including wrapped controls at large text sizes. */
+/* Configurable pin: keeps its natural height, including wrapped controls at large text sizes. */
 .app-header.home-header-pinned { position:sticky; top:0; z-index:2; box-shadow:0 3px 10px #00000012; }
 
 .choice.income-choice-promoted { border-color:var(--green); box-shadow:inset 0 0 0 1px var(--green); }
@@ -369,3 +369,7 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 .settings-group[open] > div { animation:settings-reveal .12s ease-out; }
 @keyframes settings-reveal { from {opacity:0;} to {opacity:1;} }
 @media (prefers-reduced-motion: reduce) { .settings-group > summary > span { transition:none; } .settings-group[open] > div { animation:none; } }
+
+.header-scope-setting { margin:4px 0 14px 16px; min-height:44px; gap:10px; }
+.header-scope-setting:has(input:disabled) { opacity:.6; }
+.app-header { padding-top:max(12px,env(safe-area-inset-top)); }
