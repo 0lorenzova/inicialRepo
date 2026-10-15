@@ -449,3 +449,12 @@ Ambas decisiones quedan resueltas; no volver a solicitarlas. La implementación 
 - Persistencia JSON por usuario mantiene comparación de revisión en Supabase para impedir escrituras concurrentes sobre una versión desactualizada. No requiere SQL nuevo. No se añadió una restricción SQL semántica de nombres.
 - Pruebas aprobadas: verify-salary-tracking (integración, parciales, distribución, duplicados y semanas distintas), verify-salary-import, verify-income-distribution, TypeScript, lint y build. Sin datos financieros reales modificados.
 - PENDIENTE: revisión visual del nuevo formulario en móvil/PC y concurrencia Supabase entre dispositivos reales. Entrada aplica a un período y rechaza importes superiores al pendiente; abonos de varios períodos continúan disponibles desde Seguimiento de salarios. Los pendientes del importador y del backlog anterior permanecen.
+
+## Gestión salarial integral — 15 octubre 2026
+- Informe de requisitos, pruebas y pendientes: docs/gestion-salarial-2026-10-15.md. Sustituye pendientes anteriores de selector Entrada limitado a un período, falta de adelantos, vistas y edición de históricos.
+- Menú principal Gestión salarial (URL Salarios conservada), herramientas secundarias, lista/cuadrícula persistente, identificación ISO, resumen con importes diferenciados, filtro de pendientes incluidos parciales.
+- Entrada: sugerencia último finalizado y devengado con deuda, no reasigna silenciosamente cuando ya está pagado; permite adelanto confirmado, deuda anterior, múltiples períodos/conceptos, creación contextual y excedente decidido por usuario.
+- Motor: adelantos no devengan períodos; plantillas de conceptos, frecuencia personalizada, instantánea de periodicidad. Correcciones atómicas de cobros/históricos y eliminación con auditoría y guardas de saldo/trazabilidad.
+- Mover a otro sobre ahora dentro de Más opciones inicialmente cerrado. Sin SQL nuevo ni importación real. No datos ficticios en producción.
+- QA: nueva suite salary-management + salary-tracking + salary-import; lint y build. UI local Supabase desactivado verificó Entrada y corrección, una recepción real por abono, persistencia, lista/cuadrícula móvil360/escritorio1280, claro/oscuro, sin overflow observado.
+- PENDIENTES: monedas/centavos (decisión), reversión de ingresos gastados con dependencias (bloqueada para conservar saldos), QA visual integral importador, QA Supabase entre dispositivos, backlog previo ajeno. Los históricos ya se pueden editar: no repetir ese desarrollo.
