@@ -1,6 +1,7 @@
 # Continuidad del proyecto — 4 octubre 2026
 
 ## Cómo continuar
+0. Último bloque: `docs/cierre-salarial-2026-10-15.md`. Devengo desde el día siguiente al cierre, anticipos explícitos, Inicio salarial y fichas por estado. El usuario decidió dejar `202610150001_salary_earned_guard.sql` pendiente: NO ejecutarlo ni declarar completada la protección de escrituras directas. Esta nota sustituye los mensajes anteriores de “no hace falta SQL” para este requisito nuevo.
 1. Leer este archivo primero. No repetir pruebas ya registradas salvo cambios que las afecten.
 2. Mantener arquitectura, historial y diseño. La instrucción posterior sustituye solo el comportamiento que modifica.
 3. Controlar los límites de cinco horas y semanal; publicar un bloque funcional cerca de 15 % restante o antes para asegurar margen. Confirmar Vercel. Al cerrar, actualizar este informe.

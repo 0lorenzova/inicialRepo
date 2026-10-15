@@ -30,9 +30,15 @@ assert.equal(imported.salary.periods.length,1);assert.equal(imported.salary.paym
 assert.equal(salaryPeriodTotals(imported,imported.salary.periods[0]).pending,1200);
 assert.equal(JSON.stringify(ledger),original);
 assert.throws(()=>importSalaryPeriods(imported,reviewed,'c',today),/ya fue importado/);
-for(const change of [p=>p.concepts[0].amount='',p=>p.concepts[0].amount='1.5',p=>p.receipts[0].date='2025-11-09',p=>p.receipts[0].amounts[p.concepts[0].id]='201',p=>p.earned=false]){
+for(const change of [p=>p.concepts[0].amount='',p=>p.concepts[0].amount='1.5',p=>p.receipts[0].date='2025-11-09',p=>p.receipts[0].amounts[p.concepts[0].id]='201']){
   const bad=structuredClone(reviewed);change(bad.periods[0]);assert.throws(()=>importSalaryPeriods(ledger,bad,'c',today));assert.equal(JSON.stringify(ledger),original);
 }
+const unconfirmed=structuredClone(reviewed);unconfirmed.periods[0].earned=false;
+const unconfirmedImport=importSalaryPeriods(ledger,unconfirmed,'c',today);
+assert.equal(unconfirmedImport.salary.periods[0].earned,false);
+assert.equal(salaryPeriodTotals(unconfirmedImport,unconfirmedImport.salary.periods[0]).received,200);
+assert.equal(salaryPeriodTotals(unconfirmedImport,unconfirmedImport.salary.periods[0]).earned,0);
+assert.deepEqual(unconfirmedImport.movements,ledger.movements);
 const historical=structuredClone(reviewed);
 historical.periods[0].receipts[0].mode='historical';historical.periods[0].receipts[0].movementId='';
 const history=importSalaryPeriods(ledger,historical,'c',today);

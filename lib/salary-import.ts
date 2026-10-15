@@ -52,7 +52,7 @@ export function importSalaryPeriods<T extends SalaryLedger>(ledger:T,draft:Salar
   }
   for(const [movementId,group] of groups){
     const m=ledger.movements.find(m=>m.id===movementId)!;
-    next=postSalaryPayment(next,{id:`xlsx-payment:${draft.fingerprint}:${movementId}`,configId,date:m.date,amount:m.amount,accountId:m.accountId!,method:m.paymentMethod??"",reference:m.reference??"",notes:`Importación revisada: ${group.sources.join(", ")}`,applications:group.applications,existingMovementId:movementId},today);
+    next=postSalaryPayment(next,{id:`xlsx-payment:${draft.fingerprint}:${movementId}`,configId,date:m.date,amount:m.amount,accountId:m.accountId!,method:m.paymentMethod??"",reference:m.reference??"",notes:`Importación revisada: ${group.sources.join(", ")}`,applications:group.applications,existingMovementId:movementId,allowAdvance:true},today);
   }
   return next;
 }

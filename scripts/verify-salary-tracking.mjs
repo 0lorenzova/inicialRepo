@@ -59,7 +59,7 @@ for(const value of [d,reopened,reset]){const t=totals(value);assert.equal(t.acco
 const monthly=saveSalaryConfig(initial,{...config,frequency:'Mensual',start:'2028-01-31'},null);
 const months=generateSalaryPeriods(monthly,'c',3).salary.periods;
 assert.deepEqual(months.map(p=>p.start),['2028-01-31','2028-02-29','2028-03-31']);
-assert.throws(()=>saveSalaryPeriod(monthly,{...months[0],earned:true},null,today,'devengo'),/futuro/);
+assert.throws(()=>saveSalaryPeriod(monthly,{...months[0],earned:true},null,today,'devengo'),/todavía no ha finalizado/);
 console.log('OK: salary projections, earned concepts, partial/multiple payments, old debt, atomic distribution, linking without duplicates, corrections, config snapshots, reset, month anchors and JSON persistence.');
 
 // Entry and Salary use the same atomic posting operation.
