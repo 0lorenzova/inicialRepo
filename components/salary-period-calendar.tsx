@@ -10,7 +10,7 @@ export function SalaryPeriodCalendar({ledger,config,selected,today,month,onMonth
   const shiftMonth=(amount:number)=>{try{return shiftSalaryDate(`${month}-01`,amount,"months").slice(0,7);}catch{return null;}};
   const entries=days.map(date=>{try {if(!date)return null;const period=salaryPeriodForDate(ledger,config.id,date);return {date,period,view:salaryPeriodPresentation(ledger,period,today)};}catch{return null;}});
   const weeks=Array.from({length:days.length/7},(_,i)=>entries.slice(i*7,i*7+7));
-  const description=(entry:NonNullable<typeof entries[number]>)=>`${salaryPeriodLabel(entry.period,config)}: ${entry.view.state} · ${entry.view.workState}`;
+  const description=(entry:NonNullable<typeof entries[number]>)=>`${salaryPeriodLabel(entry.period,config)}: ${entry.view.state}${entry.view.overdueLabel?` · ${entry.view.overdueLabel}`:""} · ${entry.view.workState}`;
   return <div className={styles.calendar} aria-label="Seleccionar período salarial">
     <div className={styles.calendarHeading}>
       {([-12,-1] as const).map(amount=><button key={amount} type="button" className="secondary" aria-label={amount===-12?"Año anterior":"Mes anterior"} disabled={!shiftMonth(amount)} onClick={()=>onMonth(shiftMonth(amount)!)}>{amount===-12?"«":"‹"}</button>)}
@@ -25,10 +25,10 @@ export function SalaryPeriodCalendar({ledger,config,selected,today,month,onMonth
           <div className={styles.weekNumber}>{iso&&<span>{iso.week} · {iso.year}</span>}
             <div className={styles.statusDots}>{periods.map(entry=><button key={entry.period.id} type="button" className={styles.periodStatus} aria-label={`Seleccionar ${description(entry)}`} title={description(entry)} aria-pressed={entry.period.id===selected?.id} onClick={()=>onSelect(entry.date)}><span className={`${styles.statusDot} ${styles[entry.view.tone]}`} aria-hidden="true"/></button>)}</div>
           </div>
-          {week.map((entry,i)=>entry?<button type="button" key={i} className={styles.calendarDay} data-outside={entry.date.slice(0,7)!==month} data-selected={entry.period.id===selected?.id} aria-pressed={entry.period.id===selected?.id} aria-label={`${entry.date} · ${description(entry)}`} title={description(entry)} onClick={()=>onSelect(entry.date)}>{Number(entry.date.slice(-2))}</button>:<span key={i}/>)}
+          {week.map((entry,i)=>entry?<button type="button" key={i} className={styles.calendarDay} data-today={entry.date===today} aria-current={entry.date===today?"date":undefined} data-outside={entry.date.slice(0,7)!==month} data-selected={entry.period.id===selected?.id} aria-pressed={entry.period.id===selected?.id} aria-label={`${entry.date} · ${description(entry)}`} title={description(entry)} onClick={()=>onSelect(entry.date)}>{Number(entry.date.slice(-2))}</button>:<span key={i}/>)}
         </div>;
       })}
     </div>
-    <small>Verde: cubierto · Amarillo: parcial · Rojo: devengado sin pagar · Neutro: sin devengo ni pagos. Los puntos representan los períodos de cada fila; elegirlos no guarda datos.</small>
+    <div className={styles.calendarLegend}>{[["paid","Pagado"],["neutral","Sin vencer"],["partial","Parcial"],["overdue","Vencido"]].map(([tone,label])=><span key={tone}><i className={`${styles.statusDot} ${styles[tone]}`} aria-hidden="true"/>{label}</span>)}</div><small>Selecciona una fecha o el indicador de la semana. Navegar no registra pagos.</small>
   </div>;
 }

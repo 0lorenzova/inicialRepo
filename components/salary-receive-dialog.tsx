@@ -12,6 +12,7 @@ import { salaryPeriodPresentation, salaryConceptPaid, adjacentSalaryPeriod, sala
 import type { PlanningEnvelope } from "@/lib/envelope-planning";
 import type { FundingSelection } from "@/lib/income-distribution";
 import styles from "./salary-receive-dialog.module.css";
+import statusStyles from "./salary-status.module.css";
 
 type Props = {
   ledger: SalaryLedger;
@@ -200,16 +201,17 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
       <label className={styles.configLabel}>Configuración salarial<select value={configId} onChange={event => changeConfig(event.target.value)}>{state.configs.map(item => <option key={item.id} value={item.id}>{item.employer} · {item.name}{item.active ? "" : " (inactiva)"}</option>)}</select></label>
       {config && <>
         <section className={styles.periodPicker} aria-label="Período salarial">
-          <div className={styles.periodHeading}>
+          <div className={`${styles.periodHeading} ${statusStyles.surface}`} data-tone={presentation?.tone??"neutral"}>
             <button type="button" className="secondary" aria-label="Período anterior" onClick={() => movePeriod(-1)} disabled={!period || period.start <= "0001-01-01"}>‹</button>
-            <div><strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>{period && <><span className={styles.temporalLabel}>{salaryTemporalLabel(ledger,period,viewerDay)}</span><small>{dayLabel(period.start)} — {dayLabel(period.end)}</small></>}</div>
+            <div><strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>{period && <><span className={styles.temporalLabel}>{salaryTemporalLabel(ledger,period,viewerDay)}</span><small>{presentation?.state}{presentation?.overdueLabel?` · ${presentation.overdueLabel}`:""}</small><small>{dayLabel(period.start)} — {dayLabel(period.end)}</small></>}</div>
             <button type="button" className="secondary" aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}>›</button>
-            <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Explorar períodos en calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦</button>
+            <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Explorar períodos en calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar almanaque":"Elegir en almanaque"}</button>
           </div>
-          {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(period.payDate)}</b></span><span>Referencia: <b>{display(expectedAmount)}</b></span></div>}
+          {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(period.payDate)}</b></span><span>Salario: <b>{display(expectedAmount)}</b></span></div>}
+          {period?.scheduledWorkDays&&<small className={styles.workDays}>Laborables: {period.scheduledWorkDays.map(d=>["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"][d]).join(" · ")}</small>}
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
-          {period && <p className={styles.timing} role="status">{timing?.label}{period.start <= today && period.end >= today ? " · Período en curso" : period.start > today ? " · Período futuro" : " · Período finalizado"}</p>}
+          {period && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{period.start <= today && period.end >= today ? " · Período en curso" : period.start > today ? " · Período futuro" : " · Período finalizado"}</p>}
         </section>
 
         <label htmlFor="salary-received-amount">Importe recibido</label>

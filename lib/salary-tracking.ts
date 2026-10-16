@@ -7,9 +7,9 @@ import { movementDay } from "./finance-history";
 import { previewPostponement } from "./finance-recurrence";
 import {incomeReceptionMethods} from "./income-preferences";
 
-export type SalaryConfig = { id:string; employer:string; name:string; currency:"CRC"; base:number; frequency:"Semanal"|"Quincenal"|"Mensual"|"Otra"; intervalDays?:number; extraConcepts?:SalaryConcept[]; start:string; payOffset:number; workDays:number[]; active:boolean };
+export type SalaryConfig = { id:string; employer:string; name:string; currency:"CRC"; base:number; frequency:"Semanal"|"Quincenal"|"Mensual"|"Otra"; intervalDays?:number; extraConcepts?:SalaryConcept[]; start:string; payOffset:number; calendarMode?:"iso-workdays"; workDays:number[]; active:boolean };
 export type SalaryConcept = { id:string; name:string; amount:number };
-export type SalaryPeriod = { id:string; configId:string; start:string; end:string; payDate:string; earned:boolean; concepts:SalaryConcept[]; notes:string; source?:string; frequency?:SalaryConfig["frequency"]; workedDays?:string[] };
+export type SalaryPeriod = { id:string; configId:string; start:string; end:string; payDate:string; earned:boolean; concepts:SalaryConcept[]; notes:string; source?:string; frequency?:SalaryConfig["frequency"]; workedDays?:string[]; scheduledWorkDays?:number[] };
 export type SalaryApplication = { periodId:string; conceptId:string; amount:number };
 export type SalaryPayment = { id:string; configId:string; movementId:string; amount:number; date:string; accountId:string; method:string; reference:string; notes:string; applications:SalaryApplication[]; voidReason?:string; historical?:{source:string;recordedAt:string} };
 export type SalaryAudit = { id:string; date:string; action:string; entityId:string; reason:string; before?:unknown };
@@ -53,8 +53,9 @@ export function saveSalaryConfig<T extends SalaryLedger>(ledger:T,requested:Sala
   salaryDay(requested.start);
   ensure(Number.isInteger(requested.payOffset)&&requested.payOffset>=0&&requested.payOffset<=31,"La fecha habitual admite entre 0 y 31 días después del período.");
   ensure(requested.workDays.length>0&&new Set(requested.workDays).size===requested.workDays.length&&requested.workDays.every(d=>Number.isInteger(d)&&d>=0&&d<=6),"Selecciona los días laborales.");
+  ensure(!requested.calendarMode||requested.calendarMode==="iso-workdays","Selecciona una regla de calendario válida.");
   const config={...requested,name:requested.name.trim(),employer:requested.employer.trim()};
-  return {...ledger,salary:{...state,periods:state.periods.map(p=>p.configId===requested.id&&!p.frequency&&current?{...p,frequency:current.frequency}:p),configs:original?state.configs.map(c=>c.id===config.id?config:c):[...state.configs,config],audit:audit(state,config.id,"Configuración",original?"Cambios para próximos períodos; historia conservada":"Nueva configuración",original)}};
+  return {...ledger,salary:{...state,periods:state.periods.map(p=>p.configId===requested.id&&current?{...p,frequency:p.frequency??current.frequency,scheduledWorkDays:p.scheduledWorkDays??[...current.workDays]}:p),configs:original?state.configs.map(c=>c.id===config.id?config:c):[...state.configs,config],audit:audit(state,config.id,"Configuración",original?"Cambios para próximos períodos; historia conservada":"Nueva configuración",original)}};
 }
 const previousDay = (day:string) => { const d=new Date(`${salaryDay(day)}T12:00:00Z`);d.setUTCDate(d.getUTCDate()-1);return salaryDay(d.toISOString().slice(0,10)); };
 const daysBetween=(from:string,to:string)=>Math.round((Date.parse(`${salaryDay(to)}T12:00:00Z`)-Date.parse(`${salaryDay(from)}T12:00:00Z`))/86400000);
@@ -67,6 +68,10 @@ export function shiftSalaryDate(value:string,amount:number,unit:"days"|"months"=
   return salaryDay(d.toISOString().slice(0,10));
 }
 function periodStartForDate(config:SalaryConfig,date:string) {
+  if(config.frequency==="Semanal"&&config.calendarMode==="iso-workdays") {
+    const start=shiftSalaryDate(date,-((new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7));
+    return {start,next:shiftSalaryDate(start,7)};
+  }
   if(config.frequency==="Mensual") {
     const monthDistance=(Number(date.slice(0,4))-Number(config.start.slice(0,4)))*12+Number(date.slice(5,7))-Number(config.start.slice(5,7));
     let index=monthDistance;
@@ -83,7 +88,11 @@ function periodStartForDate(config:SalaryConfig,date:string) {
 }
 function projectedSalaryPeriod(config:SalaryConfig,start:string,next:string):SalaryPeriod {
   const end=previousDay(next),id=`salary-period:${config.id}:${start}`;
-  return {id,configId:config.id,start,end,payDate:config.payOffset?previewPostponement(end,{unit:"days",amount:config.payOffset}):end,earned:false,concepts:[{id:`${id}:salary`,name:"Salario",amount:config.base},...(config.extraConcepts??[]).map(c=>({...c,id:`${id}:${c.id}`}))],frequency:config.frequency,notes:""};
+  let payBase=end;
+  if(config.calendarMode==="iso-workdays") {
+    for(let back=0;back<7;back++) {const day=shiftSalaryDate(end,-back);if(day<start)break;if(config.workDays.includes(new Date(`${day}T12:00:00Z`).getUTCDay())){payBase=day;break;}}
+  }
+  return {id,configId:config.id,start,end,payDate:shiftSalaryDate(payBase,config.payOffset),earned:false,concepts:[{id:`${id}:salary`,name:"Salario",amount:config.base},...(config.extraConcepts??[]).map(c=>({...c,id:`${id}:${c.id}`}))],frequency:config.frequency,scheduledWorkDays:[...config.workDays],notes:""};
 }
 /** Returns the saved period when it exists, or a pure, unsaved projection for the date. */
 export function salaryPeriodForDate(ledger:SalaryLedger,configId:string,date:string):SalaryPeriod {
@@ -95,6 +104,7 @@ export function salaryPeriodForDate(ledger:SalaryLedger,configId:string,date:str
   const {start,next}=periodStartForDate(config,date);
   const scheduled=state.periods.find(p=>p.configId===configId&&p.start===start);
   if(scheduled)return scheduled;
+  ensure(!state.periods.some(p=>p.configId===configId&&p.start<next&&p.end>=start),"Esta semana cruza un período histórico. Consulta ese período o elige la siguiente semana completa.");
   return projectedSalaryPeriod(config,start,next);
 }
 export function preferredSalaryConfigId(ledger:SalaryLedger) {
@@ -121,7 +131,9 @@ export function salaryTemporalLabel(ledger:SalaryLedger,period:SalaryPeriod,view
   return offset<0?`Hace ${Math.abs(offset)} ${plural}`:`Dentro de ${offset} ${plural}`;
 }
 export function adjacentSalaryPeriod(ledger:SalaryLedger,period:SalaryPeriod,direction:-1|1) {
-  let next=salaryPeriodForDate(ledger,period.configId,shiftSalaryDate(direction<0?period.start:period.end,direction));
+  const config=salaryState(ledger).configs.find(c=>c.id===period.configId)!;
+  const nextDate=direction>0&&config.frequency==="Semanal"&&config.calendarMode==="iso-workdays"?periodStartForDate(config,period.end).next:shiftSalaryDate(direction<0?period.start:period.end,direction);
+  let next=salaryPeriodForDate(ledger,period.configId,nextDate);
   if(next.id===period.id&&direction>0){const config=salaryState(ledger).configs.find(c=>c.id===period.configId)!;next=salaryPeriodForDate(ledger,period.configId,periodStartForDate(config,period.start).next);}
   ensure(next.id!==period.id,"No hay otro período en esta fecha.");return next;
 }
@@ -140,12 +152,13 @@ export function generateSalaryPeriods<T extends SalaryLedger>(ledger:T,configId:
   const existing=state.periods.filter(p=>p.configId===configId).sort((a,b)=>b.end.localeCompare(a.end));
   let start=existing.length?previewPostponement(existing[0].end,{unit:"days",amount:1}):config.start;
   if(start<config.start)start=config.start;
+  if(config.frequency==="Semanal"&&config.calendarMode==="iso-workdays") {const aligned=periodStartForDate(config,start).start;start=existing.length&&aligned<start?shiftSalaryDate(aligned,7):aligned;}
   const periods=[...state.periods];
   for(let i=0;i<count;i++) {
     const next=previewPostponement(start,{unit:config.frequency==="Mensual"?"months":"days",amount:config.frequency==="Mensual"?1:config.frequency==="Semanal"?7:config.frequency==="Otra"?config.intervalDays!:15},Number(config.start.slice(8)));
-    const end=previousDay(next),id=`salary-period:${configId}:${start}`;
+    const end=previousDay(next);
     ensure(!periods.some(p=>p.configId===configId&&p.start<=end&&p.end>=start),"El período se superpone con otro existente.");
-    periods.push({id,configId,start,end,payDate:config.payOffset?previewPostponement(end,{unit:"days",amount:config.payOffset}):end,earned:false,concepts:[{id:`${id}:salary`,name:"Salario",amount:config.base},...(config.extraConcepts??[]).map(c=>({...c,id:`${id}:${c.id}`}))],frequency:config.frequency,notes:""});
+    periods.push(projectedSalaryPeriod(config,start,next));
     start=next;
   }
   return {...ledger,salary:{...state,periods,audit:audit(state,configId,"Generar períodos",`${count} proyecciones; sin ingresos ni deuda confirmada`)}};
@@ -263,12 +276,15 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   const amountFor=(payment:SalaryPayment)=>total(payment.applications.filter(a=>a.periodId===period.id).map(a=>a.amount));
   const early=total(payments.filter(p=>movementDay(p.date)<period.payDate).map(amountFor));
   const late=total(payments.filter(p=>movementDay(p.date)>period.payDate).map(amountFor));
-  const overdue=confirmed&&amounts.pending>0&&period.payDate<today;
+  const remaining=Math.max(0,expected-amounts.received);
+  const overdue=remaining>0&&period.payDate<today;
+  const overdueDays=overdue?daysBetween(period.payDate,today):0;
+  const overdueLabel=overdueDays?`${overdueDays} ${overdueDays===1?"día":"días"} de atraso`:"";
   const fullyPaid=expected>0&&amounts.received>=expected;
   const workState=period.start>today?"Aún no comienza":today<=period.end?"En curso":confirmed?"Período finalizado":"Por confirmar devengo";
   const state=fullyPaid?(confirmed?"Completamente pagado":"Importe previsto cubierto"):amounts.received>0?"Parcialmente pagado":confirmed?"Pendiente de pago":period.start>today?"Proyectado":today<=period.end?"En curso":"Por confirmar devengo";
-  const tone=fullyPaid?"paid":amounts.received>0?"partial":confirmed&&expected>0?"overdue":"neutral";
-  return {...amounts,expected,remaining:Math.max(0,expected-amounts.received),confirmed,fullyPaid,early,late,advances:early,overdue,workState,state,tone,paymentCount:payments.length};
+  const tone=fullyPaid?"paid":amounts.received>0?"partial":overdue?"overdue":"neutral";
+  return {...amounts,expected,remaining,confirmed,fullyPaid,early,late,advances:early,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
 }
 export function salaryPaymentTiming(period:SalaryPeriod,receivedAt:string) {
   const days=daysBetween(period.payDate,movementDay(receivedAt));

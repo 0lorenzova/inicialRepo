@@ -37,7 +37,7 @@ const stable=JSON.stringify(d);assert.throws(()=>postSalaryPayment(d,{...input,i
 const worked=d.salary.periods[0];d=saveSalaryPeriod(d,{...worked,earned:true},worked,'2026-10-17','Semana completada');
 view=salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-17');assert.equal(view.state,'Parcialmente pagado');assert.equal(view.pending,75000);assert.equal(view.advances,50000);assert.equal(view.tone,'partial');
 assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-19').overdue,false,'Due date itself is not past due');
-assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-20').tone,'partial','Partially paid remains yellow even when overdue');
+assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-20').tone,'partial','Partially paid remains orange even when overdue');
 assert.equal(salaryPaymentTiming(period,'2026-10-20T09:00').days,1);assert.equal(salaryPaymentTiming(period,'2026-10-20T09:00').label,'Pagado 1 día de atraso');
 assert.equal(salaryPeriodPresentation(d,{...period,id:'future',start:'2026-11-02',end:'2026-11-06',concepts:[{id:'future-concept',name:'Salario',amount:125000}]},'2026-10-14').tone,'neutral');
 // A legacy prematurely earned flag must not make projected amounts count as debt.
