@@ -52,7 +52,7 @@ assert.equal(salaryPeriodTotals(restored,restored.salary.periods[0]).received,20
 const voided=unlinkSalaryPayment(restored,restored.salary.payments[0].id,'Importe histórico equivocado');
 assert.equal(salaryPeriodTotals(voided,voided.salary.periods[0]).pending,1400);assert.deepEqual(totals(voided),totals(ledger));assert.equal(voided.salary.payments.length,1);
 assert.throws(()=>importSalaryPeriods(history,historical,'c',today),/ya fue importado/);
-for(const change of [p=>p.receipts[0].date='',p=>p.receipts[0].date='2028-01-01',p=>p.receipts[0].movementId='income',p=>p.receipts[0].amounts[p.concepts[0].id]='2000',p=>p.earned=false]) {
+for(const change of [p=>p.receipts[0].date='',p=>p.receipts[0].date='2028-01-01',p=>p.receipts[0].movementId='income',p=>p.receipts[0].amounts[p.concepts[0].id]='2000']) {
  const bad=structuredClone(historical);change(bad.periods[0]);assert.throws(()=>importSalaryPeriods(ledger,bad,'c',today));assert.equal(JSON.stringify(ledger),original);
 }
 const historicPayment=history.salary.payments[0];

@@ -237,6 +237,11 @@
 .settings-group [hidden] { display:none; }
 .page-title > .primary { flex-shrink:0; white-space:normal; width:auto; height:auto; min-height:44px; padding:10px 14px; font-size:calc(13px * var(--ui-scale, 1)); }
 .page-title > .primary span { display:inline; }
+.home-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; max-width:310px; flex:0 0 auto; }
+.home-actions > button { min-height:44px; padding:10px 14px; white-space:normal; }
+.home-actions > .primary { flex-shrink:0; width:auto; height:auto; }
+@media(max-width:650px) { .page-title:has(.home-actions) { flex-wrap:wrap; } .home-actions { width:100%; max-width:none; justify-content:flex-start; } }
+@media(max-width:480px) { .home-actions { width:100%; max-width:none; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .home-actions > button { width:100%; min-width:0; } }
 @media(max-width:480px) { .page-title { flex-wrap:wrap; gap:12px; } .page-title > button { align-self:flex-start; } }
 
 .account-selector { display:grid; gap:8px; min-width:0; }

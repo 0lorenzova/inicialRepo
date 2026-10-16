@@ -12,7 +12,7 @@ export type SalaryPeriod = { id:string; configId:string; start:string; end:strin
 export type SalaryApplication = { periodId:string; conceptId:string; amount:number };
 export type SalaryPayment = { id:string; configId:string; movementId:string; amount:number; date:string; accountId:string; method:string; reference:string; notes:string; applications:SalaryApplication[]; voidReason?:string; historical?:{source:string;recordedAt:string} };
 export type SalaryAudit = { id:string; date:string; action:string; entityId:string; reason:string; before?:unknown };
-export type SalaryState = { configs:SalaryConfig[]; periods:SalaryPeriod[]; payments:SalaryPayment[]; audit:SalaryAudit[]; viewMode?:"list"|"grid" };
+export type SalaryState = { configs:SalaryConfig[]; periods:SalaryPeriod[]; payments:SalaryPayment[]; audit:SalaryAudit[]; viewMode?:"list"|"grid"; lastConfigId?:string };
 export type SalaryLedger = Ledger & { salary?:SalaryState };
 export const emptySalary = ():SalaryState => ({configs:[],periods:[],payments:[],audit:[]});
 export const salaryState = (ledger:SalaryLedger) => ledger.salary ?? emptySalary();
@@ -56,6 +56,45 @@ export function saveSalaryConfig<T extends SalaryLedger>(ledger:T,requested:Sala
   return {...ledger,salary:{...state,periods:state.periods.map(p=>p.configId===requested.id&&!p.frequency&&current?{...p,frequency:current.frequency}:p),configs:original?state.configs.map(c=>c.id===config.id?config:c):[...state.configs,config],audit:audit(state,config.id,"Configuración",original?"Cambios para próximos períodos; historia conservada":"Nueva configuración",original)}};
 }
 const previousDay = (day:string) => { const d=new Date(`${salaryDay(day)}T12:00:00Z`);d.setUTCDate(d.getUTCDate()-1);return salaryDay(d.toISOString().slice(0,10)); };
+const daysBetween=(from:string,to:string)=>Math.round((Date.parse(`${salaryDay(to)}T12:00:00Z`)-Date.parse(`${salaryDay(from)}T12:00:00Z`))/86400000);
+function periodStartForDate(config:SalaryConfig,date:string) {
+  if(date<config.start)throw new Error("La fecha es anterior al inicio de esta configuración salarial.");
+  if(config.frequency==="Mensual") {
+    const monthDistance=(Number(date.slice(0,4))-Number(config.start.slice(0,4)))*12+Number(date.slice(5,7))-Number(config.start.slice(5,7));
+    let index=Math.max(0,monthDistance);const anchor=Number(config.start.slice(8));
+    let start=index?previewPostponement(config.start,{unit:"months",amount:index},anchor):config.start;
+    while(start>date&&index>0){index--;start=index?previewPostponement(config.start,{unit:"months",amount:index},anchor):config.start;}
+    let next=previewPostponement(config.start,{unit:"months",amount:index+1},anchor);
+    while(next<=date){index++;start=next;next=previewPostponement(config.start,{unit:"months",amount:index+1},anchor);}
+    return {start,next};
+  }
+  const interval=config.frequency==="Semanal"?7:config.frequency==="Quincenal"?15:config.intervalDays??7;
+  const index=Math.floor(daysBetween(config.start,date)/interval);
+  const start=index?previewPostponement(config.start,{unit:"days",amount:index*interval}):config.start;
+  const next=previewPostponement(config.start,{unit:"days",amount:(index+1)*interval});
+  return {start,next};
+}
+function projectedSalaryPeriod(config:SalaryConfig,start:string,next:string):SalaryPeriod {
+  const end=previousDay(next),id=`salary-period:${config.id}:${start}`;
+  return {id,configId:config.id,start,end,payDate:config.payOffset?previewPostponement(end,{unit:"days",amount:config.payOffset}):end,earned:false,concepts:[{id:`${id}:salary`,name:"Salario",amount:config.base},...(config.extraConcepts??[]).map(c=>({...c,id:`${id}:${c.id}`}))],frequency:config.frequency,notes:""};
+}
+/** Returns the saved period when it exists, or a pure, unsaved projection for the date. */
+export function salaryPeriodForDate(ledger:SalaryLedger,configId:string,date:string):SalaryPeriod {
+  salaryDay(date);
+  const state=salaryState(ledger),config=state.configs.find(c=>c.id===configId);
+  ensure(config,"Selecciona una configuración salarial.");
+  const existing=state.periods.find(p=>p.configId===configId&&p.start<=date&&p.end>=date);
+  if(existing)return existing;
+  const {start,next}=periodStartForDate(config,date);
+  const scheduled=state.periods.find(p=>p.configId===configId&&p.start===start);
+  if(scheduled)return scheduled;
+  return projectedSalaryPeriod(config,start,next);
+}
+export function preferredSalaryConfigId(ledger:SalaryLedger) {
+  const configs=salaryState(ledger).configs;
+  const last=salaryState(ledger).lastConfigId;
+  return configs.find(c=>c.id===last&&c.active)?.id??configs.find(c=>c.active)?.id??configs[0]?.id??"";
+}
 export function generateSalaryPeriods<T extends SalaryLedger>(ledger:T,configId:string,count:number):T {
   const state=salaryState(ledger),config=state.configs.find(c=>c.id===configId&&c.active);
   ensure(config,"Selecciona una configuración salarial activa.");
@@ -92,26 +131,25 @@ export function saveSalaryPeriod<T extends SalaryLedger>(ledger:T,requested:Sala
     const paid=salaryConceptPaid(ledger,requested.id,c.id),replacement=requested.concepts.find(x=>x.id===c.id);
     ensure(!paid||((requested.earned||!current?.earned||!canConfirmSalaryPeriod(current.end,today))&&replacement&&replacement.amount>=paid),"No puedes retirar un concepto pagado ni reducirlo por debajo de sus abonos. Revisa primero las vinculaciones.");
   }
-  for(const pay of state.payments.filter(pay=>salaryPaymentValid(ledger,pay)&&pay.applications.some(a=>a.periodId===requested.id)))ensure(requested.earned||requested.start<=(pay.historical?pay.date:movementDay(pay.date)),"La fecha inicial no puede quedar después de un adelanto recibido.");
   const value={...requested,frequency:requested.frequency??state.configs.find(c=>c.id===requested.configId)?.frequency,concepts:requested.concepts.map(c=>({...c,name:c.name.trim()}))};
   return {...ledger,salary:{...state,periods:original?state.periods.map(p=>p.id===value.id?value:p):[...state.periods,value],audit:audit(state,value.id,"Guardar período",reason.trim(),original)}};
 }
-export type SalaryPaymentInput = { id:string; configId:string; date:string; amount:number; accountId:string; method:string; reference:string; notes:string; name?:string; applications:SalaryApplication[]; existingMovementId?:string; manual?:Record<string,string>; selections?:FundingSelection[]; allowAdvance?:boolean };
+export type SalaryPaymentInput = { id:string; configId:string; date:string; amount:number; accountId:string; method:string; reference:string; notes:string; name?:string; applications:SalaryApplication[]; existingMovementId?:string; manual?:Record<string,string>; selections?:FundingSelection[]; allowAdvance?:boolean; preparedPeriod?:SalaryPeriod };
 export function salaryPeriodApplications(ledger:SalaryLedger,configId:string,periodId:string,amount:number,advanceDate?:string):SalaryApplication[] {
-  const period=salaryState(ledger).periods.find(p=>p.id===periodId&&p.configId===configId&&(p.earned||Boolean(advanceDate&&p.start<=advanceDate)));
-  ensure(period,"Selecciona un empleador y un período devengado con saldo pendiente.");
+  void advanceDate;
+  const period=salaryState(ledger).periods.find(p=>p.id===periodId&&p.configId===configId);
+  ensure(period,"Selecciona un período salarial.");
   ensure(amountValid(amount)&&amount>0,"Escribe un importe entero mayor que cero.");
   let remaining=amount;
   const applications=period.concepts.flatMap(c=>{const applied=Math.min(remaining,c.amount-salaryConceptPaid(ledger,period.id,c.id));if(applied<=0)return [];remaining-=applied;return [{periodId:period.id,conceptId:c.id,amount:applied}];});
   ensure(remaining===0,"El ingreso supera el saldo pendiente del período seleccionado.");
   return applications;
 }
-function validateSalaryApplications(ledger:SalaryLedger,configId:string,applications:SalaryApplication[],amount:number,advanceDate?:string,receiptDate?:string) {
+function validateSalaryApplications(ledger:SalaryLedger,configId:string,applications:SalaryApplication[],amount:number) {
   const state=salaryState(ledger);
   ensure(applications.length>0&&new Set(applications.map(a=>`${a.periodId}:${a.conceptId}`)).size===applications.length,"Selecciona los conceptos sin repetirlos.");
   for(const a of applications) {
-    const p=state.periods.find(p=>p.id===a.periodId&&p.configId===configId&&(p.earned||Boolean(advanceDate&&p.start<=advanceDate))),c=p?.concepts.find(c=>c.id===a.conceptId);
-    ensure(!p||!receiptDate||canConfirmSalaryPeriod(p.end,receiptDate)||Boolean(advanceDate),"Selecciona Pago anticipado y confirma el dinero recibido antes de terminar el período.");
+    const p=state.periods.find(p=>p.id===a.periodId&&p.configId===configId),c=p?.concepts.find(c=>c.id===a.conceptId);
     ensure(c&&amountValid(a.amount)&&a.amount>0&&a.amount<=c.amount-salaryConceptPaid(ledger,a.periodId,a.conceptId),"Una aplicación supera la deuda pendiente o el período no está devengado.");
   }
   ensure(total(applications.map(a=>a.amount))===amount,"Distribuye el abono completo entre los conceptos y períodos seleccionados.");
@@ -129,17 +167,24 @@ export function postHistoricalSalaryPayment<T extends SalaryLedger>(ledger:T,inp
   return {...ledger,salary:{...state,payments:[...state.payments,payment],audit:audit(state,payment.id,"Registrar pago histórico","Cobro anterior confirmado; reduce deuda salarial sin crear ingresos ni modificar cuentas o sobres")}};
 }
 export function postSalaryPayment<T extends SalaryLedger>(ledger:T,input:SalaryPaymentInput,today:string):T {
-  const state=salaryState(ledger),config=state.configs.find(c=>c.id===input.configId);
+  let prepared:SalaryLedger=ledger;
+  const initialState=salaryState(ledger);
+  const missingPeriods=[...new Set(input.applications.map(a=>a.periodId))].filter(id=>!initialState.periods.some(p=>p.id===id));
+  if(missingPeriods.length) {
+    ensure(input.preparedPeriod&&missingPeriods.length===1&&missingPeriods[0]===input.preparedPeriod.id&&input.preparedPeriod.configId===input.configId,"El período de este salario ya no está disponible. Vuelve a seleccionarlo.");
+    prepared=saveSalaryPeriod(ledger,input.preparedPeriod,null,today,"Proyección creada al registrar el ingreso salarial");
+  }
+  const state=salaryState(prepared),config=state.configs.find(c=>c.id===input.configId);
   ensure(config,"Selecciona un empleador.");
   ensure(input.id&&!state.payments.some(p=>p.id===input.id),"Ya existe un ingreso con estos mismos datos.");
   ensure(amountValid(input.amount)&&input.amount>0,"El abono debe ser un importe entero mayor que cero.");
   ensure(validMovementDate(input.date)&&input.date.slice(0,10)<=salaryDay(today),"Selecciona la fecha real del cobro, no una fecha futura.");
-  validateSalaryApplications(ledger,config.id,input.applications,input.amount,input.allowAdvance?movementDay(input.date):undefined,movementDay(input.date));
-  const applicationKey=(items:SalaryApplication[])=>JSON.stringify([...new Set(items.map(a=>a.periodId))].sort());
-  if(!input.existingMovementId&&input.reference.trim())ensure(!state.payments.some(p=>!p.historical&&salaryPaymentValid(ledger,p)&&p.configId===config.id&&p.date===input.date&&p.amount===input.amount&&p.accountId===input.accountId&&normalizeSalaryName(p.reference)===normalizeSalaryName(input.reference)&&applicationKey(p.applications)===applicationKey(input.applications)),"Ya existe un ingreso con estos mismos datos.");
+  validateSalaryApplications(prepared,config.id,input.applications,input.amount);
+  const applicationKey=(items:SalaryApplication[])=>JSON.stringify([...items].map(a=>[a.periodId,a.conceptId,a.amount]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))||String(a[1]).localeCompare(String(b[1]))));
+  if(!input.existingMovementId)ensure(!state.payments.some(p=>!p.historical&&salaryPaymentValid(ledger,p)&&p.configId===config.id&&p.date===input.date&&p.amount===input.amount&&p.accountId===input.accountId&&applicationKey(p.applications)===applicationKey(input.applications)&&(!input.reference.trim()&&!p.reference.trim()||normalizeSalaryName(p.reference)===normalizeSalaryName(input.reference))),"Ya existe un ingreso con estos mismos datos.");
   const movementId=input.existingMovementId||`salary-income:${input.id}`;
   ensure(!state.payments.some(p=>!p.voidReason&&p.movementId===movementId),"Ya existe un ingreso con estos mismos datos.");
-  let next:Ledger=ledger;
+  let next:Ledger=prepared;
   if(input.existingMovementId) {
     const m=ledger.movements.find(m=>m.id===movementId);
     ensure(m&&m.type==="Ingreso"&&m.amount===input.amount&&m.date===input.date&&m.accountId===input.accountId,"El ingreso cambió. Selecciónalo otra vez y revisa su monto, cuenta y fecha.");
@@ -149,7 +194,7 @@ export function postSalaryPayment<T extends SalaryLedger>(ledger:T,input:SalaryP
   }
   const linked=next.movements.find(m=>m.id===movementId)!;
   const payment:SalaryPayment={id:input.id,configId:config.id,movementId,amount:input.amount,date:input.date,accountId:input.accountId,method:linked.paymentMethod??"Sin especificar",reference:linked.reference??"",notes:input.notes,applications:input.applications.map(a=>({...a}))};
-  return {...ledger,...next,salary:{...state,payments:[...state.payments,payment],audit:audit(state,payment.id,"Registrar abono",input.existingMovementId?"Ingreso existente vinculado; sin duplicar dinero":"Ingreso y aplicaciones guardados juntos")}};
+  return {...ledger,...next,salary:{...state,payments:[...state.payments,payment],lastConfigId:config.id,audit:audit(state,payment.id,"Registrar pago salarial",input.existingMovementId?"Ingreso existente vinculado; sin duplicar dinero":"Ingreso y aplicaciones guardados juntos")}};
 }
 export function unlinkSalaryPayment<T extends SalaryLedger>(ledger:T,paymentId:string,reason:string):T {
   const state=salaryState(ledger),payment=state.payments.find(p=>p.id===paymentId&&!p.voidReason);
@@ -166,16 +211,31 @@ export function salaryPeriodLabel(period:SalaryPeriod, config?:SalaryConfig) {
   return frequency==="Mensual"?`Mes · ${month}`:`Período · ${period.start}`;
 }
 export const salaryPeriodRemaining=(ledger:SalaryLedger,p:SalaryPeriod)=>total(p.concepts.map(c=>c.amount-salaryConceptPaid(ledger,p.id,c.id)));
+export function salaryPeriodPaymentLabel(ledger:SalaryLedger,period:SalaryPeriod) {
+  const payments=salaryState(ledger).payments.filter(payment=>salaryPaymentValid(ledger,payment)&&payment.applications.some(application=>application.periodId===period.id));
+  if(!payments.length)return "Sin pagos";
+  if(payments.length===1&&total(payments[0].applications.filter(application=>application.periodId===period.id).map(application=>application.amount))>=total(period.concepts.map(concept=>concept.amount)))return "Pago completo";
+  return `${payments.length} abono${payments.length===1?"":"s"}`;
+}
 /** A receipt remains identifiable as an advance after the period is confirmed. */
 export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod,today:string) {
   const amounts=salaryPeriodTotals(ledger,period,today);
   const confirmed=period.earned&&canConfirmSalaryPeriod(period.end,today);
   const payments=salaryState(ledger).payments.filter(p=>salaryPaymentValid(ledger,p)&&p.applications.some(a=>a.periodId===period.id));
-  const advances=total(payments.filter(p=>(p.historical?p.date:movementDay(p.date))<=period.end).flatMap(p=>p.applications.filter(a=>a.periodId===period.id).map(a=>a.amount)));
+  const expected=total(period.concepts.map(c=>c.amount));
+  const amountFor=(payment:SalaryPayment)=>total(payment.applications.filter(a=>a.periodId===period.id).map(a=>a.amount));
+  const early=total(payments.filter(p=>movementDay(p.date)<period.payDate).map(amountFor));
+  const late=total(payments.filter(p=>movementDay(p.date)>period.payDate).map(amountFor));
   const overdue=confirmed&&amounts.pending>0&&period.payDate<today;
-  const state=!confirmed?(period.start>today?"Proyectado":canConfirmSalaryPeriod(period.end,today)?"Por confirmar devengo":"En curso"):amounts.pending===0?"Completamente pagado":overdue?"Pendiente vencido":amounts.received>0?"Parcialmente pagado":"Devengado sin pagos";
-  const tone=!confirmed?(period.start>today?"neutral":"current"):amounts.pending===0?"paid":overdue?"overdue":amounts.received>0?"partial":"neutral";
-  return {...amounts,confirmed,advances,overdue,state,tone,paymentCount:payments.length};
+  const fullyPaid=amounts.received>=expected;
+  const workState=period.start>today?"Aún no comienza":today<=period.end?"En curso":confirmed?"Período finalizado":"Por confirmar devengo";
+  const state=fullyPaid?"Completamente pagado":amounts.received>0?"Parcialmente pagado":confirmed?"Pendiente de pago":period.start>today?"Proyectado":today<=period.end?"En curso":"Por confirmar devengo";
+  const tone=fullyPaid?"paid":overdue?"overdue":amounts.received>0?"partial":period.start<=today&&today<=period.end?"current":"neutral";
+  return {...amounts,expected,remaining:Math.max(0,expected-amounts.received),confirmed,fullyPaid,early,late,advances:early,overdue,workState,state,tone,paymentCount:payments.length};
+}
+export function salaryPaymentTiming(period:SalaryPeriod,receivedAt:string) {
+  const days=daysBetween(period.payDate,movementDay(receivedAt));
+  return {days,label:days<0?`Pagado ${Math.abs(days)} ${Math.abs(days)===1?"día":"días"} por adelantado`:days>0?`Pagado ${days} ${days===1?"día":"días"} de atraso`:"Pagado en la fecha prevista",kind:days<0?"early" as const:days>0?"late" as const:"on-time" as const};
 }
 export function salarySuggestions(ledger:SalaryLedger,configId:string,receptionDay:string) {
   salaryDay(receptionDay);
@@ -204,7 +264,7 @@ export function correctSalaryPayment<T extends SalaryLedger>(ledger:T,expected:S
   const date=payment.historical?salaryDay(changes.date):movementDay(changes.date);
   ensure((payment.historical||validMovementDate(changes.date))&&date<=salaryDay(today),"Selecciona la fecha real del cobro, igual o anterior a hoy.");
   let next:SalaryLedger={...ledger,salary:{...state,payments:state.payments.filter(p=>p.id!==payment.id)}};
-  if(!remove)validateSalaryApplications(next,payment.configId,changes.applications,changes.amount,date);
+  if(!remove)validateSalaryApplications(next,payment.configId,changes.applications,changes.amount);
   if(!payment.historical) {
     const movement=ledger.movements.find(m=>m.id===payment.movementId);
     ensure(movement&&salaryPaymentValid(ledger,payment),"El ingreso vinculado cambió; revísalo antes de corregirlo.");
@@ -220,7 +280,8 @@ export function correctSalaryPayment<T extends SalaryLedger>(ledger:T,expected:S
     ensure(totals(next).unassigned>=0,"La corrección dejaría más dinero asignado que dinero real.");
     if(changes.date!==payment.date)for(const other of ledger.movements.filter(m=>m.type==="Ingreso"&&m.id!==movement.id))ensure(incomeDistribution(ledger,other.id)?.unassigned===incomeDistribution(next,other.id)?.unassigned,"Esta fecha alteraría la trazabilidad de otros ingresos. Revisa primero los movimientos dependientes.");
   }
-  if(!remove&&changes.reference.trim()&&!payment.historical)ensure(!state.payments.some(p=>p.id!==payment.id&&!p.historical&&salaryPaymentValid(ledger,p)&&p.configId===payment.configId&&p.date===changes.date&&p.amount===changes.amount&&p.accountId===payment.accountId&&normalizeSalaryName(p.reference)===normalizeSalaryName(changes.reference)&&JSON.stringify([...new Set(p.applications.map(a=>a.periodId))].sort())===JSON.stringify([...new Set(changes.applications.map(a=>a.periodId))].sort())),"Ya existe un ingreso con estos mismos datos.");
+  const applicationKey=(items:SalaryApplication[])=>JSON.stringify([...items].map(a=>[a.periodId,a.conceptId,a.amount]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))||String(a[1]).localeCompare(String(b[1]))));
+  if(!remove&&!payment.historical)ensure(!state.payments.some(p=>p.id!==payment.id&&!p.historical&&salaryPaymentValid(ledger,p)&&p.configId===payment.configId&&p.date===changes.date&&p.amount===changes.amount&&p.accountId===payment.accountId&&applicationKey(p.applications)===applicationKey(changes.applications)&&(!changes.reference.trim()&&!p.reference.trim()||normalizeSalaryName(p.reference)===normalizeSalaryName(changes.reference))),"Ya existe un ingreso con estos mismos datos.");
   const updated=remove?{...payment,voidReason:reason}:{...payment,amount:changes.amount,date:changes.date,reference:changes.reference,notes:changes.notes,applications:changes.applications.map(a=>({...a}))};
   return {...ledger,...next,salary:{...state,payments:state.payments.map(p=>p.id===payment.id?updated:p),audit:audit(state,payment.id,remove?"Anular cobro":"Corregir cobro",reason,{payment,movement:ledger.movements.find(m=>m.id===payment.movementId)})}};
 }

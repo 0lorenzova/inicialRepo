@@ -1,0 +1,40 @@
+.dialog{display:grid;gap:14px;max-height:88dvh;overflow:auto;overscroll-behavior:contain;padding:22px;background:var(--paper);color:var(--ink);border-radius:18px}
+.dialog header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}
+.dialog header h2{margin:2px 0 0;font-size:clamp(19px,4vw,25px)}
+.dialog header small{color:var(--muted);font-weight:700;letter-spacing:.08em}
+.dialog header button{min-width:44px;min-height:44px}
+.dialog label{display:grid;gap:6px;min-width:0}
+.dialog input,.dialog select,.dialog textarea{max-width:100%;min-width:0}
+.configLabel{margin-top:2px}
+.periodPicker{display:grid;gap:10px;border:1px solid var(--line);border-radius:14px;padding:12px}
+.periodHeading{display:grid;grid-template-columns:44px minmax(0,1fr) 44px 44px;align-items:center;gap:8px}
+.periodHeading button{min-height:44px;padding:6px}
+.periodHeading>div{display:grid;gap:3px;min-width:0;text-align:center}
+.periodHeading strong{font-size:clamp(15px,3.8vw,19px);overflow-wrap:anywhere}
+.periodHeading small{color:var(--muted);line-height:1.4}
+.periodMeta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 14px;font-size:13px}
+.timing{margin:0;color:var(--muted);font-size:14px}
+.balance{margin:-8px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+.accountValue{display:grid;gap:4px;border:1px solid var(--line);border-radius:10px;padding:10px 12px}.accountValue span{color:var(--muted);font-size:12px}
+.moreOptions{border-top:1px solid var(--line);padding-top:10px}
+.moreOptions summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700}
+.advancedFields{display:grid;gap:13px;padding-top:8px}
+.advancedFields fieldset{min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
+.advancedFields legend{max-width:100%;white-space:normal}
+.advancedFields :global(.check-label){display:flex;align-items:center;gap:8px}
+.advancedFields :global(.check-label) input{width:20px;height:20px;min-width:20px}
+.advancedFields small{color:var(--muted);line-height:1.5}
+.applications{display:grid;gap:10px}
+.calendar{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.calendarHeading{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;text-align:center;text-transform:capitalize}
+.calendarHeading button{min-height:44px;padding:6px}
+.calendarGrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:3px;text-align:center;font-size:12px}
+.calendarGrid>span{align-self:center;color:var(--muted);font-weight:700}
+.calendarWeek{display:contents}
+.weekNumber,.calendarDay{min-width:0;min-height:38px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit}
+.weekNumber{grid-column:1;cursor:pointer;color:var(--muted);font-size:10px;line-height:1.2;padding:2px}
+.weekNumber:hover,.calendarDay:hover{background:var(--soft)}
+.calendarDay[data-selected="true"]{background:var(--green);color:#fff;font-weight:800}
+.calendarDay[data-outside="true"]{opacity:.4}
+.calendar>small{color:var(--muted);line-height:1.4}
+@media(max-width:480px){.dialog{padding:16px}.periodPicker{padding:10px}.periodHeading{grid-template-columns:40px minmax(0,1fr) 40px 40px;gap:5px}.calendarGrid{gap:1px;font-size:11px}.calendarDay,.weekNumber{min-height:36px;border-radius:6px}.weekNumber{font-size:9px}.periodMeta{font-size:12px}}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {canConfirmSalaryPeriod,salaryLocalToday,SALARY_NOT_FINISHED} from '../lib/salary-dates.ts';
-import {saveSalaryConfig,saveSalaryPeriod,postSalaryPayment,salaryPeriodPresentation,salaryPeriodTotals,correctSalaryPayment,deleteSalaryPeriod} from '../lib/salary-tracking.ts';
+import {saveSalaryConfig,saveSalaryPeriod,postSalaryPayment,salaryPeriodPresentation,salaryPeriodTotals,correctSalaryPayment,deleteSalaryPeriod,salaryPeriodForDate,salaryPeriodLabel,salaryPaymentTiming,salaryPeriodPaymentLabel,preferredSalaryConfigId} from '../lib/salary-tracking.ts';
 import {postMovement,totals} from '../lib/finance-ledger.ts';
 import {importSalaryPeriods} from '../lib/salary-import.ts';
 const empty={accounts:[{id:'a',name:'Cuenta local ficticia',type:'Banco',active:true,balance:0}],envelopes:[{id:'e',name:'Prueba',balance:0}],movements:[],loans:[]};
@@ -8,6 +8,14 @@ const cfg={id:'c',employer:'Ficticio',name:'Semanal',currency:'CRC',base:125000,
 let d=saveSalaryConfig(empty,cfg,null);
 const period={id:'p',configId:'c',frequency:'Semanal',start:'2026-10-12',end:'2026-10-16',payDate:'2026-10-19',earned:false,concepts:[{id:'base',name:'Salario',amount:125000}],notes:''};
 d=saveSalaryPeriod(d,period,null,'2026-10-14','Período propuesto');
+assert.equal(salaryPeriodForDate(d,'c','2026-10-14'),d.salary.periods[0],'Reuse the existing projection for the current period');
+assert.equal(salaryPeriodForDate(d,'c','2026-10-17'),d.salary.periods[0],'Reuse a saved period with the scheduled start even when it has custom bounds');
+const currentProjection=salaryPeriodForDate(d,'c','2026-10-27');assert.equal(currentProjection.start,'2026-10-26');assert.equal(salaryPeriodLabel(currentProjection,cfg),'Semana 44 · Año 2026');assert.equal(d.salary.periods.length,1,'Browsing periods does not persist projections');
+assert.equal(salaryPeriodForDate(d,'c','2026-10-25').start,'2026-10-19','Previous-period navigation resolves the previous scheduled period');assert.equal(salaryPeriodForDate(d,'c','2026-11-02').start,'2026-11-02','Next-period navigation resolves the next scheduled period');assert.equal(salaryPeriodForDate(d,'c','2026-11-01').id,currentProjection.id,'Direct calendar selection resolves a date inside its scheduled period');
+const biweekly={...cfg,id:'b',name:'Quincenal',frequency:'Quincenal',start:'2026-10-01'};d=saveSalaryConfig(d,biweekly,null);assert.equal(salaryPeriodForDate(d,'b','2026-10-20').start,'2026-10-16');
+const monthly={...cfg,id:'m',name:'Mensual',frequency:'Mensual',start:'2026-01-31'};d=saveSalaryConfig(d,monthly,null);assert.equal(salaryPeriodForDate(d,'m','2026-02-28').start,'2026-02-28');
+const custom={...cfg,id:'o',name:'Otra periodicidad',frequency:'Otra',intervalDays:10,start:'2026-10-03'};d=saveSalaryConfig(d,custom,null);assert.equal(salaryPeriodForDate(d,'o','2026-10-22').start,'2026-10-13');
+d={...d,salary:{...d.salary,lastConfigId:'b'}};assert.equal(preferredSalaryConfigId(d),'b','Restore the last active salary configuration');
 for(const day of ['2026-10-14','2026-10-16'])assert.throws(()=>saveSalaryPeriod(d,{...period,earned:true},period,day,'Confirmar antes de tiempo'),{message:SALARY_NOT_FINISHED});
 assert.equal(canConfirmSalaryPeriod('2026-10-16','2026-10-16'),false);
 assert.equal(canConfirmSalaryPeriod('2026-10-16','2026-10-17'),true);
@@ -19,17 +27,19 @@ assert.throws(()=>saveSalaryPeriod(d,{...period,workedDays:['2026-10-10']},perio
 d=saveSalaryPeriod(d,{...period,workedDays:['2026-10-12','2026-10-14']},period,'2026-10-14','Días confirmados individualmente');
 assert.equal(d.salary.periods[0].earned,false);assert.equal(salaryPeriodTotals(d,d.salary.periods[0],'2026-10-14').earned,0);
 const input={id:'advance',configId:'c',amount:50000,date:'2026-10-14T10:00',accountId:'a',method:'Transferencia',reference:'A1',notes:'Ficticio',applications:[{periodId:'p',conceptId:'base',amount:50000}],manual:{e:'10000'}};
-assert.throws(()=>postSalaryPayment(d,input,'2026-10-14'),/Pago anticipado|devengado/);
-d=postSalaryPayment(d,{...input,allowAdvance:true},'2026-10-14');
+assert.equal(salaryPaymentTiming(period,input.date).days,-5);assert.equal(salaryPaymentTiming(period,input.date).label,'Pagado 5 días por adelantado');
+d=postSalaryPayment(d,input,'2026-10-14');
 assert.equal(d.salary.periods[0].earned,false);assert.equal(d.movements.length,1);assert.equal(d.salary.payments.length,1);
+assert.equal(preferredSalaryConfigId(d),'c');assert.equal(salaryPeriodPaymentLabel(d,d.salary.periods[0]),'1 abono');
 assert.deepEqual(totals(d),{accounts:50000,assigned:10000,unassigned:40000});
-let view=salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-14');assert.equal(view.state,'En curso');assert.equal(view.tone,'current');assert.equal(view.advances,50000);assert.equal(view.pending,0);assert.equal(view.projected,125000);
-const stable=JSON.stringify(d);assert.throws(()=>postSalaryPayment(d,{...input,allowAdvance:true},'2026-10-14'),/Ya existe/);assert.equal(JSON.stringify(d),stable);
+let view=salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-14');assert.equal(view.state,'Parcialmente pagado');assert.equal(view.workState,'En curso');assert.equal(view.tone,'partial');assert.equal(view.advances,50000);assert.equal(view.pending,0);assert.equal(view.projected,125000);
+const stable=JSON.stringify(d);assert.throws(()=>postSalaryPayment(d,{...input,id:'duplicate'},'2026-10-14'),/Ya existe/);assert.equal(JSON.stringify(d),stable);
 const worked=d.salary.periods[0];d=saveSalaryPeriod(d,{...worked,earned:true},worked,'2026-10-17','Semana completada');
 view=salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-17');assert.equal(view.state,'Parcialmente pagado');assert.equal(view.pending,75000);assert.equal(view.advances,50000);assert.equal(view.tone,'partial');
 assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-19').overdue,false,'Due date itself is not past due');
 assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-20').tone,'overdue');
-assert.equal(salaryPeriodPresentation(d,{...period,start:'2026-11-02',end:'2026-11-06'},'2026-10-14').tone,'neutral');
+assert.equal(salaryPaymentTiming(period,'2026-10-20T09:00').days,1);assert.equal(salaryPaymentTiming(period,'2026-10-20T09:00').label,'Pagado 1 día de atraso');
+assert.equal(salaryPeriodPresentation(d,{...period,id:'future',start:'2026-11-02',end:'2026-11-06',concepts:[{id:'future-concept',name:'Salario',amount:125000}]},'2026-10-14').tone,'neutral');
 // A legacy prematurely earned flag must not make projected amounts count as debt.
 assert.equal(salaryPeriodTotals(d,{...period,earned:true},'2026-10-14').earned,0);
 let legacy={...d,salary:{...d.salary,periods:[{...period,earned:true}]}};
@@ -37,8 +47,15 @@ legacy=saveSalaryPeriod(legacy,{...period,earned:false},legacy.salary.periods[0]
 // Past periods remain editable, and changing the future end cannot bypass devengo.
 const existing=d.salary.periods[0];assert.throws(()=>saveSalaryPeriod(d,{...existing,end:'2026-11-01'},existing,'2026-10-17','Extender'),/todavía no ha finalizado/);
 d=saveSalaryPeriod(d,{...existing,notes:'Nota histórica corregida'},existing,'2026-10-17','Corrección legítima');
-d=postSalaryPayment(d,{...input,id:'final',amount:75000,date:'2026-10-19T09:00',reference:'A2',manual:{},applications:[{periodId:'p',conceptId:'base',amount:75000}]},'2026-10-19');
+d=postSalaryPayment(d,{...input,id:'final',amount:75000,date:'2026-10-20T09:00',reference:'A2',manual:{},applications:[{periodId:'p',conceptId:'base',amount:75000}]},'2026-10-20');
 view=salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-20');assert.equal(view.tone,'paid');assert.equal(view.state,'Completamente pagado');assert.equal(view.advances,50000);assert.equal(view.paymentCount,2);
+assert.equal(salaryPeriodPaymentLabel(d,d.salary.periods[0]),'2 abonos','Partial and later top-up receipts retain the abono classification');
+assert.equal(salaryPaymentTiming(period,'2026-10-19T09:00').label,'Pagado en la fecha prevista');
+const periodCountBefore=d.salary.periods.length;
+const futureProjection=salaryPeriodForDate(d,'c','2026-10-27');
+d=postSalaryPayment(d,{id:'one-full',configId:'c',amount:125000,date:'2026-11-04T09:00',accountId:'a',method:'Transferencia',reference:'F1',notes:'',applications:[{periodId:futureProjection.id,conceptId:futureProjection.concepts[0].id,amount:125000}],preparedPeriod:futureProjection},'2026-11-04');
+assert.equal(d.salary.periods.length,periodCountBefore+1,'A first payment materializes exactly one prepared projection');
+const fullPeriod=d.salary.periods.find(item=>item.id===futureProjection.id);assert.equal(fullPeriod.earned,false,'A full payment never confirms work automatically');assert.equal(salaryPeriodPaymentLabel(d,fullPeriod),'Pago completo','A single full receipt is not called an abono');assert.equal(d.movements.length,3,'Each real receipt creates exactly one movement');assert.equal(salaryPaymentTiming(fullPeriod,'2026-11-04T09:00').label,'Pagado en la fecha prevista');
 // Payment correction and deletion guards remain in place for allocated money.
 assert.throws(()=>correctSalaryPayment(d,d.salary.payments[0],d.salary.payments[0],'2026-10-20','Anular',true),/asignado|asignaciones/);
 assert.throws(()=>deleteSalaryPeriod(d,'p',d.salary.periods[0],'Eliminar'),/abonos/);
@@ -47,4 +64,4 @@ const ordinary=postMovement(empty,{id:'ordinary',type:'Ingreso',name:'Regalo',am
 const fingerprint='a'.repeat(64),source=`xlsx:${fingerprint}:Hoja1:1`;
 assert.throws(()=>importSalaryPeriods(saveSalaryConfig(empty,cfg,null),{fingerprint,warnings:[],periods:[{id:source,row:1,selected:true,start:period.start,end:period.end,payDate:period.payDate,earned:true,concepts:[{id:'c',included:true,name:'Salario',amount:'125000'}],receipts:[],warnings:[],notes:''}]},'c','2026-10-16'),/todavía no ha finalizado/);
 for(const x of [d,legacy,ordinary]){const v=totals(x);assert.equal(v.accounts,v.assigned+v.unassigned);}
-console.log('OK: day-after-close, Costa Rica midnight, all save/import routes, individual worked days, advance distinct from devengo, status/ribbon states/due dates, single movements, edits, ordinary incomes and money invariant.');
+console.log('OK: current-period reuse, pure period navigation, weekly/quincenal/monthly/custom windows, expected-pay timing, early/on-time/late receipts, partial/full labels, real movement counts, scheduled config preference, earned-date guard, imports, corrections and money invariant.');
