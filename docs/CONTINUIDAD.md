@@ -1,7 +1,7 @@
 # Continuidad del proyecto — 4 octubre 2026
 
 ## Cómo continuar
- - Norma permanente reiterada por el propietario: publicar lo listo y verificar Vercel antes de agotar uso, salvo instrucción contraria. Reservar margen para commit, push y despliegue; no esperar al límite. Último bloque: `docs/refinamiento-salarial-2026-10-15.md`.
+ - Norma permanente reiterada por el propietario: publicar lo listo y verificar Vercel antes de agotar uso, salvo instrucción contraria. Reservar margen para commit, push y despliegue; no esperar al límite. Último bloque: `docs/etiquetas-temas-2026-10-15.md` (etiquetas locales de períodos y White Snow/Ice/Fire).
 0. Último bloque: `docs/cierre-salarial-2026-10-15.md`. Devengo desde el día siguiente al cierre, anticipos explícitos, Inicio salarial y fichas por estado. El usuario decidió dejar `202610150001_salary_earned_guard.sql` pendiente: NO ejecutarlo ni declarar completada la protección de escrituras directas. Esta nota sustituye los mensajes anteriores de “no hace falta SQL” para este requisito nuevo.
 1. Leer este archivo primero. No repetir pruebas ya registradas salvo cambios que las afecten.
 2. Mantener arquitectura, historial y diseño. La instrucción posterior sustituye solo el comportamiento que modifica.

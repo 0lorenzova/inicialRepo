@@ -10,3 +10,8 @@ export function salaryLocalToday(now = new Date()) {
 export function canConfirmSalaryPeriod(end:string,today:string) {
   return validMovementDate(`${end}T12:00`)&&validMovementDate(`${today}T12:00`)&&end<today;
 }
+/** Orientation only: local civil day in the viewer's zone, without changing accounting dates. */
+export function salaryViewerDay(now=new Date(),timeZone?:string) {
+  const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(now).map(p=>[p.type,p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}

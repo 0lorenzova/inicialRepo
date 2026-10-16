@@ -102,6 +102,24 @@ export function preferredSalaryConfigId(ledger:SalaryLedger) {
   const last=salaryState(ledger).lastConfigId;
   return configs.find(c=>c.id===last&&c.active)?.id??configs.find(c=>c.active)?.id??configs[0]?.id??"";
 }
+export function salaryTemporalLabel(ledger:SalaryLedger,period:SalaryPeriod,viewerDay:string) {
+  salaryDay(viewerDay);
+  if(period.start<=viewerDay&&period.end>=viewerDay)return "Hoy";
+  const config=salaryState(ledger).configs.find(c=>c.id===period.configId);
+  ensure(config,"Selecciona una configuración salarial.");
+  const current=periodStartForDate(config,viewerDay).start;
+  const target=periodStartForDate(config,period.start).start;
+  const frequency=period.frequency??config.frequency;
+  const difference=config.frequency==="Mensual"?(Number(target.slice(0,4))-Number(current.slice(0,4)))*12+Number(target.slice(5,7))-Number(current.slice(5,7)):
+    Math.round(daysBetween(current,target)/(config.frequency==="Semanal"?7:config.frequency==="Quincenal"?15:config.intervalDays??7));
+  // A shortened historical period can share an anchor with today without containing it.
+  const offset=difference|| (period.end<viewerDay?-1:1);
+  const unit=frequency==="Semanal"?"semana":frequency==="Quincenal"?"quincena":frequency==="Mensual"?"mes":"período";
+  if(offset===-1)return unit==="mes"?"El mes pasado":unit==="período"?"El período pasado":`La ${unit} pasada`;
+  if(offset===1)return unit==="mes"?"El próximo mes":unit==="período"?"El próximo período":`La próxima ${unit}`;
+  const plural=unit==="mes"?"meses":`${unit}s`;
+  return offset<0?`Hace ${Math.abs(offset)} ${plural}`:`Dentro de ${offset} ${plural}`;
+}
 export function adjacentSalaryPeriod(ledger:SalaryLedger,period:SalaryPeriod,direction:-1|1) {
   let next=salaryPeriodForDate(ledger,period.configId,shiftSalaryDate(direction<0?period.start:period.end,direction));
   if(next.id===period.id&&direction>0){const config=salaryState(ledger).configs.find(c=>c.id===period.configId)!;next=salaryPeriodForDate(ledger,period.configId,periodStartForDate(config,period.start).next);}

@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { salaryViewerDay } from "@/lib/salary-dates";
+import { salaryTemporalLabel } from "@/lib/salary-tracking";
 import { AccountSelector } from "@/components/account-selector";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { IncomeDistribution } from "@/components/income-distribution";
@@ -34,6 +36,8 @@ const dayLabel = (value: string) => new Intl.DateTimeFormat("es-CR", { timeZone:
 const currentDateTime = (value: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value : `${value.slice(0, 10)}T12:00`;
 
 export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreferences, display, initialConfigId, initialPeriodId, error: externalError, onClose, onConfigure, onCreateAccount, onSave }: Props) {
+  const [viewerDay,setViewerDay]=useState(()=>salaryViewerDay());
+  useEffect(()=>{const update=()=>setViewerDay(salaryViewerDay());const timer=window.setInterval(update,60000);window.addEventListener("focus",update);return()=>{window.clearInterval(timer);window.removeEventListener("focus",update);};},[]);
   const state = salaryState(ledger);
   const startingPeriod = state.periods.find(period => period.id === initialPeriodId);
   const startingConfigId = initialConfigId || startingPeriod?.configId || preferredSalaryConfigId(ledger);
@@ -198,7 +202,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
         <section className={styles.periodPicker} aria-label="Período salarial">
           <div className={styles.periodHeading}>
             <button type="button" className="secondary" aria-label="Período anterior" onClick={() => movePeriod(-1)} disabled={!period || period.start <= "0001-01-01"}>‹</button>
-            <div><strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>{period && <small>{dayLabel(period.start)} — {dayLabel(period.end)}</small>}</div>
+            <div><strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>{period && <><span className={styles.temporalLabel}>{salaryTemporalLabel(ledger,period,viewerDay)}</span><small>{dayLabel(period.start)} — {dayLabel(period.end)}</small></>}</div>
             <button type="button" className="secondary" aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}>›</button>
             <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Explorar períodos en calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦</button>
           </div>

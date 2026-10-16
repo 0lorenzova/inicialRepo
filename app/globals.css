@@ -386,3 +386,6 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 
 .theme-personality .positive { color:#6de0b3; }
 .theme-personality .negative { color:#ff9da5; }
+.theme-personality:not(.dark-mode) .positive { color:#17603d; }
+.theme-personality:not(.dark-mode) .negative { color:#b42335; }
+:is(.theme-white-snow,.theme-ice,.theme-fire) .logo .brand-name { background:transparent; }

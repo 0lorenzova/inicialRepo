@@ -5,11 +5,11 @@ import { createTheme, CssBaseline, GlobalStyles, ThemeProvider as MuiThemeProvid
 
 import { interfaceScale, nextInterfaceSize, normalizeInterfaceSize, type InterfaceSize } from "@/lib/interface-size";
 
-import { additionalPalette, additionalThemeStyles } from "@/lib/theme-palettes";
+import { additionalPalette, additionalThemeStyles, additionalThemeIsDark } from "@/lib/theme-palettes";
 
-export const themeNames = { light: "Claro", dark: "Oscuro", metallic: "Metálico", organic: "Orgánico / Naturaleza", silver: "Silver", "red-moon":"Red Moon", universe:"Universe", galaxy:"Galaxy", "river-water":"River Water" };
+export const themeNames = { light: "Claro", dark: "Oscuro", metallic: "Metálico", organic: "Orgánico / Naturaleza", silver: "Silver", "red-moon":"Red Moon", universe:"Universe", galaxy:"Galaxy", "river-water":"River Water", "white-snow":"White Snow", ice:"Ice", fire:"Fire" };
 export type ColorMode = keyof typeof themeNames;
-export const themeClass = (mode: ColorMode) => `${mode === "dark" || mode === "metallic" || additionalPalette(mode) ? "dark-mode" : ""} theme-${mode}${additionalPalette(mode) ? " theme-personality" : ""}`;
+export const themeClass = (mode: ColorMode) => `${mode === "dark" || mode === "metallic" || additionalThemeIsDark(mode) ? "dark-mode" : ""} theme-${mode}${additionalPalette(mode) ? " theme-personality" : ""}`;
 const ThemeModeContext = createContext<{ mode: ColorMode; setMode: (mode: ColorMode) => void; setPreferenceOwner:(owner:string)=>void; toggleMode: () => void; size:InterfaceSize; scale:number; cycleSize:()=>void }>({ mode: "light", setMode: () => {}, setPreferenceOwner:()=>{}, toggleMode: () => {}, size:0, scale:1, cycleSize:()=>{} });
 
 export function useThemeMode() {
@@ -56,13 +56,13 @@ export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode
       divider: mode === "dark" ? "#4a5a65" : mode === "silver" ? "#8795a5" : mode === "organic" ? "#82936e" : undefined,
       success: { main: "#4d8b69" },
       ...(extra ? {
-        mode: "dark" as const,
-        primary: { main:extra.accent, dark:extra.action, light:extra.selected, contrastText:extra.canvas },
+        mode: additionalThemeIsDark(mode)?"dark" as const:"light" as const,
+        primary: { main:extra.accent, dark:extra.action, light:extra.selected, contrastText:additionalThemeIsDark(mode)?extra.canvas:"#ffffff" },
         secondary: {main:extra.secondary},
         background: { default:extra.canvas, paper:extra.paper },
         text: { primary:extra.ink, secondary:extra.muted },
         divider:extra.line,
-        error: {main:"#ff9da5"},
+        error: {main:additionalThemeIsDark(mode)?"#ff9da5":"#b42335"},
       } : {}),
     },
     typography: {
