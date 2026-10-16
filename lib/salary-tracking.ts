@@ -104,7 +104,10 @@ export function salaryPeriodForDate(ledger:SalaryLedger,configId:string,date:str
   const {start,next}=periodStartForDate(config,date);
   const scheduled=state.periods.find(p=>p.configId===configId&&p.start===start);
   if(scheduled)return scheduled;
-  ensure(!state.periods.some(p=>p.configId===configId&&p.start<next&&p.end>=start),"Esta semana cruza un período histórico. Consulta ese período o elige la siguiente semana completa.");
+  // Reuse a crossing historical reference instead of creating an overlapping obligation.
+  const crossing=state.periods.filter(p=>p.configId===configId&&p.start<next&&p.end>=start)
+    .sort((a,b)=>Math.min(Math.abs(daysBetween(a.start,date)),Math.abs(daysBetween(a.end,date)))-Math.min(Math.abs(daysBetween(b.start,date)),Math.abs(daysBetween(b.end,date)))||a.id.localeCompare(b.id))[0];
+  if(crossing)return crossing;
   return projectedSalaryPeriod(config,start,next);
 }
 export function preferredSalaryConfigId(ledger:SalaryLedger) {
@@ -134,7 +137,7 @@ export function adjacentSalaryPeriod(ledger:SalaryLedger,period:SalaryPeriod,dir
   const config=salaryState(ledger).configs.find(c=>c.id===period.configId)!;
   const nextDate=direction>0&&config.frequency==="Semanal"&&config.calendarMode==="iso-workdays"?periodStartForDate(config,period.end).next:shiftSalaryDate(direction<0?period.start:period.end,direction);
   let next=salaryPeriodForDate(ledger,period.configId,nextDate);
-  if(next.id===period.id&&direction>0){const config=salaryState(ledger).configs.find(c=>c.id===period.configId)!;next=salaryPeriodForDate(ledger,period.configId,periodStartForDate(config,period.start).next);}
+  if(next.id===period.id){const bounds=periodStartForDate(config,direction<0?period.start:period.end);next=salaryPeriodForDate(ledger,period.configId,direction<0?shiftSalaryDate(bounds.start,-1):bounds.next);}
   ensure(next.id!==period.id,"No hay otro período en esta fecha.");return next;
 }
 export function salaryReceiptDefaults(ledger:SalaryLedger) {

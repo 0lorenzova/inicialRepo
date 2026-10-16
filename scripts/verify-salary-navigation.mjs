@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {salaryDateLabel,salaryWorkSchedule,salaryWeekdays} from '../lib/salary-dates.ts';
+import {saveSalaryConfig,saveSalaryPeriod,salaryPeriodForDate,adjacentSalaryPeriod,salaryPeriodPresentation,salaryTemporalLabel,salaryPeriodLabel,shiftSalaryDate} from '../lib/salary-tracking.ts';
+const empty={accounts:[],envelopes:[],movements:[],loans:[]};
+const c={id:'c',employer:'Ficticio',name:'Salario',currency:'CRC',base:125000,frequency:'Semanal',calendarMode:'iso-workdays',start:'2026-10-12',payOffset:1,workDays:[1,2,3,4,5],active:true};
+let d=saveSalaryConfig(empty,c,null);const original=JSON.stringify(d),current=salaryPeriodForDate(d,c.id,'2026-10-16');
+let p=current;
+for(let i=1;i<=110;i++){p=adjacentSalaryPeriod(d,p,-1);assert.equal(p.start,shiftSalaryDate(current.start,-i*7));assert.equal(salaryTemporalLabel(d,p,'2026-10-16'),i===1?'La semana pasada':`Hace ${i} semanas`);const v=salaryPeriodPresentation(d,p,'2026-10-16');assert.equal(v.received,0);assert.equal(v.paymentCount,0);assert.equal(v.expected,125000);assert.equal(salaryPeriodForDate(d,c.id,p.end).id,p.id);}
+for(let i=0;i<110;i++)p=adjacentSalaryPeriod(d,p,1);assert.deepEqual(p,current);assert.equal(JSON.stringify(d),original);
+for(const [date,label] of [['2026-12-31','Jv'],['2027-01-01','Vi'],['2027-01-03','Dm']])assert.ok(salaryDateLabel(date).startsWith(label+' '));
+for(let i=0;i<7;i++)assert.ok(salaryDateLabel(shiftSalaryDate('2026-10-11',i),false).startsWith(salaryWeekdays[i]+' '));
+assert.match(salaryWorkSchedule(current),/^Trabajo previsto: Ln 12 oct — Vi 16 oct$/);
+assert.match(salaryWorkSchedule({...current,scheduledWorkDays:[1,3,5]}),/Ln 12 oct · Mc 14 oct · Vi 16 oct/);
+assert.equal(salaryPeriodLabel(salaryPeriodForDate(d,c.id,'2027-01-01'),c),'Semana 53 · Año 2026');
+const custom={...current,id:'custom',start:'2026-10-13',end:'2026-10-16',concepts:[{id:'historical',name:'Salario',amount:100000}]};
+d=saveSalaryPeriod(d,custom,null,'2026-10-16','Historia');const before=JSON.stringify(d);
+assert.equal(salaryPeriodForDate(d,c.id,'2026-10-12').id,'custom','Reuse crossing history without load errors');
+const previous=adjacentSalaryPeriod(d,custom,-1);assert.equal(previous.start,'2026-10-05','Back arrow must escape the same saved reference');assert.equal(adjacentSalaryPeriod(d,previous,1).id,'custom');
+assert.equal(adjacentSalaryPeriod(d,custom,1).start,'2026-10-19');assert.equal(JSON.stringify(d),before);
+console.log('OK: 110 weeks each direction, calendar/arrow identity, zero receipts, no writes, ISO year change, weekday labels, planned workdays and custom-history backward regression.');

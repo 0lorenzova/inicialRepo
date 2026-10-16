@@ -1,7 +1,7 @@
 # Continuidad del proyecto — 4 octubre 2026
 
 ## Cómo continuar
- - Último bloque adicional: `docs/gestion-automatica-2026-10-16.md`. Retomar revisión visual del reporte nuevo en móvil/PC, orden lista/cuadrícula y recarga; lógica probada. Administración manual retirada del flujo habitual, sin borrar datos.
+ - Último bloque: `docs/navegacion-salarial-2026-10-16.md`. Corregida navegación hacia atrás con históricos personalizados; fechas con días abreviados y Abonos: 0. Completada revisión del reporte a 320/1280 px, orden lista/cuadrícula y persistencia tras recarga. No repetir esas pruebas salvo cambios relacionados. Limitación pendiente de QA: escritura automatizada del mes nativo; botones del almanaque y selección de fechas sí verificados.
  - Norma permanente reiterada por el propietario: publicar lo listo y verificar Vercel antes de agotar uso, salvo instrucción contraria. Reservar margen para commit, push y despliegue; no esperar al límite. Último bloque: `docs/estados-salariales-2026-10-16.md` (estados compartidos, alertas, semanas ISO, días laborales y almanaque).
 0. Último bloque: `docs/cierre-salarial-2026-10-15.md`. Devengo desde el día siguiente al cierre, anticipos explícitos, Inicio salarial y fichas por estado. El usuario decidió dejar `202610150001_salary_earned_guard.sql` pendiente: NO ejecutarlo ni declarar completada la protección de escrituras directas. Esta nota sustituye los mensajes anteriores de “no hace falta SQL” para este requisito nuevo.
 1. Leer este archivo primero. No repetir pruebas ya registradas salvo cambios que las afecten.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { salaryViewerDay } from "@/lib/salary-dates";
+import { salaryViewerDay, salaryDateLabel, salaryWorkSchedule } from "@/lib/salary-dates";
 import { salaryTemporalLabel } from "@/lib/salary-tracking";
 import { AccountSelector } from "@/components/account-selector";
 import { FinanceDialog } from "@/components/finance-dialog";
@@ -33,7 +33,7 @@ const localNow = () => {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Costa_Rica", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map(part => [part.type, part.value]));
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 };
-const dayLabel = (value: string) => new Intl.DateTimeFormat("es-CR", { timeZone: "UTC", dateStyle: "medium" }).format(new Date(`${value.slice(0, 10)}T12:00:00Z`));
+const dayLabel = salaryDateLabel;
 const currentDateTime = (value: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value : `${value.slice(0, 10)}T12:00`;
 
 export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreferences, display, initialConfigId, initialPeriodId, error: externalError, onClose, onConfigure, onCreateAccount, onSave }: Props) {
@@ -120,6 +120,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
     try {
       const next = salaryPeriodForDate(ledger, config!.id, date);
       setPeriodDate(next.start);
+      setCalendarMonth(next.start.slice(0,7));
 
       resetApplications(next);
 
@@ -208,7 +209,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
             <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Explorar períodos en calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar almanaque":"Elegir en almanaque"}</button>
           </div>
           {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(period.payDate)}</b></span><span>Salario: <b>{display(expectedAmount)}</b></span></div>}
-          {period?.scheduledWorkDays&&<small className={styles.workDays}>Laborables: {period.scheduledWorkDays.map(d=>["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"][d]).join(" · ")}</small>}
+          {period?.scheduledWorkDays&&<small className={styles.workDays}>{salaryWorkSchedule(period)}</small>}
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
           {period && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{period.start <= today && period.end >= today ? " · Período en curso" : period.start > today ? " · Período futuro" : " · Período finalizado"}</p>}
@@ -216,7 +217,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
 
         <label htmlFor="salary-received-amount">Importe recibido</label>
         <div className="currency-input"><span>₡</span><input id="salary-received-amount" autoFocus type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); setLocalError(""); }}/></div>
-        <p className={styles.balance}>Salario: {display(expectedAmount)} · Recibido: {display(receivedAmount)} · Pendiente: {display(pendingAmount)}</p>
+        <p className={styles.balance}>Salario: {display(expectedAmount)} · Recibido: {display(receivedAmount)} · Pendiente previsto: {display(pendingAmount)} · Abonos: {presentation?.paymentCount??0}</p>
         {linkedMovement?<div className={styles.accountValue}><span>Cuenta del ingreso existente</span><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div>:<AccountSelector label="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/>}
 
         <label>Medio de recepción<select value={linkedMovement?.paymentMethod ?? method} disabled={Boolean(linkedMovement)} onChange={event => setMethod(event.target.value)}>{[...new Set([...incomeReceptionMethods, method, linkedMovement?.paymentMethod])].filter(Boolean).map(item => <option key={item}>{item}</option>)}</select></label>

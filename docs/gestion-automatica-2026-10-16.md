@@ -9,3 +9,7 @@
 - Pruebas: registro sin período previo, parcial/completo, duplicados, consulta 1920/2400 sin escrituras, orden reversible y estable, persistencia JSON, invariantes financieros; suite de estados; TypeScript y compilación. La revisión interactiva móvil/PC de este nuevo reporte queda pendiente por margen de uso. No se declara verificada visualmente.
 - No hay SQL nuevo. La migración previa sigue pendiente; no ejecutarla sin autorización. Las estructuras históricas y el guard de devengo conservan compatibilidad, aunque ya no se exige ese paso al usuario.
 - Publicar el bloque compilado y confirmar Vercel. Retomar revisión visual del reporte, orden en ambas vistas y preferencia tras recarga. No repetir las pruebas lógicas ya aprobadas salvo cambios relacionados.
+
+## Cierre posterior de verificación
+- El bloque anterior se publicó en Production con el commit d7224e2.
+- Revisión interactiva pendiente completada en la siguiente entrega: reporte a 320/1280 px, lista/cuadrícula en ambos órdenes y preferencia tras recarga. Evidencia y límites en `navegacion-salarial-2026-10-16.md`; sus notas sustituyen el pendiente visual anterior.

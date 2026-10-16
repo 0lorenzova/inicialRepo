@@ -7,10 +7,11 @@ import { salaryPaymentTiming, salaryPeriodPaymentLabel, salaryPeriodPresentation
 import styles from "./salary-tracking.module.css";
 import {SalaryPeriodReport} from "./salary-period-report";
 import {sortSalaryHistory,setSalaryHistoryOrder} from "@/lib/salary-history";
+import {salaryDateLabel,salaryWorkSchedule} from "@/lib/salary-dates";
 import statusStyles from "./salary-status.module.css";
 
 type Props={ledger:SalaryLedger;today:string;display:(n:number)=>string;onSave:(operation:(current:SalaryLedger)=>SalaryLedger)=>void;onMovement:(id:string)=>void;onReceive:(configId:string,periodId?:string)=>void};
-const day=(value:string)=>new Intl.DateTimeFormat("es-CR",{timeZone:"UTC",dateStyle:"medium"}).format(new Date(`${value.slice(0,10)}T12:00:00Z`));
+const day=salaryDateLabel;
 const text=(form:FormData,name:string)=>String(form.get(name)??"").trim();
 function Editor({title,onClose,onSubmit,children,error}:{title:string;onClose:()=>void;onSubmit:(e:FormEvent<HTMLFormElement>)=>void;children:ReactNode;error:string}) {
   return <FinanceDialog label={title} onClose={onClose} maxWidth={640}><form className={`flow-modal flow-body ${styles.editor}`} onSubmit={onSubmit}><div className={styles.row}><h2>{title}</h2><button type="button" className="secondary" aria-label="Cerrar" onClick={onClose}>×</button></div>{children}{error&&<p className="form-error" role="alert">{error}</p>}<div className={styles.actions}><button type="button" className="secondary" onClick={onClose}>Cancelar</button><button className="primary" type="submit">Guardar y confirmar</button></div></form></FinanceDialog>;
@@ -76,7 +77,7 @@ export function SalaryTracking({ledger,today:initialToday,display,onSave,onMovem
             <div className={styles.periodAmounts}><span>Salario<strong className={styles.earned}>{display(sum.expected)}</strong></span><span>Recibido<strong className={styles.received}>{display(sum.received)}</strong></span><span>Pendiente<strong className={styles.pending}>{display(sum.remaining)}</strong></span></div>
           </summary>
           <p>Fecha prevista de pago: {day(p.payDate)} · Estado laboral: {sum.workState}</p>
-          {p.scheduledWorkDays&&<small>Días laborables: {p.scheduledWorkDays.map(d=>["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"][d]).join(" · ")}</small>}{(p.workedDays??[]).length>0&&<p>Días registrados como trabajados: {p.workedDays!.map(day).join(", ")}</p>}
+          {p.scheduledWorkDays&&<small>{salaryWorkSchedule(p)}</small>}{(p.workedDays??[]).length>0&&<p>Días registrados como trabajados: {p.workedDays!.map(value=>day(value)).join(", ")}</p>}
           {p.concepts.map(c=><div className={styles.concept} key={c.id}><b>{c.name}</b><span>{display(c.amount)} · Recibido {display(salaryConceptPaid(ledger,p.id,c.id))}</span></div>)}
           {p.notes&&<p>{p.notes}</p>}
           <details><summary>Correcciones históricas</summary><div className={styles.actions}><button className="secondary" disabled={!state.periods.some(item=>item.id===p.id)} onClick={()=>editPeriod(p)}>Corregir datos y conceptos</button><button disabled={!state.periods.some(item=>item.id===p.id)} className="secondary" onClick={()=>{setReason("");setError("");setDeleting({period:p});}}>Eliminar período</button></div></details>
