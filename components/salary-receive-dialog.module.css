@@ -26,9 +26,10 @@
 .advancedFields small{color:var(--muted);line-height:1.5}
 .applications{display:grid;gap:10px}
 .calendar{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:10px}
-.calendarHeading{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;text-align:center;text-transform:capitalize}
+.calendarHeading{display:grid;grid-template-columns:32px 32px minmax(0,1fr) 32px 32px;align-items:center;gap:3px;text-align:center}
+.calendarHeading label{font-size:11px}.calendarHeading input{width:100%;padding:4px!important;min-height:40px;font-size:12px}
 .calendarHeading button{min-height:44px;padding:6px}
-.calendarGrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:3px;text-align:center;font-size:12px}
+.calendarGrid{display:grid;grid-template-columns:58px repeat(7,minmax(0,1fr));gap:3px;text-align:center;font-size:12px}
 .calendarGrid>span{align-self:center;color:var(--muted);font-weight:700}
 .calendarWeek{display:contents}
 .weekNumber,.calendarDay{min-width:0;min-height:38px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit}
@@ -37,4 +38,6 @@
 .calendarDay[data-selected="true"]{background:var(--green);color:#fff;font-weight:800}
 .calendarDay[data-outside="true"]{opacity:.4}
 .calendar>small{color:var(--muted);line-height:1.4}
+.statusDots{display:flex;justify-content:center;flex-wrap:wrap;gap:0}.periodStatus{display:flex;align-items:center;justify-content:center;min-width:25px;min-height:30px;padding:3px;border:0;border-radius:6px;background:transparent}.periodStatus[aria-pressed=true]{outline:1px solid var(--ink);outline-offset:-2px}.statusDot{display:block;width:10px;height:10px;border-radius:50%;border:1px solid #0005}.statusDot.paid{background:#22c55e}.statusDot.partial{background:#facc15}.statusDot.overdue{background:#ef4444}.statusDot.neutral{background:#a1a1aa}.calendar button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 @media(max-width:480px){.dialog{padding:16px}.periodPicker{padding:10px}.periodHeading{grid-template-columns:40px minmax(0,1fr) 40px 40px;gap:5px}.calendarGrid{gap:1px;font-size:11px}.calendarDay,.weekNumber{min-height:36px;border-radius:6px}.weekNumber{font-size:9px}.periodMeta{font-size:12px}}
+@media(max-width:400px){.calendarHeading{grid-template-columns:repeat(4,minmax(0,1fr))}.calendarHeading label{grid-column:1/-1;grid-row:1}.calendarHeading input{font-size:14px}.calendarHeading button{grid-row:2}}

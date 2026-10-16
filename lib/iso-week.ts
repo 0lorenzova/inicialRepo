@@ -7,6 +7,7 @@ export function isoWeek(value: string): { week: number; year: number } {
   if (!day || !Number.isFinite(date.getTime())) throw new Error("Selecciona una fecha válida.");
   date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
   const year = date.getUTCFullYear();
-  const first = Date.UTC(year, 0, 1, 12);
+  const firstDay = new Date(date);firstDay.setUTCFullYear(year,0,1);firstDay.setUTCHours(12,0,0,0);
+  const first = firstDay.getTime();
   return { year, week: Math.ceil(((date.getTime() - first) / 86400000 + 1) / 7) };
 }
