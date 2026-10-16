@@ -25,7 +25,7 @@ assert.equal(salaryReceiptDefaults({...d,accounts:[{...d.accounts[0],active:fals
 assert.equal(salaryPaymentDuplicate(d,{...receipt,reference:'pago uno'}),true);assert.equal(salaryPaymentDuplicate(d,{...receipt,date:'2026-10-16T10:00'}),false);
 assert.throws(()=>postSalaryPayment(d,{...receipt,id:'duplicate',reference:'pago uno'},'2026-10-15'),/Ya existe un ingreso con estos mismos datos/);
 const pay=d.salary.payments[0];d=correctSalaryPayment(d,pay,{...pay,amount:125000,applications:pay.applications.map(a=>({...a,amount:125000}))},'2026-10-15','Corregir importe');
-let view=salaryPeriodPresentation(d,shortened,'2026-10-15');assert.equal(view.tone,'paid');assert.equal(view.state,'Importe previsto cubierto');assert.equal(view.confirmed,false);assert.equal(salaryPeriodPaymentLabel(d,shortened),'Pago completo');assert.equal(d.movements.length,1);
+let view=salaryPeriodPresentation(d,shortened,'2026-10-15');assert.equal(view.tone,'paid');assert.equal(view.state,'Completamente pagado');assert.equal(view.confirmed,false);assert.equal(salaryPeriodPaymentLabel(d,shortened),'Pago completo');assert.equal(d.movements.length,1);
 const saved=d.salary.periods[0];d=saveSalaryPeriod(d,{...saved,earned:true},saved,'2026-10-17','Confirmar trabajo');assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-17').state,'Completamente pagado');
 const full=d.salary.payments[0];d=correctSalaryPayment(d,full,full,'2026-10-17','Anular ingreso ficticio',true);
 view=salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-17');assert.equal(view.tone,'neutral','Earned but not due remains yellow');assert.equal(view.overdue,false);assert.equal(view.received,0);assert.equal(d.movements.length,0);

@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {sortSalaryHistory,setSalaryHistoryOrder} from '../lib/salary-history.ts';
+import {saveSalaryConfig,salaryPeriodForDate,postSalaryPayment,salaryPeriodPresentation} from '../lib/salary-tracking.ts';
+import {totals} from '../lib/finance-ledger.ts';
+const empty={accounts:[{id:'a',name:'Prueba',type:'Banco',active:true,balance:0}],envelopes:[],movements:[],loans:[]};
+const config={id:'c',employer:'Ficticio',name:'Salario',currency:'CRC',base:100,frequency:'Semanal',start:'2026-10-12',payOffset:1,calendarMode:'iso-workdays',workDays:[1,2,3,4,5],active:true};
+let d=saveSalaryConfig(empty,config,null);const before=JSON.stringify(d);
+for(const date of ['1920-01-02','2026-10-16','2400-01-01']){const p=salaryPeriodForDate(d,'c',date);salaryPeriodPresentation(d,p,'2026-10-16');}assert.equal(JSON.stringify(d),before);
+const p=salaryPeriodForDate(d,'c','2026-10-16');
+const input={id:'one',configId:'c',date:'2026-10-16T08:00',amount:40,accountId:'a',method:'Efectivo',reference:'',notes:'',preparedPeriod:p,applications:[{periodId:p.id,conceptId:p.concepts[0].id,amount:40}]};
+d=postSalaryPayment(d,input,'2026-10-16');assert.equal(d.salary.periods.length,1);assert.equal(d.salary.periods[0].earned,false);assert.equal(salaryPeriodPresentation(d,p,'2026-10-16').tone,'partial');assert.throws(()=>postSalaryPayment(d,input,'2026-10-16'));
+d=postSalaryPayment(d,{...input,id:'two',preparedPeriod:undefined,date:'2026-10-16T09:00',amount:60,applications:[{...input.applications[0],amount:60}]},'2026-10-16');assert.equal(salaryPeriodPresentation(d,p,'2026-10-16').tone,'paid');assert.equal(d.movements.length,2);
+const financial=JSON.stringify({accounts:d.accounts,envelopes:d.envelopes,movements:d.movements});d=setSalaryHistoryOrder(d,'oldest');assert.equal(JSON.parse(JSON.stringify(d)).salary.historyOrder,'oldest');assert.equal(JSON.stringify({accounts:d.accounts,envelopes:d.envelopes,movements:d.movements}),financial);
+const rows=[{id:'b',date:'2026-10-16T09:00'},{id:'a',date:'2026-10-16T09:00'},{id:'c',date:'2026-10-15'}];const original=JSON.stringify(rows);const ascending=sortSalaryHistory(rows,'oldest',p=>p.date);assert.deepEqual(ascending.map(p=>p.id),['c','a','b']);assert.deepEqual(sortSalaryHistory(rows,'newest',p=>p.date),[...ascending].reverse());assert.equal(JSON.stringify(rows),original);const t=totals(d);assert.equal(t.accounts,t.assigned+t.unassigned);
+console.log('OK: automatic payment without period creation/closure, partial/full, duplicates, pure distant consultation, reversible stable sorting, preference persistence and unchanged finances.');

@@ -13,7 +13,7 @@ export type SalaryPeriod = { id:string; configId:string; start:string; end:strin
 export type SalaryApplication = { periodId:string; conceptId:string; amount:number };
 export type SalaryPayment = { id:string; configId:string; movementId:string; amount:number; date:string; accountId:string; method:string; reference:string; notes:string; applications:SalaryApplication[]; voidReason?:string; historical?:{source:string;recordedAt:string} };
 export type SalaryAudit = { id:string; date:string; action:string; entityId:string; reason:string; before?:unknown };
-export type SalaryState = { configs:SalaryConfig[]; periods:SalaryPeriod[]; payments:SalaryPayment[]; audit:SalaryAudit[]; viewMode?:"list"|"grid"; lastConfigId?:string; lastReceipt?:{method:string;accountId:string} };
+export type SalaryState = { configs:SalaryConfig[]; periods:SalaryPeriod[]; payments:SalaryPayment[]; audit:SalaryAudit[]; viewMode?:"list"|"grid"; historyOrder?:"newest"|"oldest"; lastConfigId?:string; lastReceipt?:{method:string;accountId:string} };
 export type SalaryLedger = Ledger & { salary?:SalaryState };
 export const emptySalary = ():SalaryState => ({configs:[],periods:[],payments:[],audit:[]});
 export const salaryState = (ledger:SalaryLedger) => ledger.salary ?? emptySalary();
@@ -281,8 +281,8 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   const overdueDays=overdue?daysBetween(period.payDate,today):0;
   const overdueLabel=overdueDays?`${overdueDays} ${overdueDays===1?"día":"días"} de atraso`:"";
   const fullyPaid=expected>0&&amounts.received>=expected;
-  const workState=period.start>today?"Aún no comienza":today<=period.end?"En curso":confirmed?"Período finalizado":"Por confirmar devengo";
-  const state=fullyPaid?(confirmed?"Completamente pagado":"Importe previsto cubierto"):amounts.received>0?"Parcialmente pagado":confirmed?"Pendiente de pago":period.start>today?"Proyectado":today<=period.end?"En curso":"Por confirmar devengo";
+  const workState=period.start>today?"Aún no comienza":today<=period.end?"En curso":"Período finalizado";
+  const state=fullyPaid?"Completamente pagado":amounts.received>0?"Parcialmente pagado":overdue?"Pendiente vencido":period.start>today?"Proyectado":today<=period.end?"En curso":"Pendiente de pago";
   const tone=fullyPaid?"paid":amounts.received>0?"partial":overdue?"overdue":"neutral";
   return {...amounts,expected,remaining,confirmed,fullyPaid,early,late,advances:early,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
 }
