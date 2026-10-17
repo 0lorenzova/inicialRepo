@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { salaryViewerDay, salaryDateLabel, salaryWorkSchedule } from "@/lib/salary-dates";
-import { salaryTemporalLabel } from "@/lib/salary-tracking";
+import { salaryTemporalLabel, latestSalaryPeriodPending, salaryPeriodPaymentLabel } from "@/lib/salary-tracking";
 import { AccountSelector } from "@/components/account-selector";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { SalaryReceiptDialog } from "./salary-receipt-dialog";
@@ -98,6 +98,8 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const applicationBalance = numericAmount - applicationTotal;
   const presentation=period?salaryPeriodPresentation(ledger,period,today):null;
   const expectedAmount=presentation?.expected??0;
+  let lastPending:SalaryPeriod|null=null;
+  try {if(config)lastPending=latestSalaryPeriodPending(ledger,config.id,today);}catch{/* Date boundary; ordinary navigation remains available. */}
   const receivedAmount=presentation?.received??0;
   const pendingAmount=presentation?.remaining??0;
   const selectedAccount = ledger.accounts.find(account => account.id === accountId && account.active);
@@ -212,12 +214,13 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
           {period?.scheduledWorkDays&&<small className={styles.workDays}>{salaryWorkSchedule(period)}</small>}
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
-          {period && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{period.start <= today && period.end >= today ? " · Período en curso" : period.start > today ? " · Período futuro" : " · Período finalizado"}</p>}
+          {lastPending&&lastPending.id!==period?.id&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(lastPending!.start)}>Último período pendiente · {salaryPeriodLabel(lastPending,config)}</button>}
+          {period && numericAmount>0 && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{period.start <= today && period.end >= today ? " · Período en curso" : period.start > today ? " · Período futuro" : " · Período finalizado"}</p>}
         </section>
 
         <label htmlFor="salary-received-amount">Importe recibido</label>
         <div className="currency-input"><span>₡</span><input id="salary-received-amount" autoFocus type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); setLocalError(""); }}/></div>
-        <p className={styles.balance}>Salario: {display(expectedAmount)} · Recibido: {display(receivedAmount)} · Pendiente previsto: {display(pendingAmount)} · Abonos: {presentation?.paymentCount??0}</p>
+        <p className={styles.balance}>Salario: {display(expectedAmount)} · Recibido: {display(receivedAmount)} · Pendiente previsto: {display(pendingAmount)} · {period&&presentation?.paymentCount?salaryPeriodPaymentLabel(ledger,period):"Abonos: 0"}</p>
         {linkedMovement?<div className={styles.accountValue}><span>Cuenta del ingreso existente</span><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div>:<AccountSelector label="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/>}
 
         <label>Medio de recepción<select value={linkedMovement?.paymentMethod ?? method} disabled={Boolean(linkedMovement)} onChange={event => setMethod(event.target.value)}>{[...new Set([...incomeReceptionMethods, method, linkedMovement?.paymentMethod])].filter(Boolean).map(item => <option key={item}>{item}</option>)}</select></label>

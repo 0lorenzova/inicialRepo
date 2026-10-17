@@ -144,6 +144,20 @@ export function salaryReceiptDefaults(ledger:SalaryLedger) {
   const remembered=salaryState(ledger).lastReceipt;
   return {method:incomeReceptionMethods.some(m=>m===remembered?.method)?remembered!.method:"Transferencia",accountId:ledger.accounts.find(a=>a.active&&a.id===remembered?.accountId)?.id??""};
 }
+/** Read-only shortcut: skip settled history, including gaps without saved rows. */
+export function latestSalaryPeriodPending(ledger:SalaryLedger,configId:string,today:string) {
+  const state=salaryState(ledger),config=state.configs.find(c=>c.id===configId);
+  if(!config)return null;
+  let period=salaryPeriodForDate(ledger,configId,today);
+  // At most each saved settled row plus the first unsaved reference is visited.
+  for(let i=0;i<=state.periods.filter(p=>p.configId===configId).length+1;i++) {
+    if(period.end<today&&salaryPeriodRemaining(ledger,period)>0)return period;
+    if(period.start<=config.start)return null;
+    period=adjacentSalaryPeriod(ledger,period,-1);
+    if(period.end<config.start)return null;
+  }
+  return null;
+}
 export function salaryPaymentDuplicate(ledger:SalaryLedger,input:{configId:string;date:string;amount:number;accountId:string;reference:string;applications:SalaryApplication[]},excludeId?:string) {
   const key=(items:SalaryApplication[])=>JSON.stringify(items.map(a=>[a.periodId,a.conceptId,a.amount]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))||String(a[1]).localeCompare(String(b[1]))));
   return salaryState(ledger).payments.some(p=>p.id!==excludeId&&!p.historical&&salaryPaymentValid(ledger,p)&&p.configId===input.configId&&p.date===input.date&&p.amount===input.amount&&p.accountId===input.accountId&&key(p.applications)===key(input.applications)&&normalizeSalaryName(p.reference)===normalizeSalaryName(input.reference));

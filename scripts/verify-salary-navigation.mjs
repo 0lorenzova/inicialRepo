@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {latestSalaryPeriodPending} from '../lib/salary-tracking.ts';
 import {salaryDateLabel,salaryWorkSchedule,salaryWeekdays} from '../lib/salary-dates.ts';
 import {saveSalaryConfig,saveSalaryPeriod,salaryPeriodForDate,adjacentSalaryPeriod,salaryPeriodPresentation,salaryTemporalLabel,salaryPeriodLabel,shiftSalaryDate} from '../lib/salary-tracking.ts';
 const empty={accounts:[],envelopes:[],movements:[],loans:[]};
@@ -18,3 +19,9 @@ assert.equal(salaryPeriodForDate(d,c.id,'2026-10-12').id,'custom','Reuse crossin
 const previous=adjacentSalaryPeriod(d,custom,-1);assert.equal(previous.start,'2026-10-05','Back arrow must escape the same saved reference');assert.equal(adjacentSalaryPeriod(d,previous,1).id,'custom');
 assert.equal(adjacentSalaryPeriod(d,custom,1).start,'2026-10-19');assert.equal(JSON.stringify(d),before);
 console.log('OK: 110 weeks each direction, calendar/arrow identity, zero receipts, no writes, ISO year change, weekday labels, planned workdays and custom-history backward regression.');
+const earlierConfig={...c,start:'2026-08-03'};
+const shortcut=saveSalaryConfig(empty,earlierConfig,null),snapshot=JSON.stringify(shortcut);
+assert.equal(latestSalaryPeriodPending(shortcut,'c','2026-10-16').start,'2026-10-05');
+assert.equal(latestSalaryPeriodPending(shortcut,'c','2026-08-04'),null);
+assert.equal(JSON.stringify(shortcut),snapshot);
+console.log('OK: pending-period shortcut includes unsaved weeks and never creates records or pre-tracking obligations.');
