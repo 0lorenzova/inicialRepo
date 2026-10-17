@@ -26,3 +26,11 @@ const css=readFileSync(new URL('../components/salary-status.module.css',import.m
 assert.match(css,/data-tone=partial\]\{--salary-bg:#fff0ad/);assert.match(css,/data-tone=neutral\]\{--salary-bg:#e6eaf0/);
 const calendar=readFileSync(new URL('../components/salary-receive-dialog.module.css',import.meta.url),'utf8');assert.match(calendar,/statusDot.partial\{background:#facc15/);assert.match(calendar,/statusDot.neutral\{background:#94a3b8/);
 console.log('OK: work schedule snapshots, Friday/Saturday distinction, advance versus due date, full advance without earned work, legacy fallback, future neutral, shared palette and no consultation writes.');
+
+const sameDayPeriod={...period,payDate:'2026-10-16'};
+const sameDay=postSalaryPayment(ledger,{...payment,preparedPeriod:sameDayPeriod},'2026-10-16');
+const sameDayView=salaryPeriodPresentation(sameDay,sameDayPeriod,'2026-10-16');
+assert.equal(sameDayView.early,0);assert.equal(sameDayView.laborAdvances,100);assert.equal(sameDayView.hasAdvance,true);
+assert.equal(second.hasAdvance,true);
+assert.equal(salaryPeriodPresentation(ledger,period,'2026-10-16').hasAdvance,false);
+console.log('OK: advance filter includes labor advances on the expected payment date and excludes periods without receipts.');

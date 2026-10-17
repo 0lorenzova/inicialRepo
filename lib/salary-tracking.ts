@@ -304,7 +304,7 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   const workState=period.start>today?"Aún no comienza":today<=workEnd?"En curso":"Jornada prevista finalizada";
   const state=fullyPaid?"Completamente pagado":amounts.received>0?"Parcialmente pagado":overdue?"Pendiente vencido":period.start>today?"Proyectado":today<=workEnd?"En curso":"Pendiente de pago";
   const tone=fullyPaid?"paid":amounts.received>0?"partial":(confirmed||(overdue&&workEnd<today))?"overdue":"neutral";
-  return {...amounts,expected,remaining,confirmed,fullyPaid,early,late,advances:early,laborAdvances,workEnd,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
+  return {...amounts,expected,remaining,confirmed,fullyPaid,early,late,advances:early,laborAdvances,hasAdvance:early>0||laborAdvances>0,workEnd,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
 }
 export function salaryPaymentTiming(period:SalaryPeriod,receivedAt:string) {
   const receivedDay=salaryReceiptDay(receivedAt);
