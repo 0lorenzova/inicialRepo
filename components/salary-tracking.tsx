@@ -73,7 +73,7 @@ export function SalaryTracking({ledger,today:initialToday,display,onSave,onMovem
               <label className={styles.paidControl} onClick={event=>event.stopPropagation()}><input type="checkbox" aria-label={sum.fullyPaid?`${salaryPeriodLabel(p,config)}: ${sum.state}`:`Registrar pago pendiente de ${salaryPeriodLabel(p,config)}`} checked={sum.fullyPaid} disabled={sum.fullyPaid} onChange={()=>onReceive(config.id,p.id)}/><span>Pagado</span></label>
             </span>
             <span>{day(p.start)} — {day(p.end)}<small className={styles.workState}>Pago previsto: {day(p.payDate)}</small></span>
-             <span>{salaryPeriodPaymentLabel(ledger,p)}{sum.early>0?" · Pago anticipado":""}{sum.late>0?" · Pago atrasado":""}<small className={styles.workState}>{sum.workState}</small></span>
+             <span>{salaryPeriodPaymentLabel(ledger,p)}{sum.early>0?" · Antes de la fecha de pago":""}{sum.laborAdvances>0?" · Adelanto laboral":""}{sum.late>0?" · Pago atrasado":""}<small className={styles.workState}>{sum.workState}</small></span>
             <div className={styles.periodAmounts}><span>Salario<strong className={styles.earned}>{display(sum.expected)}</strong></span><span>Recibido<strong className={styles.received}>{display(sum.received)}</strong></span><span>Pendiente<strong className={styles.pending}>{display(sum.remaining)}</strong></span></div>
           </summary>
           <p>Fecha prevista de pago: {day(p.payDate)} · Estado laboral: {sum.workState}</p>

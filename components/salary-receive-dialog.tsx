@@ -215,7 +215,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
           {lastPending&&lastPending.id!==period?.id&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(lastPending!.start)}>Último período pendiente · {salaryPeriodLabel(lastPending,config)}</button>}
-          {period && numericAmount>0 && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{period.start <= today && period.end >= today ? " · Período en curso" : period.start > today ? " · Período futuro" : " · Período finalizado"}</p>}
+          {period && numericAmount>0 && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{presentation? ` · ${presentation.workState}`:""}</p>}
         </section>
 
         <label htmlFor="salary-received-amount">Importe recibido</label>

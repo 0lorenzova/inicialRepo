@@ -27,7 +27,7 @@ assert.throws(()=>saveSalaryPeriod(d,{...period,workedDays:['2026-10-10']},perio
 d=saveSalaryPeriod(d,{...period,workedDays:['2026-10-12','2026-10-14']},period,'2026-10-14','Días confirmados individualmente');
 assert.equal(d.salary.periods[0].earned,false);assert.equal(salaryPeriodTotals(d,d.salary.periods[0],'2026-10-14').earned,0);
 const input={id:'advance',configId:'c',amount:50000,date:'2026-10-14T10:00',accountId:'a',method:'Transferencia',reference:'A1',notes:'Ficticio',applications:[{periodId:'p',conceptId:'base',amount:50000}],manual:{e:'10000'}};
-assert.equal(salaryPaymentTiming(period,input.date).days,-5);assert.equal(salaryPaymentTiming(period,input.date).label,'Pagado 5 días por adelantado');
+assert.equal(salaryPaymentTiming(period,input.date).days,-5);assert.equal(salaryPaymentTiming(period,input.date).label,'Pagado 5 días por adelantado · Adelanto laboral');
 d=postSalaryPayment(d,input,'2026-10-14');
 assert.equal(d.salary.periods[0].earned,false);assert.equal(d.movements.length,1);assert.equal(d.salary.payments.length,1);
 assert.equal(preferredSalaryConfigId(d),'c');assert.equal(salaryPeriodPaymentLabel(d,d.salary.periods[0]),'1 abono');
@@ -37,7 +37,7 @@ const stable=JSON.stringify(d);assert.throws(()=>postSalaryPayment(d,{...input,i
 const worked=d.salary.periods[0];d=saveSalaryPeriod(d,{...worked,earned:true},worked,'2026-10-17','Semana completada');
 view=salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-17');assert.equal(view.state,'Parcialmente pagado');assert.equal(view.pending,75000);assert.equal(view.advances,50000);assert.equal(view.tone,'partial');
 assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-19').overdue,false,'Due date itself is not past due');
-assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-20').tone,'partial','Partially paid remains orange even when overdue');
+assert.equal(salaryPeriodPresentation(d,d.salary.periods[0],'2026-10-20').tone,'partial','Partially paid remains yellow even when overdue');
 assert.equal(salaryPaymentTiming(period,'2026-10-20T09:00').days,1);assert.equal(salaryPaymentTiming(period,'2026-10-20T09:00').label,'Pagado 1 día de atraso');
 assert.equal(salaryPeriodPresentation(d,{...period,id:'future',start:'2026-11-02',end:'2026-11-06',concepts:[{id:'future-concept',name:'Salario',amount:125000}]},'2026-10-14').tone,'neutral');
 // A legacy prematurely earned flag must not make projected amounts count as debt.

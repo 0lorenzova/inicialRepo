@@ -29,6 +29,6 @@ export function SalaryPeriodCalendar({ledger,config,selected,today,month,onMonth
         </div>;
       })}
     </div>
-    <div className={styles.calendarLegend}>{[["paid","Pagado"],["neutral","Sin vencer"],["partial","Parcial"],["overdue","Vencido"]].map(([tone,label])=><span key={tone}><i className={`${styles.statusDot} ${styles[tone]}`} aria-hidden="true"/>{label}</span>)}</div><small>Selecciona una fecha o el indicador de la semana. Navegar no registra pagos.</small>
+    <div className={styles.calendarLegend}>{[["paid","Pagado"],["neutral","Proyectado / en curso"],["partial","Parcial"],["overdue","Devengado pendiente / vencido"]].map(([tone,label])=><span key={tone}><i className={`${styles.statusDot} ${styles[tone]}`} aria-hidden="true"/>{label}</span>)}</div><small>Selecciona una fecha o el indicador de la semana. Navegar no registra pagos.</small>
   </div>;
 }

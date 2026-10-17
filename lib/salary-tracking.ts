@@ -1,4 +1,4 @@
-import {canConfirmSalaryPeriod,salaryLocalToday,SALARY_NOT_FINISHED} from "./salary-dates";
+import {canConfirmSalaryPeriod,salaryLocalToday,SALARY_NOT_FINISHED,salaryWorkEnd} from "./salary-dates";
 import { totals, validMovementDate, type Ledger } from "./finance-ledger";
 import { postDistributedIncome, type FundingSelection } from "./income-distribution";
 import { incomeDistribution } from "./income-trace";
@@ -21,6 +21,7 @@ function ensure(condition:unknown,message:string):asserts condition { if(!condit
 const amountValid = (n:number) => Number.isSafeInteger(n)&&n>=0;
 export const normalizeSalaryName=(value:string)=>value.normalize("NFKC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");
 export function salaryDay(day:string) { ensure(validMovementDate(`${day}T12:00`),"Selecciona una fecha válida.");return day; }
+const salaryReceiptDay=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)?salaryDay(value):salaryDay(movementDay(value));
 function total(values:number[]) { const n=values.reduce((s,v)=>s+v,0);ensure(amountValid(n),"El total salarial no es válido o excede el límite permitido.");return n; }
 function audit(state:SalaryState,entityId:string,action:string,reason:string,before?:unknown):SalaryAudit[] { return [...state.audit,{id:crypto.randomUUID(),date:new Date().toISOString(),entityId,action,reason,before}]; }
 export function salaryPaymentValid(ledger:SalaryLedger,payment:SalaryPayment) {
@@ -151,7 +152,7 @@ export function latestSalaryPeriodPending(ledger:SalaryLedger,configId:string,to
   let period=salaryPeriodForDate(ledger,configId,today);
   // At most each saved settled row plus the first unsaved reference is visited.
   for(let i=0;i<=state.periods.filter(p=>p.configId===configId).length+1;i++) {
-    if(period.end<today&&salaryPeriodRemaining(ledger,period)>0)return period;
+    if(salaryWorkEnd(period)<today&&salaryPeriodRemaining(ledger,period)>0)return period;
     if(period.start<=config.start)return null;
     period=adjacentSalaryPeriod(ledger,period,-1);
     if(period.end<config.start)return null;
@@ -291,21 +292,26 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   const payments=salaryState(ledger).payments.filter(p=>salaryPaymentValid(ledger,p)&&p.applications.some(a=>a.periodId===period.id));
   const expected=total(period.concepts.map(c=>c.amount));
   const amountFor=(payment:SalaryPayment)=>total(payment.applications.filter(a=>a.periodId===period.id).map(a=>a.amount));
-  const early=total(payments.filter(p=>movementDay(p.date)<period.payDate).map(amountFor));
-  const late=total(payments.filter(p=>movementDay(p.date)>period.payDate).map(amountFor));
+  const early=total(payments.filter(p=>salaryReceiptDay(p.date)<period.payDate).map(amountFor));
+  const workEnd=salaryWorkEnd(period);
+  const laborAdvances=total(payments.filter(p=>salaryReceiptDay(p.date)<=workEnd).map(amountFor));
+  const late=total(payments.filter(p=>salaryReceiptDay(p.date)>period.payDate).map(amountFor));
   const remaining=Math.max(0,expected-amounts.received);
   const overdue=remaining>0&&period.payDate<today;
   const overdueDays=overdue?daysBetween(period.payDate,today):0;
   const overdueLabel=overdueDays?`${overdueDays} ${overdueDays===1?"día":"días"} de atraso`:"";
   const fullyPaid=expected>0&&amounts.received>=expected;
-  const workState=period.start>today?"Aún no comienza":today<=period.end?"En curso":"Período finalizado";
-  const state=fullyPaid?"Completamente pagado":amounts.received>0?"Parcialmente pagado":overdue?"Pendiente vencido":period.start>today?"Proyectado":today<=period.end?"En curso":"Pendiente de pago";
-  const tone=fullyPaid?"paid":amounts.received>0?"partial":overdue?"overdue":"neutral";
-  return {...amounts,expected,remaining,confirmed,fullyPaid,early,late,advances:early,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
+  const workState=period.start>today?"Aún no comienza":today<=workEnd?"En curso":"Jornada prevista finalizada";
+  const state=fullyPaid?"Completamente pagado":amounts.received>0?"Parcialmente pagado":overdue?"Pendiente vencido":period.start>today?"Proyectado":today<=workEnd?"En curso":"Pendiente de pago";
+  const tone=fullyPaid?"paid":amounts.received>0?"partial":(confirmed||(overdue&&workEnd<today))?"overdue":"neutral";
+  return {...amounts,expected,remaining,confirmed,fullyPaid,early,late,advances:early,laborAdvances,workEnd,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
 }
 export function salaryPaymentTiming(period:SalaryPeriod,receivedAt:string) {
-  const days=daysBetween(period.payDate,movementDay(receivedAt));
-  return {days,label:days<0?`Pagado ${Math.abs(days)} ${Math.abs(days)===1?"día":"días"} por adelantado`:days>0?`Pagado ${days} ${days===1?"día":"días"} de atraso`:"Pagado en la fecha prevista",kind:days<0?"early" as const:days>0?"late" as const:"on-time" as const};
+  const receivedDay=salaryReceiptDay(receivedAt);
+  const days=daysBetween(period.payDate,receivedDay);
+  const laborAdvance=receivedDay<=salaryWorkEnd(period);
+  const paymentLabel=days<0?`Pagado ${Math.abs(days)} ${Math.abs(days)===1?"día":"días"} por adelantado`:days>0?`Pagado ${days} ${days===1?"día":"días"} de atraso`:"Pagado en la fecha prevista";
+  return {days,laborAdvance,label:`${paymentLabel}${laborAdvance?" · Adelanto laboral":""}`,kind:days<0?"early" as const:days>0?"late" as const:"on-time" as const};
 }
 export function salarySuggestions(ledger:SalaryLedger,configId:string,receptionDay:string) {
   salaryDay(receptionDay);

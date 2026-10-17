@@ -2,6 +2,15 @@ import {validMovementDate} from "./finance-ledger";
 
 export const SALARY_TIME_ZONE = "America/Costa_Rica";
 export const salaryWeekdays=["Dm","Ln","Mt","Mc","Jv","Vi","Sb"] as const;
+/** Use the period's saved schedule; never borrow today's employer configuration. */
+export function salaryWorkEnd(period:{start:string;end:string;scheduledWorkDays?:number[]}) {
+  if(!period.scheduledWorkDays?.length)return period.end;
+  const date=new Date(`${period.end}T12:00:00Z`),start=Date.parse(`${period.start}T12:00:00Z`);
+  for(let back=0;back<7&&date.getTime()>=start;back++,date.setUTCDate(date.getUTCDate()-1)) {
+    if(period.scheduledWorkDays.includes(date.getUTCDay()))return date.toISOString().slice(0,10);
+  }
+  return period.end;
+}
 /** Civil date labels must not shift a day with the device's time zone. */
 export function salaryDateLabel(value:string,year=true) {
   const civil=value.slice(0,10),date=new Date(`${civil}T12:00:00Z`);
