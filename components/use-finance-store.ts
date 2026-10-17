@@ -168,7 +168,18 @@ export function useFinanceStore<T>(client: SupabaseClient | null, initial: T, hy
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  return { ...snapshot, setData, user, authLoading, retry, clearLocalCopy, downloadBackup, replaceWithBackup,
+  const confirmSaved = useCallback(async () => {
+    if (!client) return; // setData already persisted the local-only write.
+    clearTimeout(saveTimer.current);
+    const sync = controller.current, owner = sync?.getState().userId;
+    if (!sync || !owner) throw new Error("No se pudo confirmar la sesión.");
+    await sync.flush();
+    const state = sync.getState();
+    if (controller.current !== sync || state.userId !== owner || state.pending || state.status !== "synced")
+      throw new Error(state.error || "El guardado en Supabase sigue pendiente. Reintenta la confirmación sin registrar otro ingreso.");
+  }, [client]);
+
+  return { ...snapshot, confirmSaved, setData, user, authLoading, retry, clearLocalCopy, downloadBackup, replaceWithBackup,
     reloadFromCloud: async () => { await controller.current?.reloadFromCloud(); },
   };
 }

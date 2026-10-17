@@ -5,12 +5,11 @@ import { salaryViewerDay, salaryDateLabel, salaryWorkSchedule } from "@/lib/sala
 import { salaryTemporalLabel } from "@/lib/salary-tracking";
 import { AccountSelector } from "@/components/account-selector";
 import { FinanceDialog } from "@/components/finance-dialog";
-import { IncomeDistribution } from "@/components/income-distribution";
+import { SalaryReceiptDialog } from "./salary-receipt-dialog";
 import { incomeDefaults, incomeReceptionMethods, type IncomePreferences } from "@/lib/income-preferences";
 import { SalaryPeriodCalendar } from "./salary-period-calendar";
 import { salaryPeriodPresentation, salaryConceptPaid, adjacentSalaryPeriod, salaryReceiptDefaults, salaryPaymentDuplicate, salaryPaymentTiming, salaryPeriodApplications, salaryPeriodForDate, salaryPeriodLabel, salaryPeriodRemaining, salaryState, preferredSalaryConfigId, postSalaryPayment, type SalaryApplication, type SalaryLedger, type SalaryPeriod } from "@/lib/salary-tracking";
 import type { PlanningEnvelope } from "@/lib/envelope-planning";
-import type { FundingSelection } from "@/lib/income-distribution";
 import styles from "./salary-receive-dialog.module.css";
 import statusStyles from "./salary-status.module.css";
 
@@ -26,6 +25,7 @@ type Props = {
   onClose: () => void;
   onConfigure: () => void;
   onCreateAccount: (name: string, type: string) => string;
+  onConfirmSave: () => Promise<void>;
   onSave: (operation: (current: SalaryLedger) => SalaryLedger) => boolean;
 };
 
@@ -36,7 +36,7 @@ const localNow = () => {
 const dayLabel = salaryDateLabel;
 const currentDateTime = (value: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value : `${value.slice(0, 10)}T12:00`;
 
-export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreferences, display, initialConfigId, initialPeriodId, error: externalError, onClose, onConfigure, onCreateAccount, onSave }: Props) {
+export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreferences, display, initialConfigId, initialPeriodId, error: externalError, onClose, onConfigure, onCreateAccount, onSave, onConfirmSave }: Props) {
   const [viewerDay,setViewerDay]=useState(()=>salaryViewerDay());
   useEffect(()=>{const update=()=>setViewerDay(salaryViewerDay());const timer=window.setInterval(update,60000);window.addEventListener("focus",update);return()=>{window.clearInterval(timer);window.removeEventListener("focus",update);};},[]);
   const state = salaryState(ledger);
@@ -59,9 +59,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const [calendarMonth, setCalendarMonth] = useState((startingProjection?.start ?? today).slice(0, 7));
   const [multiPeriod, setMultiPeriod] = useState(false);
   const [applications, setApplications] = useState<SalaryApplication[]>([]);
-  const [distribute, setDistribute] = useState(false);
-  const [manual, setManual] = useState<Record<string, string>>({});
-  const [selections, setSelections] = useState<FundingSelection[]>([]);
+  const [receiptIncomeId,setReceiptIncomeId]=useState<string|null>(null);
   const [existingMovementId, setExistingMovementId] = useState("");
   const [localError, setLocalError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -179,18 +177,20 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
       name: linkedMovement?.name ?? `Salario · ${config.employer} · ${salaryPeriodLabel(period, config)}`,
       applications: calculatedApplications,
       existingMovementId: linkedMovement?.id,
-      manual: distribute && !linkedMovement ? manual : {},
-      selections: distribute && !linkedMovement ? selections : [],
+      manual: {},
+      selections: [],
       preparedPeriod: isSavedPeriod ? undefined : period,
     };
     const operation = (current: SalaryLedger) => postSalaryPayment(current, input, today);
     try {
       operation(ledger);
-      if (onSave(operation)) onClose();
+      if (onSave(operation)) setReceiptIncomeId(linkedMovement?.id ?? `salary-income:${paymentId}`);
       else setLocalError("No se pudo guardar el pago. Revisa el aviso de la aplicación e inténtalo de nuevo.");
     } catch (cause) { setLocalError(cause instanceof Error ? cause.message : "No se pudo registrar el salario."); }
     finally { savingRef.current = false; setSaving(false); }
   };
+
+  if (receiptIncomeId) return <SalaryReceiptDialog ledger={ledger} envelopes={envelopes} incomeId={receiptIncomeId} today={today} display={display} onSave={onSave} onConfirmSave={onConfirmSave} onClose={onClose}/>;
 
   if (!state.configs.length) return <FinanceDialog label="Registrar salario" onClose={onClose}>
     <section className={`flow-modal ${styles.dialog}`}><header><h2>Registrar salario</h2><button type="button" aria-label="Cerrar" onClick={onClose}>×</button></header><div className="flow-body"><p>Configura primero tu salario habitual para preparar períodos y evitar ingresos duplicados.</p><button className="primary wide" onClick={onConfigure}>Configurar salario</button><button className="secondary wide" onClick={onClose}>Cancelar</button></div></section>
@@ -232,7 +232,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
               const id = event.target.value;
               const movement = paymentMovements.find(item => item.id === id);
               setExistingMovementId(id);
-              if (movement) { setAmount(String(movement.amount ?? "")); setAccountId(movement.accountId ?? ""); setReceivedAt(currentDateTime(movement.date)); setMethod(movement.paymentMethod ?? "Transferencia"); setReference(movement.reference ?? ""); setDistribute(false); }
+              if (movement) { setAmount(String(movement.amount ?? "")); setAccountId(movement.accountId ?? ""); setReceivedAt(currentDateTime(movement.date)); setMethod(movement.paymentMethod ?? "Transferencia"); setReference(movement.reference ?? ""); }
               setLocalError("");
             }}><option value="">Crear un movimiento al confirmar</option>{paymentMovements.map(movement => <option key={movement.id} value={movement.id}>Vincular {movement.name} · {dayLabel(movement.date)} · {display(movement.amount)}</option>)}</select><small>Vincular un ingreso existente lo relaciona con el período sin volver a sumar dinero.</small></label>
             <label className="check-label"><input type="checkbox" checked={multiPeriod} onChange={event => { setMultiPeriod(event.target.checked); setApplications([]); setLocalError(""); }}/>Aplicar este pago a varios períodos</label>
@@ -245,10 +245,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
               })}</fieldset>)}
               <div className="review-box"><span>Recibido: {display(numericAmount)}</span><span>Aplicado: {display(applicationTotal)}</span><b>Por aplicar: {display(applicationBalance)}</b></div>
             </div>}
-            {!linkedMovement && <>
-              <label>Distribución del dinero<select value={distribute ? "distribute" : "unassigned"} onChange={event => setDistribute(event.target.value === "distribute")}><option value="unassigned">Guardar sin asignar</option><option value="distribute">Distribuir ahora entre sobres</option></select></label>
-              {distribute && <IncomeDistribution envelopes={envelopes} today={today} amount={numericAmount} manual={manual} selections={selections} onManual={setManual} onSelections={setSelections} display={display}/>}
-            </>}
+
           </div>
         </details>
 
