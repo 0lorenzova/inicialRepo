@@ -1,7 +1,17 @@
 # Migraciones autorizadas — 17 octubre 2026
 
-## Estado real
-El propietario autorizó ambas migraciones al aclarar «Hazlas». Preparadas y probadas; NO ejecutadas en Supabase. Panel del proyecto iljzewjvutigusmjmwhz redirige a inicio de sesión. Solo hay clave pública configurada; no se encontró CLI/token administrativo. Se pidió iniciar sesión sin compartir contraseña.
+## Estado real — cierre confirmado
+Ambas migraciones APLICADAS el 17 octubre 2026 en Supabase iljzewjvutigusmjmwhz, por autorización del propietario. Se confirmó primero el cliente f27d67f en Vercel Production: https://inicial-repo-25buvovr6-myself-e673.vercel.app.
+
+- Compilación/TypeScript aprobados tras corregir el tipo de respuesta RPC.
+- Preflight remoto: esquema original, RLS activa, un documento, sin función RPC ni trigger salarial previos.
+- Bundle supabase/apply_pending_20261017.sql ejecutado una sola vez en SQL Editor, transacción coordinada con lock y respaldo privado. Resultado: «Migraciones aplicadas; respaldo privado verificado».
+- Comparación exacta de user_id, data y updated_at contra respaldo dentro de la transacción: aprobada. Ningún documento financiero modificado.
+- Verificación remota posterior: rpc=true, salary_guard=true, rls=true, rpc_execute=true; direct_insert=false, direct_update=false; backup_private=true; live_rows=1 y backup_rows=1.
+- Respaldo: finanzas_migration_backup.user_finance_data_20261017. Esquema privado sin acceso de anon/authenticated/service_role; RLS sin políticas en copia. Recuperación solo administrativa y revisada; no sobrescribir movimientos posteriores automáticamente.
+- No se registraron pagos de prueba en producción. Sigue pendiente la comprobación funcional entre dispositivos con cuenta ficticia aislada.
+- Las pestañas de versiones anteriores deben recargar para usar RPC. No limpiar cachés ni borradores.
+- SQL aplicado manualmente en Editor; no se insertaron registros inventados en el historial interno de migraciones de Supabase. No confundir la lista de migraciones del dashboard con ausencia de estas funciones.
 
 ## Preparación completada
 - Cliente intenta RPC save_finance_data(p_data,p_expected_updated_at); solo usa transporte anterior si falta la función (PGRST202). Permisos, validaciones, fallos de red y conflictos NO provocan fallback.
@@ -14,17 +24,11 @@ El propietario autorizó ambas migraciones al aclarar «Hazlas». Preparadas y p
 - verify-finance-sync: 19 escenarios aprobados.
 - verify-salary-work-timing: días laborales, anticipos, guardas y legado aprobados.
 - verify-sql-migrations: ambas migraciones completas en PostgreSQL embebido PGlite, permisos, aislamiento entre usuarios, conflictos, creación única, guardas salariales, rechazos atómicos, repetición de migraciones y rollback ante históricos inválidos. No prueba simultaneidad real entre conexiones; sí revisión obsoleta y creación repetida.
-- ESLint aprobado. Build y publicación: confirmar resultado en entrega.
+- ESLint, build y publicación del cliente aprobados.
 - PGlite instalado SOLO en carpeta temporal C:/Users/0lore/AppData/Local/Temp/finanzas-sql-qa; no añade dependencias a la app.
 
-## Retomar ejecución
-1. Comprobar sesión administrativa y proyecto exacto. No solicitar otra autorización, ya concedida.
-2. Inspeccionar esquema real, funciones/permisos y estado de migraciones; no asumir que Git refleja la base.
-3. Obtener respaldo protegido de user_finance_data y guardar evidencia de recuperación. No exponer documentos financieros en logs.
-4. Confirmar cliente compatible desplegado. Aplicar SQL revisado de concurrencia y guarda salarial en transacción controlada; si hay incompatibilidad, rollback y explicar sin alterar históricos automáticamente.
-5. Verificar funciones, trigger, RLS y permisos. Pruebas financieras reales no autorizadas: usar cuenta/entorno ficticio aislado.
-6. Dispositivos con una versión antigua deberán recargar tras revocar escrituras directas. Sus borradores locales se conservan; no limpiar cachés.
-7. Registrar evidencia de aplicación y despliegue. No declarar migraciones ejecutadas hasta comprobarlo.
+## Continuidad
+No repetir las migraciones ni volver a pedir autorización. El bundle se niega a sobrescribir el respaldo existente. Retomar QA de sincronización real solo con entorno/cuenta de prueba aislada. El resto de pendientes funcionales está en CONTINUIDAD.md.
 
 ## Archivos
 lib/supabase/finance-transport.ts; lib/salary-dates.ts; lib/salary-tracking.ts; components/salary-income-link.tsx; ambas migraciones; scripts/verify-finance-transport.mjs; scripts/verify-salary-work-timing.mjs; scripts/verify-sql-migrations.mjs; documentación.
