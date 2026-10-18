@@ -14,7 +14,7 @@ export function SalaryPeriodCalendar({ledger,config,selected,today,month,onMonth
   return <div className={styles.calendar} aria-label="Seleccionar período salarial">
     <div className={styles.calendarHeading}>
       <div className={styles.monthControls}><button type="button" className="secondary" aria-label="Mes anterior" disabled={!shiftMonth(-1)} onClick={()=>onMonth(shiftMonth(-1)!)}>‹</button><span>Mes</span><button type="button" className="secondary" aria-label="Mes siguiente" disabled={!shiftMonth(1)} onClick={()=>onMonth(shiftMonth(1)!)}>›</button></div>
-      <input aria-label="Mes y año del almanaque salarial" type="month" min="0001-01" max="9999-12" value={month} onChange={e=>{if(/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value))onMonth(e.target.value);}}/>
+      <input aria-label="Mes y año del calendario salarial" type="month" min="0001-01" max="9999-12" value={month} onChange={e=>{if(/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value))onMonth(e.target.value);}}/>
       <div className={styles.yearControls}><button type="button" className="secondary" aria-label="Año anterior" disabled={!shiftMonth(-12)} onClick={()=>onMonth(shiftMonth(-12)!)}>− Año</button><button type="button" className="secondary" aria-label="Año siguiente" disabled={!shiftMonth(12)} onClick={()=>onMonth(shiftMonth(12)!)}>+ Año</button></div>
     </div>
     <div className={styles.calendarGrid}><span aria-hidden="true">Semana</span>{["L","M","X","J","V","S","D"].map((label,i)=><span key={i} aria-hidden="true">{label}</span>)}

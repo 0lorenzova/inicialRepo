@@ -79,3 +79,5 @@ button.entry:hover { border-color:var(--green); background:var(--pale); }
 .navigation:not([hidden]) { animation:navigation-reveal .12s ease-out; }
 @keyframes navigation-reveal { from {opacity:0;} to {opacity:1;} }
 @media (prefers-reduced-motion: reduce) { .navigation:not([hidden]) { animation:none; } }
+
+.relativePeriod{margin:0 0 8px;text-align:center;color:var(--muted);font-size:calc(13px * var(--ui-scale,1))}

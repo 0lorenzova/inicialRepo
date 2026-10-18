@@ -1,3 +1,7 @@
+## Entrega 0.1.64 — reglas por empleador y catálogo compacto
+- Ver `docs/fases-salarios-2026-10-18.md`: alcance real, pruebas, UI y conciliación de las cinco fases del prompt integral. Pago por día/cierre/días antes con vigencia; relación laboral; catálogo compacto; Calendario y etiquetas relativas. No afirmar que el registro masivo o los cálculos legales estén implementados. Próximo bloque: fase 2. Sin SQL nuevo.
+- Publicación autorizada en esta ronda; build, TypeScript, seis suites y revisión UI 384/1280 aprobados. Confirmar Production success antes de reportar publicación.
+
 ## Entrega 0.1.63 · 18 octubre 2026
 - Publicación autorizada explícitamente para este bloque: «Ahora sí quiero que publique estas mejoras». Incluye las mejoras compactas y textos locales descritos abajo, más Activar semana histórica pendiente.
 - `activateSalaryPeriod` reutiliza saveSalaryPeriod y el campo earned: solo pasado sin cobros/obligación, con importe confirmado positivo y condiciones conocidas. No acredita ingresos ni modifica cuentas, sobres o movimientos. Reintentos de la misma activación no crean registros duplicados. Ajustes estimados continúan estimados.

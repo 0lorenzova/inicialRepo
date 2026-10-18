@@ -46,6 +46,20 @@ export function calendarRange(value: string, scale: CalendarScale) {
   if (scale === "Año") { start.setUTCMonth(0,1); end.setUTCMonth(11,31); }
   return { from:format(start), to:format(end) };
 }
+/** Relative labels compare complete calendar periods, including ISO weeks across years. */
+export function calendarRelativeLabel(value:string,today:string,scale:CalendarScale="Semana") {
+  const target=calendarRange(value,scale).from,current=calendarRange(today,scale).from;
+  const difference=scale==="Año"?Number(target.slice(0,4))-Number(current.slice(0,4)):
+    scale==="Mes"?(Number(target.slice(0,4))-Number(current.slice(0,4)))*12+Number(target.slice(5,7))-Number(current.slice(5,7)):
+    Math.round((dateOf(target).getTime()-dateOf(current).getTime())/86400000)/(scale==="Semana"?7:1);
+  if(!difference)return scale==="Día"?"Hoy":scale==="Semana"?"Esta semana":scale==="Mes"?"Este mes":"Este año";
+  if(scale==="Día"&&Math.abs(difference)===1)return difference<0?"Ayer":"Mañana";
+  const unit=scale==="Semana"?"semana":scale==="Mes"?"mes":scale==="Año"?"año":"día";
+  if(difference===-1)return unit==="semana"?"La semana pasada":`El ${unit} pasado`;
+  if(difference===1)return unit==="semana"?"La próxima semana":`El próximo ${unit}`;
+  const plural=unit==="mes"?"meses":`${unit}s`;
+  return difference<0?`Hace ${-difference} ${plural}`:`Faltan ${difference} ${plural}`;
+}
 export function shiftCalendar(value: string, scale: CalendarScale, direction: -1|1) {
   const date = dateOf(value);
   if (scale === "Día" || scale === "Semana") date.setUTCDate(date.getUTCDate()+direction*(scale==="Semana"?7:1));

@@ -1,5 +1,6 @@
 "use client";
 
+import { calendarRelativeLabel } from "@/lib/planning-calendar";
 import { envelopeLabel } from "@/lib/envelope-label";
 import { useId, useRef, useState } from "react";
 import type { Recurrence } from "@/lib/finance-recurrence";
@@ -23,7 +24,7 @@ export function PlanningItemSummary({ item, today, display, privateMode }: { ite
   const {visible}=useTemporalDisplay();
   return <span className={styles.item}>
       <span className={styles.heading}><strong>{privateMode ? itemType(item) : item.name}</strong>{!item.payment&&item.timingEnabled&&<TemporalBadge tone={planningTone(item)} late={plannedPaymentDelay(item)>0} lateLabel={plannedPaymentDelayText(plannedPaymentDelay(item))} covered={privateMode||item.coverageHidden?undefined:item.covered} date={item.deadline} today={today} />}</span>
-      <span>{itemType(item)} · {display(item.amount)}</span>{item.recurrent&&<small>↻ Recurrente</small>}<span>Fecha límite: {dateLabel(item.deadline)}</span>{item.plannedPaymentDate&&<small>Pago previsto: {dateLabel(item.plannedPaymentDate)}{plannedPaymentDelay(item)>0?` · ${plannedPaymentDelayText(plannedPaymentDelay(item))}`:""}</small>}<small>{stateText(item)}</small>{visible&&!privateMode&&!item.coverageHidden&&!item.payment&&item.covered!==undefined&&<small>{item.covered?"Cubierto por el saldo del sobre":"Sin cobertura completa"} · {item.covered?"Aún no pagado":`Faltan ${display(item.shortfall??item.amount)}`}</small>}
+      <span>{itemType(item)} · {display(item.amount)}</span>{item.recurrent&&<small>↻ Recurrente</small>}<span>Fecha límite: {dateLabel(item.deadline)}</span>{item.deadline&&<small>{calendarRelativeLabel(item.deadline,today)}</small>}{item.plannedPaymentDate&&<small>Pago previsto: {dateLabel(item.plannedPaymentDate)}{plannedPaymentDelay(item)>0?` · ${plannedPaymentDelayText(plannedPaymentDelay(item))}`:""}</small>}<small>{stateText(item)}</small>{visible&&!privateMode&&!item.coverageHidden&&!item.payment&&item.covered!==undefined&&<small>{item.covered?"Cubierto por el saldo del sobre":"Sin cobertura completa"} · {item.covered?"Aún no pagado":`Faltan ${display(item.shortfall??item.amount)}`}</small>}
     </span>;
 }
 

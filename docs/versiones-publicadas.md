@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.63; la siguiente versión con nuevos cambios será 0.1.64.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.64; la siguiente versión con nuevos cambios será 0.1.65.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -88,3 +88,7 @@ El ordinal indica el orden de publicaciones exitosas; no afirma que estas versio
 ## Entrega 0.1.63
 
 Activación explícita de semanas históricas pendientes y mejoras compactas de interfaz. Publicación solicitada por el propietario el 18 de octubre. Build y TypeScript aprobados; confirmar estado Production del commit.
+
+## Entrega 0.1.64
+
+Configuración de día de pago por empleador, vigencias, catálogo compacto y referencias temporales. Alcance y pendientes en docs/fases-salarios-2026-10-18.md.

@@ -102,7 +102,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const applicationBalance = numericAmount - applicationTotal;
   const presentation=period?salaryPeriodPresentation(ledger,period,today):null;
   const temporalLabel=period?salaryTemporalLabel(ledger,period,viewerDay):"";
-  const registrationTemporalLabel=temporalLabel==="Hoy"&&(period?.frequency??config?.frequency)==="Semanal"?"Esta semana":temporalLabel;
+  const registrationTemporalLabel=temporalLabel==="Hoy"&&(period?.frequency??config?.frequency)==="Semanal"?"Semana en curso":temporalLabel;
   const expectedAmount=presentation?.expected??0;
   let lastPending:SalaryPeriod|null=null;
   try {if(config)lastPending=latestSalaryPeriodPending(ledger,config.id,viewerDay);}catch{/* Date boundary; ordinary navigation remains available. */}
@@ -214,12 +214,13 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
             <button type="button" className="secondary" aria-label="Período anterior" onClick={() => movePeriod(-1)} disabled={!period || period.start <= "0001-01-01"}>‹</button>
             <div><strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>{period && <><span className={styles.temporalLabel}>{registrationTemporalLabel}</span><small>{presentation?.state}{presentation?.overdueLabel?` · ${presentation.overdueLabel}`:""}</small><small>{dayLabel(period.start)} — {dayLabel(period.end)}</small></>}</div>
             <button type="button" className="secondary" aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}>›</button>
-            <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Navegar en el calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar almanaque":"Navegar en el calendario"}</button>
+            <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Navegar en el calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar calendario":"Navegar en el calendario"}</button>
           </div>
           {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(period.payDate)}</b></span>{!presentation?.historicalEmpty&&<span>Esperado: <b>{presentation?.estimateKnown?display(expectedAmount):"Sin proyección"}</b></span>}</div>}
           {period?.scheduledWorkDays&&<small className={styles.workDays}>{salaryWorkSchedule(period)}</small>}
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
+          {period&&(viewerDay<period.start||viewerDay>period.end)&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(viewerDay)}>Volver a la semana en curso</button>}
           {lastPending&&lastPending.id!==period?.id&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(lastPending!.start)}>Volver al último período pendiente: {salaryPeriodLabel(lastPending,config)}</button>}
           {period && numericAmount>0 && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{presentation? ` · ${presentation.workState}`:""}</p>}
           {period&&<SalaryPeriodActivation key={`activate:${period.id}`} ledger={ledger} period={period} today={today} display={display} onSave={onSave}/>}

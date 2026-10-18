@@ -7,8 +7,9 @@ import { movementDay } from "./finance-history";
 import { previewPostponement } from "./finance-recurrence";
 import {incomeReceptionMethods} from "./income-preferences";
 
-export type SalaryConfig = { id:string; employer:string; name:string; currency:"CRC"; base:number; frequency:"Semanal"|"Quincenal"|"Mensual"|"Otra"; intervalDays?:number; extraConcepts?:SalaryConcept[]; start:string; payOffset:number; calendarMode?:"iso-workdays"; workDays:number[]; active:boolean; remuneration?:"hour"|"day"|"week"|"fortnight"|"month"|"variable"; hourlyRate?:number; dailyRate?:number; hoursPerDay?:number; effectiveFrom?:string; termsHistory?:SalaryTerms[]; catalog?:SalaryCatalogConcept[] };
-export type SalaryTerms = Pick<SalaryConfig,"base"|"frequency"|"intervalDays"|"start"|"payOffset"|"calendarMode"|"workDays"|"remuneration"|"hourlyRate"|"dailyRate"|"hoursPerDay"> & {effectiveFrom:string};
+export type SalaryPayRule = {kind:"last-day"}|{kind:"days-before";days:number}|{kind:"weekday";day:number};
+export type SalaryConfig = {employmentStart?:string;employmentEnd?:string;payRule?:SalaryPayRule; id:string; employer:string; name:string; currency:"CRC"; base:number; frequency:"Semanal"|"Quincenal"|"Mensual"|"Otra"; intervalDays?:number; extraConcepts?:SalaryConcept[]; start:string; payOffset:number; calendarMode?:"iso-workdays"; workDays:number[]; active:boolean; remuneration?:"hour"|"day"|"week"|"fortnight"|"month"|"variable"; hourlyRate?:number; dailyRate?:number; hoursPerDay?:number; effectiveFrom?:string; termsHistory?:SalaryTerms[]; catalog?:SalaryCatalogConcept[] };
+export type SalaryTerms = Pick<SalaryConfig,"base"|"frequency"|"intervalDays"|"start"|"payOffset"|"calendarMode"|"workDays"|"remuneration"|"hourlyRate"|"dailyRate"|"hoursPerDay"|"payRule"> & {effectiveFrom:string};
 export type SalaryCatalogConcept = {id:string;name:string;sign:"add"|"subtract";usualAmount?:number;kind?:"salary"|"benefit"|"other";active:boolean};
 export type SalaryAdjustment = {id:string;catalogId?:string;name:string;amount:number;sign:"add"|"subtract";status:"estimated"|"confirmed"};
 export type SalaryPeriodAdjustments = {configId:string;periodId:string;start:string;end:string;items:SalaryAdjustment[]};
@@ -59,12 +60,20 @@ export function saveSalaryConfig<T extends SalaryLedger>(ledger:T,requested:Sala
   ensure((requested.extraConcepts??[]).every(c=>c.id&&c.name.trim()&&amountValid(c.amount))&&new Set((requested.extraConcepts??[]).map(c=>c.id)).size===(requested.extraConcepts??[]).length,"Revisa los conceptos adicionales de la configuración.");
   total([requested.base,...(requested.extraConcepts??[]).map(c=>c.amount)]);
   salaryDay(requested.start);
+  if(requested.employmentStart)salaryDay(requested.employmentStart);
+  if(requested.employmentEnd){salaryDay(requested.employmentEnd);ensure(requested.employmentEnd>=(requested.employmentStart??requested.start),"La finalización laboral no puede ser anterior al inicio.");}
+  if(requested.payRule){
+    const rule=requested.payRule;
+    ensure(["last-day","days-before","weekday"].includes(rule.kind),"Selecciona una opción de pago válida.");
+    if(rule.kind==="weekday")ensure(Number.isInteger(rule.day)&&rule.day>=0&&rule.day<=6,"Selecciona un día de lunes a domingo.");
+    if(rule.kind==="days-before")ensure(Number.isInteger(rule.days)&&rule.days>=0&&rule.days<=6,"Indica de 0 a 6 días antes del cierre de la semana.");
+  }
   ensure(Number.isInteger(requested.payOffset)&&requested.payOffset>=0&&requested.payOffset<=31,"La fecha habitual admite entre 0 y 31 días después del período.");
   ensure(requested.workDays.length>0&&new Set(requested.workDays).size===requested.workDays.length&&requested.workDays.every(d=>Number.isInteger(d)&&d>=0&&d<=6),"Selecciona los días laborales.");
   ensure(!requested.calendarMode||requested.calendarMode==="iso-workdays","Selecciona una regla de calendario válida.");
   const effectiveFrom=requested.effectiveFrom??(current?undefined:requested.start);
   if(effectiveFrom)salaryDay(effectiveFrom);
-  const terms=(c:SalaryConfig):SalaryTerms=>({remuneration:c.remuneration,hourlyRate:c.hourlyRate,dailyRate:c.dailyRate,hoursPerDay:c.hoursPerDay,base:c.base,frequency:c.frequency,intervalDays:c.intervalDays,start:c.start,payOffset:c.payOffset,calendarMode:c.calendarMode,workDays:[...c.workDays],effectiveFrom:effectiveFrom!});
+  const terms=(c:SalaryConfig):SalaryTerms=>({remuneration:c.remuneration,hourlyRate:c.hourlyRate,dailyRate:c.dailyRate,hoursPerDay:c.hoursPerDay,payRule:c.payRule,base:c.base,frequency:c.frequency,intervalDays:c.intervalDays,start:c.start,payOffset:c.payOffset,calendarMode:c.calendarMode,workDays:[...c.workDays],effectiveFrom:effectiveFrom!});
   const changed=Boolean(current&&JSON.stringify(terms(current))!==JSON.stringify(terms(requested)));
   if(changed){ensure(effectiveFrom,"Indica desde qué fecha entran en vigor las nuevas condiciones.");ensure(periodStartForDate(current!,effectiveFrom).start===effectiveFrom,"Selecciona el inicio de un período para cambiar condiciones; el prorrateo dentro del período está pendiente de definir.");}
   let history=current?.termsHistory??[];
@@ -116,7 +125,11 @@ function projectedSalaryPeriod(config:SalaryConfig,start:string,next:string):Sal
     base=days*(config.remuneration==="hour"?config.hourlyRate!*config.hoursPerDay!:config.dailyRate!);
     ensure(amountValid(base),"La tarifa y jornada producen fracciones de colón; ajusta las condiciones o utiliza un importe manual.");
   }
-  return {id,configId:config.id,start,end,payDate:shiftSalaryDate(payBase,config.payOffset),earned:false,concepts:[{id:`${id}:salary`,name:"Salario",amount:base}],frequency:config.frequency,scheduledWorkDays:[...config.workDays],notes:""};
+  let payDate=shiftSalaryDate(payBase,config.payOffset);
+  if(config.payRule?.kind==="last-day")payDate=end;
+  if(config.payRule?.kind==="days-before")payDate=shiftSalaryDate(end,-config.payRule.days);
+  if(config.payRule?.kind==="weekday")payDate=shiftSalaryDate(end,-((new Date(`${end}T12:00:00Z`).getUTCDay()-config.payRule.day+7)%7));
+  return {id,configId:config.id,start,end,payDate,earned:false,concepts:[{id:`${id}:salary`,name:"Salario",amount:base}],frequency:config.frequency,scheduledWorkDays:[...config.workDays],notes:""};
 }
 /** Returns the saved period when it exists, or a pure, unsaved projection for the date. */
 export function salaryPeriodForDate(ledger:SalaryLedger,configId:string,date:string):SalaryPeriod {
@@ -345,7 +358,7 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   const fullyPaid=expected>0&&amounts.received>=expected;
   const workState=period.start>today?"Aún no comienza":today<=workEnd?"En curso":"Jornada prevista finalizada";
   const config=salaryState(ledger).configs.find(c=>c.id===period.configId);
-  const estimateKnown=Boolean(salaryHistoricalEstimate(ledger,period))||Boolean(config&&period.start>=today&&period.start>=config.start&&!config.termsHistory?.length);
+  const estimateKnown=Boolean(salaryHistoricalEstimate(ledger,period))||Boolean(config&&period.start>=today&&period.start>=config.start&&!config.termsHistory?.length&&(!config.employmentStart||period.start>=config.employmentStart)&&(!config.employmentEnd||period.end<=config.employmentEnd));
   const noRecords=!payments.length&&!confirmed;
   const historicalEmpty=noRecords&&period.end<today;
   const state=noRecords&&period.start<=today?"Sin registros":fullyPaid?"Completamente pagado":amounts.received>0?"Parcialmente pagado":overdue?"Pendiente vencido":period.start>today?"Proyectado":today<=workEnd?"En curso":"Pendiente de pago";
@@ -410,7 +423,7 @@ export function correctSalaryPayment<T extends SalaryLedger>(ledger:T,expected:S
 
 export function salaryConfigAt(config:SalaryConfig,date:string):SalaryConfig|null {
   const terms=[...(config.termsHistory??[])].filter(t=>t.effectiveFrom<=date).sort((a,b)=>b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
-  return terms?{...config,...terms}:null;
+  return terms?{...config,payRule:undefined,...terms}:null;
 }
 export function salaryReceived(ledger:SalaryLedger,periodId:string) {
   return total(salaryState(ledger).payments.filter(p=>salaryPaymentValid(ledger,p)).flatMap(p=>p.applications.filter(a=>a.periodId===periodId).map(a=>a.amount)));
@@ -455,6 +468,7 @@ export function salaryHistoricalEstimate(ledger:SalaryLedger,period:SalaryPeriod
   const saved=salaryState(ledger).periods.find(p=>p.id===period.id);
   if(saved)return {amount:salaryExpected(ledger,saved),basis:"Condiciones e importes conservados en la referencia histórica."};
   const applicable=config&&salaryConfigAt(config,period.start);
+  if(config&&((config.employmentStart&&period.start<config.employmentStart)||(config.employmentEnd&&period.end>config.employmentEnd)))return null;
   if(!config||!applicable||(config.termsHistory??[]).some(t=>t.effectiveFrom>period.start&&t.effectiveFrom<=period.end))return null;
   return {amount:salaryExpected(ledger,period),basis:`Salario base y jornada habitual configurados desde ${applicable.effectiveFrom}. No acredita horas efectivamente trabajadas.`};
 }

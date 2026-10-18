@@ -3,7 +3,7 @@ import { isoWeek } from "@/lib/iso-week";
 import { envelopeLabel } from "@/lib/envelope-label";
 import { useEffect, useId, useMemo, useState } from "react";
 import Tooltip from "@mui/material/Tooltip";
-import { calendarIndicatorGroups, calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
+import { calendarRelativeLabel, calendarIndicatorGroups, calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
 import { proximityTones, planningCoverage, plannedPaymentDelay } from "@/lib/envelope-planning";
 import { calendarProximityMeanings } from "@/lib/planning-calendar";
 import { useTemporalDisplay, TemporalDot, TemporalBadge } from "./temporal-indicator";
@@ -54,7 +54,7 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
   function renderEntries(items:CalendarEntry[]) {
     return <div className={styles.entries}>{items.map(entry=>{
       const tone=calendarEntryTone(entry,today);
-      const content=<><span className={styles.entryContext}><small>{envelopeLabel(privateMode?"Sobre":entry.envelopeName)}</small><time dateTime={entry.date}>{label(entry.date,{day:"numeric",month:"short"})}</time></span>{entry.item?<PlanningItemSummary item={entry.item} today={today} display={display} privateMode={privateMode}/>:<><b>↻ Aporte recurrente</b><TemporalBadge tone={tone} date={entry.date} today={today}/><span>{display(entry.amount)}</span><small>{entry.virtual?"Previsión · Recurrente":"Recurrente · Requiere confirmar el aporte"}</small></>}</>;
+      const content=<><span className={styles.entryContext}><small>{envelopeLabel(privateMode?"Sobre":entry.envelopeName)}</small><time dateTime={entry.date}>{label(entry.date,{day:"numeric",month:"short"})}</time></span>{entry.item?<PlanningItemSummary item={entry.item} today={today} display={display} privateMode={privateMode}/>:<><b>↻ Aporte recurrente</b><small>{calendarRelativeLabel(entry.date,today)}</small><TemporalBadge tone={tone} date={entry.date} today={today}/><span>{display(entry.amount)}</span><small>{entry.virtual?"Previsión · Recurrente":"Recurrente · Requiere confirmar el aporte"}</small></>}</>;
       const className=styles.entry;
       if(entry.virtual)return <article key={entry.key} className={className}>{content}<small>Previsión de consulta. No es un pago ni una asignación registrada.</small></article>;
       if(selection)return <article key={entry.key} className={className}><label className="check-label"><input type="checkbox" checked={selection.isSelected(entry)} onChange={()=>selection.onToggle(entry)} aria-label={`Asignar para ${privateMode?"esta obligación":`${entry.name} · ${entry.envelopeName}`}`}/>Seleccionar para distribuir</label>{content}</article>;
@@ -68,6 +68,7 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
     <div className={styles.controls}><label>Navegación<select value={scale} onChange={event=>changeCalendar(date,event.target.value as CalendarScale)}>{calendarScales.map(value=><option key={value}>{value}</option>)}</select></label><label>Fecha<input type="date" min="0001-01-01" max="9999-12-31" value={date} onChange={event=>{const value=event.target.value;if(!value)return;try{calendarRange(value,scale);}catch{return;}changeCalendar(value,scale);}}/></label></div>
     </div>
     <div className={styles.period}><button className="secondary" aria-label="Período anterior" onClick={()=>changeCalendar(shiftCalendar(date,scale,-1),scale)}>‹</button><h2>{scale==="Año"?date.slice(0,4):scale==="Semana"?`Semana ${isoWeek(date).week} · ${label(date,{month:"long",year:"numeric"})}`:label(date,scale==="Mes"?{month:"long",year:"numeric"}:{day:"numeric",month:"long",year:"numeric"})}</h2><button className="secondary" aria-label="Período siguiente" onClick={()=>changeCalendar(shiftCalendar(date,scale,1),scale)}>›</button></div>
+    <p className={styles.relativePeriod}>{calendarRelativeLabel(date,today,scale)}</p>
     <details className={styles.guide}><summary>Cómo leer el calendario</summary>
     <p className="flow-intro">Fechas pendientes guardadas en tus sobres. Las repeticiones incluyen previsiones futuras para el período consultado; ningún aporte ni pago se realiza automáticamente.</p>
     {showProximity&&<div className={styles.legend} aria-label="Significado de los indicadores de proximidad">{proximityTones.map(tone=><Tooltip key={tone} {...hintProps} title={calendarDotDescription(entries,tone,today,privateMode)}><span><TemporalDot tone={tone}/>{calendarProximityMeanings[tone]}</span></Tooltip>)}</div>}

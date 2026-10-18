@@ -21,7 +21,7 @@ export function salaryProjection(ledger:SalaryLedger,start:string,end:string,tod
       if(++visited>50000)throw new Error("Consulta un intervalo más corto para mostrar el desglose sin bloquear la aplicación.");
       const p=salaryPeriodForDate(ledger,config.id,cursor);
       if(!seen.has(p.id)&&p.payDate>=start&&p.payDate<=end){
-        const estimate=salaryHistoricalEstimate(ledger,p),validFuture=p.start>=today&&(salaryConfigAt(config,p.start)!==null||!(config.termsHistory?.length))&&p.start>=config.start;
+        const estimate=salaryHistoricalEstimate(ledger,p),validFuture=p.start>=today&&(salaryConfigAt(config,p.start)!==null||!(config.termsHistory?.length))&&p.start>=config.start&&(!config.employmentStart||p.start>=config.employmentStart)&&(!config.employmentEnd||p.end<=config.employmentEnd);
         periods.push({id:p.id,start:p.start,end:p.end,payDate:p.payDate,expected:estimate?.amount??(validFuture?salaryExpected(ledger,p):null),basis:estimate?.basis??(validFuture?"Estimación con la configuración actual":"Sin información suficiente")});seen.add(p.id);
       }
       if(p.end>=end)break;
