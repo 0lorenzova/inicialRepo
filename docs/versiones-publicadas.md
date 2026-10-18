@@ -92,3 +92,7 @@ Activación explícita de semanas históricas pendientes y mejoras compactas de 
 ## Entrega 0.1.64
 
 Configuración de día de pago por empleador, vigencias, catálogo compacto y referencias temporales. Alcance y pendientes en docs/fases-salarios-2026-10-18.md.
+
+## Entrega 0.1.65
+
+Cantidades por hora/día en conceptos y preparación del recibo estándar semanal. El propietario autorizó la publicación; registrar su fecha y commit cuando Production confirme `success`.

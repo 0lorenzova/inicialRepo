@@ -110,6 +110,8 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const pendingAmount=presentation?.remaining??0;
   const selectedAccount = ledger.accounts.find(account => account.id === accountId && account.active);
   const isSavedPeriod = Boolean(period && state.periods.some(item => item.id === period!.id));
+  const standardWeeklyAmount=period?.concepts.reduce((sum,concept)=>sum+concept.amount,0)??0;
+  const quickStandardWeekAvailable=Boolean(period&&config&&(period.frequency??config.frequency)==="Semanal"&&period.start<=viewerDay&&period.end>=viewerDay&&presentation?.estimateKnown&&presentation.paymentCount===0&&receivedAmount===0&&standardWeeklyAmount>0);
   const accountValid = Boolean(linkedMovement || selectedAccount);
   const dateValid = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(receivedAt) && receivedDate <= today;
   const duplicateExists = !linkedMovement && salaryPaymentDuplicate(ledger,{configId,date:receivedAt,amount:numericAmount,accountId,reference,applications:calculatedApplications});
@@ -225,6 +227,8 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
           {period && numericAmount>0 && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{presentation? ` · ${presentation.workState}`:""}</p>}
           {period&&<SalaryPeriodActivation key={`activate:${period.id}`} ledger={ledger} period={period} today={today} display={display} onSave={onSave}/>}
         </section>
+
+        {quickStandardWeekAvailable&&<section className={styles.periodPicker} aria-label="Registro rápido de semana estándar"><p>Preparar el importe estándar y la fecha real de hoy. Revisa la cuenta y confirma el registro; este botón no guarda el pago.</p><button type="button" className="secondary wide" onClick={()=>{setAmount(String(standardWeeklyAmount));setReceivedAt(localNow());setExistingMovementId("");setMultiPeriod(false);setApplications([]);setAdvanced(true);setFormExpanded(true);setLocalError("");}}>Preparar registro de semana estándar · {display(standardWeeklyAmount)}</button></section>}
 
         <details className={styles.receiptSection} open={formExpanded} onToggle={event=>setFormExpanded(event.currentTarget.open)}>
           <summary>{formExpanded?"Ocultar formulario":"Desplegar formulario para registrar salario"}<span aria-hidden="true">{formExpanded?"⌃":"⌄"}</span></summary>

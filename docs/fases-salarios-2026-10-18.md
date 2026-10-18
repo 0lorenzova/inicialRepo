@@ -37,5 +37,7 @@ Campos opcionales en el documento financiero existente. Sin migraciones SQL nuev
 6. Mantener estados compartidos e independientes de estimaciones; recordatorios de registro no son deudas. Revisar condición de atraso parcial no confirmado identificada en recomendaciones anteriores antes de ampliar el motor.
 7. Pruebas pendientes específicas: horas/días extra/menos y vacaciones, casilla de cobro rápido, lotes 3/20, depósito agrupado, ciclos/vacaciones, nuevos informes/importación, UI y persistencia de esas fases; las pruebas de esta entrega no las certifican.
 
-## Siguiente paso
-Fase 2: reglas explícitas de cantidad por concepto y registro rápido individual, reutilizando postSalaryPayment y SalaryReceiptDialog; no repetir el bloque 0.1.64. Solicitar aprobación si aparece una migración SQL necesaria. La autorización de publicar a tiempo corresponde a esta ronda; las reglas posteriores dependen de la instrucción vigente del propietario.
+## Entrega 0.1.65 y siguiente paso
+El catálogo y los ajustes semanales admiten cantidad por hora/día con tarifa explícita, y Registrar salario prepara el recibo estándar de la semana actual con fecha real, sin guardar hasta confirmación. Build y TypeScript aprobados; ESLint de los archivos afectados terminó correctamente. Los scripts salariales no pudieron arrancar con Node directamente por imports TS sin extensión; no alcanzaron los escenarios. No hubo QA visual ni SQL. Ver `docs/CONTINUIDAD.md`.
+
+Pendiente: catálogo recurrente por empleador con historial de vigencias; evitar recalcular semanas anteriores sin datos guardados; preferencia por fuente en el recibo rápido; verificación de cantidades/días, fracciones y duplicados; revisión móvil y escritorio. El propietario autorizó publicar esta entrega; el siguiente paso es confirmar Production success por SHA.

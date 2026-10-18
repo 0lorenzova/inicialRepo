@@ -10,8 +10,9 @@ import {incomeReceptionMethods} from "./income-preferences";
 export type SalaryPayRule = {kind:"last-day"}|{kind:"days-before";days:number}|{kind:"weekday";day:number};
 export type SalaryConfig = {employmentStart?:string;employmentEnd?:string;payRule?:SalaryPayRule; id:string; employer:string; name:string; currency:"CRC"; base:number; frequency:"Semanal"|"Quincenal"|"Mensual"|"Otra"; intervalDays?:number; extraConcepts?:SalaryConcept[]; start:string; payOffset:number; calendarMode?:"iso-workdays"; workDays:number[]; active:boolean; remuneration?:"hour"|"day"|"week"|"fortnight"|"month"|"variable"; hourlyRate?:number; dailyRate?:number; hoursPerDay?:number; effectiveFrom?:string; termsHistory?:SalaryTerms[]; catalog?:SalaryCatalogConcept[] };
 export type SalaryTerms = Pick<SalaryConfig,"base"|"frequency"|"intervalDays"|"start"|"payOffset"|"calendarMode"|"workDays"|"remuneration"|"hourlyRate"|"dailyRate"|"hoursPerDay"|"payRule"> & {effectiveFrom:string};
-export type SalaryCatalogConcept = {id:string;name:string;sign:"add"|"subtract";usualAmount?:number;kind?:"salary"|"benefit"|"other";active:boolean};
-export type SalaryAdjustment = {id:string;catalogId?:string;name:string;amount:number;sign:"add"|"subtract";status:"estimated"|"confirmed"};
+export type SalaryQuantityUnit = "hour"|"day";
+export type SalaryCatalogConcept = {id:string;name:string;sign:"add"|"subtract";usualAmount?:number;unit?:SalaryQuantityUnit;rate?:number;usualQuantity?:number;kind?:"salary"|"benefit"|"other";active:boolean};
+export type SalaryAdjustment = {id:string;catalogId?:string;name:string;amount:number;sign:"add"|"subtract";status:"estimated"|"confirmed";unit?:SalaryQuantityUnit;rate?:number;quantity?:number};
 export type SalaryPeriodAdjustments = {configId:string;periodId:string;start:string;end:string;items:SalaryAdjustment[]};
 export type SalaryConcept = { id:string; name:string; amount:number };
 export type SalaryPeriod = { id:string; configId:string; start:string; end:string; payDate:string; earned:boolean; concepts:SalaryConcept[]; notes:string; source?:string; frequency?:SalaryConfig["frequency"]; workedDays?:string[]; scheduledWorkDays?:number[] };
@@ -24,6 +25,13 @@ export const emptySalary = ():SalaryState => ({configs:[],periods:[],payments:[]
 export const salaryState = (ledger:SalaryLedger) => ledger.salary ?? emptySalary();
 function ensure(condition:unknown,message:string):asserts condition { if(!condition)throw new Error(message); }
 const amountValid = (n:number) => Number.isSafeInteger(n)&&n>=0;
+export function salaryMeasuredAmount(quantity:number,rate:number) {
+  ensure(Number.isFinite(quantity)&&quantity>0&&Number.isInteger(quantity*4),"Indica una cantidad positiva en incrementos de 0,25.");
+  ensure(amountValid(rate)&&rate>0,"Indica una tarifa entera mayor que cero.");
+  const amount=quantity*rate;
+  ensure(amountValid(amount),"La cantidad y la tarifa deben producir un importe entero en colones.");
+  return amount;
+}
 export const normalizeSalaryName=(value:string)=>value.normalize("NFKC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");
 export function salaryDay(day:string) { ensure(validMovementDate(`${day}T12:00`),"Selecciona una fecha válida.");return day; }
 const salaryReceiptDay=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)?salaryDay(value):salaryDay(movementDay(value));
@@ -444,7 +452,7 @@ export function saveSalaryCatalog<T extends SalaryLedger>(ledger:T,configId:stri
   const state=salaryState(ledger),config=state.configs.find(c=>c.id===configId);
   ensure(config&&JSON.stringify(salaryCatalog(config))===JSON.stringify(original),"El catálogo cambió. Vuelve a abrirlo.");
   ensure(new Set(items.map(c=>c.id)).size===items.length&&new Set(items.map(c=>normalizeSalaryName(c.name))).size===items.length,"No repitas conceptos en el catálogo.");
-  ensure(items.every(c=>c.id&&c.name.trim()&&(c.sign==="add"||c.sign==="subtract")&&typeof c.active==="boolean"&&(c.usualAmount===undefined||amountValid(c.usualAmount))),"Revisa el nombre, tipo e importe de los conceptos.");
+  ensure(items.every(c=>c.id&&c.name.trim()&&(c.sign==="add"||c.sign==="subtract")&&typeof c.active==="boolean"&&(c.usualAmount===undefined||amountValid(c.usualAmount))&&(!c.unit?c.rate===undefined&&c.usualQuantity===undefined:(c.unit==="hour"||c.unit==="day")&&c.usualAmount===undefined&&amountValid(c.rate??-1)&&(c.rate??0)>0&&(c.usualQuantity===undefined||salaryMeasuredAmount(c.usualQuantity,c.rate!))&&c.kind!=="benefit")),"Revisa el nombre, tipo e importe de los conceptos. Los beneficios no admiten reglas de cantidad por hora o día.");
   return {...ledger,salary:{...state,configs:state.configs.map(c=>c.id===configId?{...c,catalog:items.map(i=>({...i,name:i.name.trim()}))}:c),audit:audit(state,configId,"Catálogo salarial","Solo referencias; no altera semanas ni pagos",original)}};
 }
 export function saveSalaryAdjustments<T extends SalaryLedger>(ledger:T,period:SalaryPeriod,items:SalaryAdjustment[],original:SalaryAdjustment[]):T {
@@ -454,7 +462,7 @@ export function saveSalaryAdjustments<T extends SalaryLedger>(ledger:T,period:Sa
   ensure(new Set(items.map(a=>a.id)).size===items.length,"No repitas ajustes.");
   const catalogIds=items.flatMap(a=>a.catalogId?[a.catalogId]:[]);
   ensure(new Set(catalogIds).size===catalogIds.length,"Este concepto ya está incluido en la semana.");
-  ensure(items.every(a=>a.id&&a.name.trim()&&amountValid(a.amount)&&(a.sign==="add"||a.sign==="subtract")&&(a.status==="estimated"||a.status==="confirmed")),"Revisa el nombre, importe y estado de los ajustes.");
+  ensure(items.every(a=>a.id&&a.name.trim()&&amountValid(a.amount)&&(a.sign==="add"||a.sign==="subtract")&&(a.status==="estimated"||a.status==="confirmed")&&(!a.unit?a.rate===undefined&&a.quantity===undefined:(a.unit==="hour"||a.unit==="day")&&a.rate!==undefined&&a.quantity!==undefined&&a.amount===salaryMeasuredAmount(a.quantity,a.rate))),"Revisa el nombre, importe, cantidad y estado de los ajustes.");
   const current=salaryPeriodForDate(ledger,period.configId,period.start);
   ensure(current.id===period.id&&current.end===period.end,"La referencia cambió. Vuelve a seleccionar la semana.");
   const entry={configId:period.configId,periodId:period.id,start:period.start,end:period.end,items:items.map(a=>({...a,name:a.name.trim()}))};
