@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {saveSalaryConfig,salaryPeriodForDate,postSalaryPayment,salaryPeriodPresentation,salaryReceiptDefaults} from '../lib/salary-tracking.ts';
+import {saveSalaryConfig,salaryPeriodForDate,saveSalaryPeriod,saveSalaryAdjustments,salaryBatchCandidates,salaryPeriodApplications,postSalaryPayment,salaryPeriodPresentation,salaryReceiptDefaults} from '../lib/salary-tracking.ts';
 import {distributeSavedIncome} from '../lib/distribute-saved-income.ts';
 import {incomeDistribution} from '../lib/income-trace.ts';
 import {totals} from '../lib/finance-ledger.ts';
@@ -38,4 +38,17 @@ assert.throws(()=>postSalaryPayment(received,payment,'2026-10-16'));
 assert.throws(()=>postSalaryPayment(configured,{...payment,accountId:'missing'},'2026-10-16'));
 assert.equal(JSON.stringify(received),saved,'Failed distributions, cancel, close and no assignment preserve the original receipt');
 for(const state of [received,partial,complete])assert.equal(totals(state).accounts,totals(state).assigned+totals(state).unassigned);
-console.log('OK: single salary receipt, independent per-source account/method defaults with legacy fallback, JSON persistence, full/partial linked allocation, remaining funds, cancel/close no mutations, duplicate rejection, atomic failures and financial totals.');
+const batchConfig={...config,id:'batch',start:'2026-09-14',base:100},batchPeriods=['2026-09-14','2026-09-21','2026-09-28','2026-10-05','2026-10-12'];
+let batchLedger=saveSalaryConfig(base,batchConfig,null),savedBatchPeriods=[];
+for(const start of batchPeriods){const period=salaryPeriodForDate(batchLedger,'batch',start);batchLedger=saveSalaryPeriod(batchLedger,{...period,earned:true},null,'2026-10-18','Semana ficticia confirmada');savedBatchPeriods.push(period);}
+assert.equal(salaryBatchCandidates(batchLedger,'batch','2026-09-14','2026-10-18','2026-10-18').length,5,'Only confirmed, fully unpaid periods enter a batch');
+const allocatedBatch=salaryBatchCandidates(batchLedger,'batch','2026-09-14','2026-10-18','2026-10-18');
+assert.equal(allocatedBatch[0].period.id,savedBatchPeriods.at(-1).id,'Batch candidates are ordered newest first');
+assert.ok(allocatedBatch.every(item=>item.amount===100&&item.applications.reduce((sum,application)=>sum+application.amount,0)===item.amount));
+batchLedger=saveSalaryAdjustments(batchLedger,savedBatchPeriods.at(-1),[{id:'estimated-extra',name:'Extra estimado',sign:'add',amount:10,status:'estimated'}],[]);
+assert.equal(salaryBatchCandidates(batchLedger,'batch','2026-09-14','2026-10-18','2026-10-18').length,4,'Unvalidated adjustments are excluded');
+const partialPeriod=savedBatchPeriods[3],partialApplications=salaryPeriodApplications(batchLedger,'batch',partialPeriod.id,50);
+batchLedger=postSalaryPayment(batchLedger,{id:'batch-partial',configId:'batch',date:'2026-10-18T09:00',amount:50,accountId:'a',method:'Transferencia',reference:'',notes:'',applications:partialApplications},'2026-10-18');
+assert.equal(salaryBatchCandidates(batchLedger,'batch','2026-09-14','2026-10-18','2026-10-18').length,3,'Partially paid periods are excluded from the grouped-deposit selector');
+assert.equal(salaryBatchCandidates(batchLedger,'batch','2026-09-14','2026-10-04','2026-10-18').length,3,'Date ranges include only complete periods contained in the interval');
+console.log('OK: single salary receipt, independent per-source account/method defaults with legacy fallback, JSON persistence, grouped batch eligibility and applications, date ranges, unvalidated adjustment/partial exclusion, full/partial linked allocation, cancel/close no mutations, duplicate rejection, atomic failures and financial totals.');

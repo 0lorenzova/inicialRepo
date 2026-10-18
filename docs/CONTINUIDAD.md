@@ -1,7 +1,12 @@
-## Entrega 0.1.67 · 18 octubre 2026
+## Entrega 0.1.68 · 18 octubre 2026
+- Gestión salarial ofrece filtro por rango y selección de los 3/20/todos los períodos confirmados elegibles para preparar un depósito agrupado. Excluye pagos parciales/completos y ajustes sin validar; el ingreso único se revisa y confirma en el diálogo normal con cuenta y fecha real. Persistencia y movimientos siguen usando la operación existente; sin SQL.
+- La subfase no implementa múltiples depósitos independientes con fechas distintas ni el tratamiento de fechas aproximadas/desconocidas. Ver fases y limitaciones en `docs/fases-salarios-2026-10-18.md`. Sin QA visual del flujo integrado.
+- Regresión dirigida de elegibilidad, aplicaciones, rango, ajustes estimados y abonos parciales; TypeScript, ESLint afectado, `git diff --check` y build de producción aprobados antes de publicar.
+
+## Entrega 0.1.67 · 18 octubre 2026 — publicada
 - Registrar salario recuerda por fuente la última cuenta y el medio de recepción usados tras guardar un pago. Al cambiar de empleador se cargan sus valores; fuentes antiguas sin preferencia específica conservan el último valor global y las cuentas inactivas no se sugieren.
 - Preferencias opcionales en el JSON salarial existente, sin SQL ni cambios en movimientos/saldos. 14 suites `verify-salary-*.mjs`, TypeScript, ESLint dirigido y build de producción aprobados. Sin revisión visual en navegador.
-- El propietario indicó continuar con los pendientes y autorizó todos los pasos sin preguntas intermedias; cerrar y publicar al confirmar build y verificaciones.
+- Vercel confirmó `success` / `Deployment has completed` para el commit `c785d32` (estado de commit: https://vercel.com/myself-e673/inicial-repo/3jPwCE4LUfq3TptcwgQJsKcuTz1G).
 
 ## Entrega 0.1.66 · 18 octubre 2026 — publicada
 - Catálogo recurrente por fuente con versiones fechadas: cada nueva versión inicia en un período futuro y no recalcula las anteriores. El catálogo existente queda como base histórica no recurrente.

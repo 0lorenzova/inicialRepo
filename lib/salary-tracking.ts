@@ -457,6 +457,22 @@ export function salaryExpected(ledger:SalaryLedger,period:SalaryPeriod,confirmed
 export function salaryPaymentConcepts(ledger:SalaryLedger,period:SalaryPeriod):SalaryConcept[] {
   return [...period.concepts,...salaryAdjustments(ledger,period).filter(a=>a.sign==="add").map(a=>({id:`adjustment:${a.id}`,name:a.name,amount:a.amount}))];
 }
+export function salaryBatchCandidates(ledger:SalaryLedger,configId:string,from:string,to:string,today:string) {
+  salaryDay(from);salaryDay(to);salaryDay(today);
+  if(from>to)return [];
+  return salaryState(ledger).periods.filter(period=>period.configId===configId&&period.start>=from&&period.end<=to).sort((a,b)=>b.start.localeCompare(a.start)).flatMap(period=>{
+    const view=salaryPeriodPresentation(ledger,period,today);
+    if(!period.earned||!view.confirmed||!view.estimateKnown||view.paymentCount>0||view.received>0||view.pending<=0||salaryExpected(ledger,period)!==salaryExpected(ledger,period,true))return [];
+    let remaining=view.pending;
+    const applications:SalaryApplication[]=[];
+    for(const concept of salaryPaymentConcepts(ledger,period)){
+      const available=concept.amount-salaryConceptPaid(ledger,period.id,concept.id),amount=Math.min(remaining,available);
+      if(amount>0){applications.push({periodId:period.id,conceptId:concept.id,amount});remaining-=amount;}
+    }
+    if(remaining!==0||!applications.length)return [];
+    return [{period,amount:view.pending,applications}];
+  });
+}
 export function salaryCatalog(config:SalaryConfig):SalaryCatalogConcept[] {
   return config.catalog??(config.extraConcepts??[]).map(c=>({id:c.id,name:c.name,sign:"add",usualAmount:c.amount,active:true}));
 }

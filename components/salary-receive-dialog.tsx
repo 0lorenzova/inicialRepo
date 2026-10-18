@@ -23,6 +23,7 @@ type Props = {
   display: (amount: number) => string;
   initialConfigId?: string;
   initialPeriodId?: string;
+  initialApplications?: SalaryApplication[];
   error?: string;
   onClose: () => void;
   onConfigure: () => void;
@@ -38,7 +39,7 @@ const localNow = () => {
 const dayLabel = salaryDateLabel;
 const currentDateTime = (value: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value : `${value.slice(0, 10)}T12:00`;
 
-export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreferences, display, initialConfigId, initialPeriodId, error: externalError, onClose, onConfigure, onCreateAccount, onSave, onConfirmSave }: Props) {
+export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreferences, display, initialConfigId, initialPeriodId, initialApplications, error: externalError, onClose, onConfigure, onCreateAccount, onSave, onConfirmSave }: Props) {
   const [viewerDay,setViewerDay]=useState(()=>salaryViewerDay());
   useEffect(()=>{const update=()=>setViewerDay(salaryViewerDay());const timer=window.setInterval(update,60000);window.addEventListener("focus",update);return()=>{window.clearInterval(timer);window.removeEventListener("focus",update);};},[]);
   const state = salaryState(ledger);
@@ -51,18 +52,18 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const [configId, setConfigId] = useState(startingConfigId);
   const [periodDate, setPeriodDate] = useState(startingProjection?.start ?? today);
   const suggest=(p:SalaryPeriod)=>p.end<viewerDay&&!salaryHistoricalEstimate(ledger,p)?"":String(salaryPeriodRemaining(ledger,p));
-  const [amount, setAmount] = useState(startingProjection ? suggest(startingProjection) : "");
+  const [amount, setAmount] = useState(initialApplications?.length ? String(initialApplications.reduce((sum,item)=>sum+item.amount,0)) : startingProjection ? suggest(startingProjection) : "");
   const [accountId, setAccountId] = useState(salaryReceiptDefaults(ledger,startingConfigId).accountId || incomeDefaults(incomePreferences, ledger.accounts).accountId);
   const [receivedAt, setReceivedAt] = useState(localNow);
   const [method, setMethod] = useState<string>(salaryReceiptDefaults(ledger,startingConfigId).method);
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
-  const [advanced, setAdvanced] = useState(false);
+  const [advanced, setAdvanced] = useState(Boolean(initialApplications?.length));
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [formExpanded, setFormExpanded] = useState(false);
+  const [formExpanded, setFormExpanded] = useState(Boolean(initialApplications?.length));
   const [calendarMonth, setCalendarMonth] = useState((startingProjection?.start ?? today).slice(0, 7));
-  const [multiPeriod, setMultiPeriod] = useState(false);
-  const [applications, setApplications] = useState<SalaryApplication[]>([]);
+  const [multiPeriod, setMultiPeriod] = useState(Boolean(initialApplications?.length));
+  const [applications, setApplications] = useState<SalaryApplication[]>(()=>initialApplications?.map(item=>({...item}))??[]);
   const [receiptIncomeId,setReceiptIncomeId]=useState<string|null>(null);
   const [existingMovementId, setExistingMovementId] = useState("");
   const [localError, setLocalError] = useState("");
@@ -258,6 +259,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
               setLocalError("");
             }}><option value="">Crear un movimiento al confirmar</option>{paymentMovements.map(movement => <option key={movement.id} value={movement.id}>Vincular {movement.name} · {dayLabel(movement.date)} · {display(movement.amount)}</option>)}</select><small>Vincular un ingreso existente lo relaciona con el período sin volver a sumar dinero.</small></label>
             <label className="check-label"><input type="checkbox" checked={multiPeriod} onChange={event => { setMultiPeriod(event.target.checked); setApplications([]); setLocalError(""); }}/>Aplicar este pago a varios períodos</label>
+            {multiPeriod&&<small>Se registrará un solo ingreso por {display(numericAmount)} y se distribuirá entre los conceptos y períodos seleccionados.</small>}
             {multiPeriod && <div className={styles.applications}>
               {candidates.map(item => <fieldset key={item.id}><legend>{salaryPeriodLabel(item, config)} · {dayLabel(item.start)} — {dayLabel(item.end)}</legend>{salaryPaymentConcepts(ledger,item).map(concept => {
                 const pending = concept.amount - salaryConceptPaid(ledger,item.id,concept.id);
