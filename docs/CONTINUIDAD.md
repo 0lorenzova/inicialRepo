@@ -1,3 +1,7 @@
+## Corrección de numeración · 18 octubre 2026
+- Auditoría: 61 publicaciones Production exitosas (61 commits), 1 intento fallido. La corrección del contador corresponde a 0.1.62. Ver `docs/versiones-publicadas.md` para evidencia y norma de incremento; próxima entrega con cambios: 0.1.63.
+- Reemplaza la numeración 0.1.1 de la nota anterior; no modifica datos ni SQL.
+
 ## Versión visible · 18 octubre 2026
 - Añadida debajo de la compilación: versión centralizada en package.json (0.1.1) y revisión Git automática en Vercel. Conserva fecha Costa Rica y tiempo relativo.
 - Build de producción y TypeScript completados correctamente. Sin cambios SQL ni financieros.
