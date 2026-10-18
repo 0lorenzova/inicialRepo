@@ -1,7 +1,7 @@
-## Entrega 0.1.68 · 18 octubre 2026
+## Entrega 0.1.68 · 18 octubre 2026 — publicada
 - Gestión salarial ofrece filtro por rango y selección de los 3/20/todos los períodos confirmados elegibles para preparar un depósito agrupado. Excluye pagos parciales/completos y ajustes sin validar; el ingreso único se revisa y confirma en el diálogo normal con cuenta y fecha real. Persistencia y movimientos siguen usando la operación existente; sin SQL.
 - La subfase no implementa múltiples depósitos independientes con fechas distintas ni el tratamiento de fechas aproximadas/desconocidas. Ver fases y limitaciones en `docs/fases-salarios-2026-10-18.md`. Sin QA visual del flujo integrado.
-- Regresión dirigida de elegibilidad, aplicaciones, rango, ajustes estimados y abonos parciales; TypeScript, ESLint afectado, `git diff --check` y build de producción aprobados antes de publicar.
+- Las 14 suites `verify-salary-*.mjs`, TypeScript, ESLint afectado, `git diff --check` y build de producción pasaron. Vercel confirmó `success` / `Deployment has completed` para `30f1c5e`: https://vercel.com/myself-e673/inicial-repo/5BxSr9j4RMsAnJeZrDtFgLk1P1R6. La revisión visual queda pendiente; el navegador rechazó la URL local por política.
 
 ## Entrega 0.1.67 · 18 octubre 2026 — publicada
 - Registrar salario recuerda por fuente la última cuenta y el medio de recepción usados tras guardar un pago. Al cambiar de empleador se cargan sus valores; fuentes antiguas sin preferencia específica conservan el último valor global y las cuentas inactivas no se sugieren.

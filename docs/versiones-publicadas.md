@@ -2,7 +2,7 @@
 
 ## Conciliación del 18 de octubre de 2026
 
-- Fuente: API de despliegues de GitHub del repositorio `0lorenzova/inicialRepo`, creados por Vercel. La conciliación inicial encontró 62 registros; 0.1.66 añadió un registro Production exitoso.
+- Fuente principal: API de despliegues de GitHub del repositorio `0lorenzova/inicialRepo`, creados por Vercel. La tabla conserva los registros con marca temporal; los commits `c785d32` (0.1.67) y `30f1c5e` (0.1.68) también tienen confirmación Vercel `success` / `Deployment has completed` por sus estados de commit.
 - 63 despliegues Production con estado `success`, correspondientes a 63 commits distintos.
 - 1 intento fallido: `0361b8c`, 28 de septiembre de 2026; excluido del recuento.
 - Hasta la publicación `9a61644`, el número visible 0.1.1 no representaba este historial. El paquete había mantenido 0.1.0 desde el inicio.
@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.67; la siguiente versión con nuevos cambios será 0.1.68.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.68; la siguiente versión con nuevos cambios será 0.1.69.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -106,3 +106,7 @@ Catálogo recurrente por fuente con versiones efectivas futuras; las estimacione
 ## Entrega 0.1.67
 
 Preferencias de cuenta y medio recordadas por fuente salarial después de guardar un pago. Vercel confirmó `success` / `Deployment has completed` para `c785d32` (https://vercel.com/myself-e673/inicial-repo/3jPwCE4LUfq3TptcwgQJsKcuTz1G).
+
+## Entrega 0.1.68
+
+Selector por rango de períodos confirmados para preparar depósitos agrupados. Vercel confirmó `success` / `Deployment has completed` para `30f1c5e` (https://vercel.com/myself-e673/inicial-repo/5BxSr9j4RMsAnJeZrDtFgLk1P1R6).
