@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {salaryWorkEnd} from '../lib/salary-dates.ts';
+import {canConfirmSalaryPeriod,salaryWorkEnd} from '../lib/salary-dates.ts';
 import {saveSalaryConfig,salaryPeriodForDate,postSalaryPayment,salaryPeriodPresentation,salaryPaymentTiming} from '../lib/salary-tracking.ts';
 const config={id:'c',employer:'Prueba',name:'Salario',currency:'CRC',base:100,frequency:'Semanal',calendarMode:'iso-workdays',start:'2026-10-12',payOffset:3,workDays:[1,2,3,4,5],active:true};
 const ledger=saveSalaryConfig({accounts:[{id:'a',name:'Ficticia',type:'Banco',active:true,balance:0}],envelopes:[],movements:[],loans:[]},config,null);
@@ -34,3 +34,10 @@ assert.equal(sameDayView.early,0);assert.equal(sameDayView.laborAdvances,100);as
 assert.equal(second.hasAdvance,true);
 assert.equal(salaryPeriodPresentation(ledger,period,'2026-10-16').hasAdvance,false);
 console.log('OK: advance filter includes labor advances on the expected payment date and excludes periods without receipts.');
+
+assert.equal(canConfirmSalaryPeriod(period,'2026-10-16'),false);
+assert.equal(canConfirmSalaryPeriod(period,'2026-10-17'),true);
+assert.equal(canConfirmSalaryPeriod({...period,scheduledWorkDays:undefined},'2026-10-17'),false);
+assert.equal(canConfirmSalaryPeriod({...period,scheduledWorkDays:[0]},'2026-10-18'),false);
+assert.equal(canConfirmSalaryPeriod({...period,scheduledWorkDays:[0]},'2026-10-19'),true);
+console.log('OK: earned guard follows saved last workday; legacy and Sunday schedules remain protected.');

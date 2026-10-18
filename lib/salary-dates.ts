@@ -29,13 +29,14 @@ export function salaryWorkSchedule(period:{start:string;end:string;scheduledWork
   const consecutive=dates.every((date,i)=>i===0||Date.parse(date)-Date.parse(dates[i-1])===86400000);
   return consecutive?`Trabajo previsto: ${salaryDateLabel(dates[0],false)}${dates.length>1?` — ${salaryDateLabel(dates.at(-1)!,false)}`:""}`:`Trabajo previsto: ${dates.map(d=>salaryDateLabel(d,false)).join(" · ")}`;
 }
-export const SALARY_NOT_FINISHED = "Este período todavía no ha finalizado. Podrás marcarlo como completamente devengado a partir del día siguiente a su fecha final.";
+export const SALARY_NOT_FINISHED = "Este período todavía no ha finalizado. Podrás marcarlo como completamente devengado a partir del día siguiente al último día laboral del período.";
 /** Civil dates follow the app's Costa Rica accounting zone, never UTC/device offsets. */
 export function salaryLocalToday(now = new Date()) {
   const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:SALARY_TIME_ZONE,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(now).map(p=>[p.type,p.value]));
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
-export function canConfirmSalaryPeriod(end:string,today:string) {
+export function canConfirmSalaryPeriod(period:string|{start:string;end:string;scheduledWorkDays?:number[]},today:string) {
+  const end=typeof period==="string"?period:salaryWorkEnd(period);
   return validMovementDate(`${end}T12:00`)&&validMovementDate(`${today}T12:00`)&&end<today;
 }
 /** Orientation only: local civil day in the viewer's zone, without changing accounting dates. */

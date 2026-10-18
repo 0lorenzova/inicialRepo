@@ -35,7 +35,7 @@ export function salaryConceptPaid(ledger:SalaryLedger,periodId:string,conceptId:
 }
 export function salaryPeriodTotals(ledger:SalaryLedger,period:SalaryPeriod,today=salaryLocalToday()) {
   const projected=total(period.concepts.map(c=>c.amount));
-  const confirmed=period.earned&&canConfirmSalaryPeriod(period.end,today);
+  const confirmed=period.earned&&canConfirmSalaryPeriod(period,today);
   const earned=confirmed?projected:0;
   const received=total(period.concepts.map(c=>salaryConceptPaid(ledger,period.id,c.id)));
   const pending=confirmed?Math.max(0,earned-received):0;
@@ -189,7 +189,8 @@ export function saveSalaryPeriod<T extends SalaryLedger>(ledger:T,requested:Sala
   ensure(requested.id&&reason.trim(),"Escribe el motivo del ajuste o la confirmación.");
   salaryDay(requested.start);salaryDay(requested.end);salaryDay(requested.payDate);salaryDay(today);
   ensure(requested.start<=requested.end,"La fecha inicial no puede superar la final.");
-  ensure(!requested.earned||canConfirmSalaryPeriod(requested.end,today),SALARY_NOT_FINISHED);
+  ensure(!requested.earned||canConfirmSalaryPeriod(requested,today),SALARY_NOT_FINISHED);
+  ensure(!requested.scheduledWorkDays||(requested.scheduledWorkDays.length>0&&new Set(requested.scheduledWorkDays).size===requested.scheduledWorkDays.length&&requested.scheduledWorkDays.every(d=>Number.isInteger(d)&&d>=0&&d<=6)),"Revisa los días laborales guardados del período.");
   ensure(new Set(requested.workedDays??[]).size===(requested.workedDays??[]).length,"No repitas días trabajados.");
   ensure((requested.workedDays??[]).every(day=>salaryDay(day)>=requested.start&&day<=requested.end&&day<=today),"Un día trabajado debe estar dentro del período y no ser futuro.");
   ensure(!state.periods.some(p=>p.id!==requested.id&&p.configId===requested.configId&&p.start<=requested.end&&p.end>=requested.start),"El período se superpone con otro existente.");
@@ -198,7 +199,7 @@ export function saveSalaryPeriod<T extends SalaryLedger>(ledger:T,requested:Sala
   total(requested.concepts.map(c=>c.amount));
   for(const c of current?.concepts??[]) {
     const paid=salaryConceptPaid(ledger,requested.id,c.id),replacement=requested.concepts.find(x=>x.id===c.id);
-    ensure(!paid||((requested.earned||!current?.earned||!canConfirmSalaryPeriod(current.end,today))&&replacement&&replacement.amount>=paid),"No puedes retirar un concepto pagado ni reducirlo por debajo de sus abonos. Revisa primero las vinculaciones.");
+    ensure(!paid||((requested.earned||!current?.earned||!canConfirmSalaryPeriod(current,today))&&replacement&&replacement.amount>=paid),"No puedes retirar un concepto pagado ni reducirlo por debajo de sus abonos. Revisa primero las vinculaciones.");
   }
   const value={...requested,frequency:requested.frequency??state.configs.find(c=>c.id===requested.configId)?.frequency,concepts:requested.concepts.map(c=>({...c,name:c.name.trim()}))};
   return {...ledger,salary:{...state,periods:original?state.periods.map(p=>p.id===value.id?value:p):[...state.periods,value],audit:audit(state,value.id,"Guardar período",reason.trim(),original)}};
@@ -288,7 +289,7 @@ export function salaryPeriodPaymentLabel(ledger:SalaryLedger,period:SalaryPeriod
 /** A receipt remains identifiable as an advance after the period is confirmed. */
 export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod,today:string) {
   const amounts=salaryPeriodTotals(ledger,period,today);
-  const confirmed=period.earned&&canConfirmSalaryPeriod(period.end,today);
+  const confirmed=period.earned&&canConfirmSalaryPeriod(period,today);
   const payments=salaryState(ledger).payments.filter(p=>salaryPaymentValid(ledger,p)&&p.applications.some(a=>a.periodId===period.id));
   const expected=total(period.concepts.map(c=>c.amount));
   const amountFor=(payment:SalaryPayment)=>total(payment.applications.filter(a=>a.periodId===period.id).map(a=>a.amount));

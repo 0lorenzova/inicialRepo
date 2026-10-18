@@ -26,7 +26,7 @@ export function SalaryIncomeLink({ledger,value,amount,date,today:initialToday,on
   let preview:SalaryApplication[]=[];let previewError="";
   try{if(amount>0&&(value.periodId||value.multiple))preview=selectedSalaryApplications(ledger,value,amount,date);}catch(e){previewError=e instanceof Error?e.message:"Revisa la aplicación.";}
   const applied=preview.reduce((s,a)=>s+a.amount,0);
-  const needsAdvance=value.multiple?value.applications.some(a=>periods.some(p=>p.id===a.periodId&&(!p.earned||!canConfirmSalaryPeriod(p.end,receptionDay)))):selected&&(!selected.earned||!canConfirmSalaryPeriod(selected.end,receptionDay));
+  const needsAdvance=value.multiple?value.applications.some(a=>periods.some(p=>p.id===a.periodId&&(!p.earned||!canConfirmSalaryPeriod(p,receptionDay)))):selected&&(!selected.earned||!canConfirmSalaryPeriod(selected,receptionDay));
   const label=(p:SalaryPeriod)=>`${salaryPeriodLabel(p,config)} · ${p.start} — ${p.end} · ${p.earned?"Pendiente":"Por cubrir (proyección)"} ${display(salaryPeriodRemaining(ledger,p))}`;
   const choose=(id:string)=>onChange({...value,periodId:id,multiple:false,applications:[],allowAdvance:false});
   return <fieldset className={styles.selection}><legend>¿A qué período corresponde este pago?</legend>

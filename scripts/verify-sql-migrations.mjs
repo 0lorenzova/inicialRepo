@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
+const {PGlite}=await import(pathToFileURL(process.argv[2]).href);
+const db=new PGlite();
+const rpc=readFileSync(new URL('../supabase/migrations/202610010001_finance_revision.sql',import.meta.url),'utf8');
+const guard=readFileSync(new URL('../supabase/migrations/202610150001_salary_earned_guard.sql',import.meta.url),'utf8');
+const user='00000000-0000-0000-0000-000000000001';
+await db.exec(`create role anon; create role authenticated; create schema auth;
+create function auth.uid() returns uuid language sql as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;
+create table public.user_finance_data(user_id uuid primary key,data jsonb not null,updated_at timestamptz not null default now());
+alter table public.user_finance_data enable row level security;
+create policy own_data on public.user_finance_data to authenticated using (auth.uid()=user_id) with check (auth.uid()=user_id);
+grant select,insert,update on public.user_finance_data to authenticated;
+insert into public.user_finance_data values ('${user}','{}','2026-10-01T10:00:00.123456Z');`);
+await db.exec(rpc);await db.exec(guard);
+await db.exec(`set role authenticated; select set_config('request.jwt.claim.sub','${user}',false);`);
+const write=async(data,token)=> (await db.query('select data,updated_at::text as token from public.save_finance_data($1::jsonb,$2::timestamptz)',[JSON.stringify(data),token])).rows[0];
+const saved=await write({test:1},'2026-10-01T10:00:00.123456Z');assert.equal(saved.data.test,1);
+await assert.rejects(()=>write({test:2},'2026-10-01T10:00:00.123456Z'),e=>e.code==='40001');
+await assert.rejects(()=>db.exec("update public.user_finance_data set data='{}'"),e=>e.code==='42501');
+await assert.rejects(()=>db.exec("insert into public.user_finance_data values(gen_random_uuid(),'{}',now(),0)"),e=>e.code==='42501');
+const dates=(await db.query("select ((statement_timestamp() at time zone 'America/Costa_Rica')::date)::text as today, ((statement_timestamp() at time zone 'America/Costa_Rica')::date-1)::text as yesterday,((statement_timestamp() at time zone 'America/Costa_Rica')::date+1)::text as tomorrow,extract(dow from ((statement_timestamp() at time zone 'America/Costa_Rica')::date-1))::int as weekday")).rows[0];
+const period={start:dates.yesterday,end:dates.today,earned:true,scheduledWorkDays:[dates.weekday]};
+const accepted=await write({salary:{periods:[period]}},saved.token);assert.equal(accepted.data.salary.periods[0].earned,true);
+for(const p of [{...period,scheduledWorkDays:undefined},{...period,start:dates.today,end:dates.tomorrow,scheduledWorkDays:undefined},{...period,workedDays:[dates.tomorrow]},{...period,workedDays:[dates.yesterday,dates.yesterday]},{...period,scheduledWorkDays:[9]},{...period,workedDays:['2026-02-31']}]){
+ await assert.rejects(()=>write({salary:{periods:[p]}},accepted.token),e=>e.code==='23514');
+}
+assert.equal((await db.query('select data from public.user_finance_data')).rows[0].data.salary.periods[0].earned,true,'Invalid update must leave previous data intact');
+await db.exec(`select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',false);`);
+assert.equal((await db.query('select * from public.user_finance_data')).rows.length,0);
+const second=await write({second:true},null);await assert.rejects(()=>write({},null),e=>e.code==='40001');assert.equal(second.data.second,true);
+await db.exec("select set_config('request.jwt.claim.sub','',false)");await assert.rejects(()=>write({},null),e=>e.code==='42501');
+await db.exec('reset role');await db.exec(rpc);await db.exec(guard);
+// Existing invalid history must abort the migration before replacing the installed trigger.
+await db.exec(`alter table public.user_finance_data disable trigger validate_salary_earned_dates;`);
+await db.query('update public.user_finance_data set data=$1::jsonb where user_id=$2',[JSON.stringify({salary:{periods:[{start:dates.tomorrow,end:dates.tomorrow,earned:true}]}}),user]);
+await db.exec('alter table public.user_finance_data enable trigger validate_salary_earned_dates');
+await assert.rejects(()=>db.exec(guard),e=>e.code==='23514');await db.exec('rollback');
+assert.equal((await db.query("select count(*)::int as n from pg_trigger where tgname='validate_salary_earned_dates'")).rows[0].n,1);
+await db.close();
+console.log('OK: SQL runs in PostgreSQL/PGlite; exact timestamp CAS, stale write rejection, authenticated isolation, direct-write revocation, first-write race, salary guard, atomic rejection, idempotent migrations and invalid-history preflight rollback. No production database used.');
