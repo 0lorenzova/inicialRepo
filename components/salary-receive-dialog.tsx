@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { salaryViewerDay, salaryDateLabel, salaryWorkSchedule } from "@/lib/salary-dates";
-import { salaryTemporalLabel, latestSalaryPeriodPending, salaryPeriodPaymentLabel } from "@/lib/salary-tracking";
+import { SalaryAdjustments, SalaryEstimation } from "./salary-adjustments";
+import { salaryHistoricalEstimate, salaryPaymentConcepts, salaryTemporalLabel, salaryPeriodPaymentLabel } from "@/lib/salary-tracking";
 import { AccountSelector } from "@/components/account-selector";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { SalaryReceiptDialog } from "./salary-receipt-dialog";
@@ -48,7 +49,8 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
 
   const [configId, setConfigId] = useState(startingConfigId);
   const [periodDate, setPeriodDate] = useState(startingProjection?.start ?? today);
-  const [amount, setAmount] = useState(String(startingProjection ? salaryPeriodRemaining(ledger, startingProjection) : ""));
+  const suggest=(p:SalaryPeriod)=>p.end<viewerDay&&!salaryHistoricalEstimate(ledger,p)?"":String(salaryPeriodRemaining(ledger,p));
+  const [amount, setAmount] = useState(startingProjection ? suggest(startingProjection) : "");
   const [accountId, setAccountId] = useState(salaryReceiptDefaults(ledger).accountId || incomeDefaults(incomePreferences, ledger.accounts).accountId);
   const [receivedAt, setReceivedAt] = useState(localNow);
   const [method, setMethod] = useState<string>(salaryReceiptDefaults(ledger).method);
@@ -99,7 +101,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const presentation=period?salaryPeriodPresentation(ledger,period,today):null;
   const expectedAmount=presentation?.expected??0;
   let lastPending:SalaryPeriod|null=null;
-  try {if(config)lastPending=latestSalaryPeriodPending(ledger,config.id,today);}catch{/* Date boundary; ordinary navigation remains available. */}
+  try {if(config)lastPending=salaryPeriodForDate(ledger,config.id,viewerDay);}catch{/* Date boundary; ordinary navigation remains available. */}
   const receivedAmount=presentation?.received??0;
   const pendingAmount=presentation?.remaining??0;
   const selectedAccount = ledger.accounts.find(account => account.id === accountId && account.active);
@@ -111,7 +113,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const canSave = Boolean(config && period && Number.isSafeInteger(numericAmount) && numericAmount > 0 && accountValid && dateValid && enoughApplications && !applicationError && !duplicateExists && !saving);
 
   const resetApplications = (nextPeriod: SalaryPeriod) => {
-    setAmount(String(salaryPeriodRemaining(ledger, nextPeriod)));
+    setAmount(suggest(nextPeriod));
     setApplications([]);
     setMultiPeriod(false);
     setLocalError("");
@@ -144,7 +146,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
       const target = salaryPeriodForDate(ledger, nextConfig.id, today);
       setPeriodDate(target.start);
       setCalendarMonth(target.start.slice(0, 7));
-      setAmount(String(salaryPeriodRemaining(ledger, target)));
+      setAmount(suggest(target));
     } catch {
       const first = state.periods.filter(item => item.configId === nextConfig.id).sort((a, b) => a.start.localeCompare(b.start))[0];
       setPeriodDate(first?.start ?? nextConfig.start);
@@ -210,17 +212,18 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
             <button type="button" className="secondary" aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}>›</button>
             <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Explorar períodos en calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar almanaque":"Elegir en almanaque"}</button>
           </div>
-          {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(period.payDate)}</b></span><span>Salario: <b>{display(expectedAmount)}</b></span></div>}
+          {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(period.payDate)}</b></span>{!presentation?.historicalEmpty&&<span>Esperado: <b>{presentation?.estimateKnown?display(expectedAmount):"Sin proyección"}</b></span>}</div>}
           {period?.scheduledWorkDays&&<small className={styles.workDays}>{salaryWorkSchedule(period)}</small>}
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
-          {lastPending&&lastPending.id!==period?.id&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(lastPending!.start)}>Último período pendiente · {salaryPeriodLabel(lastPending,config)}</button>}
+          {lastPending&&lastPending.id!==period?.id&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(lastPending!.start)}>Volver a última semana en curso</button>}
           {period && numericAmount>0 && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{presentation? ` · ${presentation.workState}`:""}</p>}
         </section>
 
+        {period&&<><SalaryEstimation key={`estimate:${period.id}`} ledger={ledger} period={period} today={today} display={display}/><SalaryAdjustments key={`adjust:${period.id}`} ledger={ledger} period={period} today={today} display={display} onSave={operation=>{if(!onSave(operation))throw new Error("No se pudieron guardar los ajustes.");}}/></>}
         <label htmlFor="salary-received-amount">Importe recibido</label>
         <div className="currency-input"><span>₡</span><input id="salary-received-amount" autoFocus type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); setLocalError(""); }}/></div>
-        <p className={styles.balance}>Salario: {display(expectedAmount)} · Recibido: {display(receivedAmount)} · Pendiente previsto: {display(pendingAmount)} · {period&&presentation?.paymentCount?salaryPeriodPaymentLabel(ledger,period):"Abonos: 0"}</p>
+        <p className={styles.balance}>Recibido: {display(receivedAmount)} · Pendiente confirmado: {display(presentation?.pending??0)}{!presentation?.historicalEmpty&&presentation?.estimateKnown&&<> · Restante estimado: {display(pendingAmount)}</>} · {period&&presentation?.paymentCount?salaryPeriodPaymentLabel(ledger,period):"Abonos: 0"}</p>
         {linkedMovement?<div className={styles.accountValue}><span>Cuenta del ingreso existente</span><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div>:<AccountSelector label="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/>}
 
         <label>Medio de recepción<select value={linkedMovement?.paymentMethod ?? method} disabled={Boolean(linkedMovement)} onChange={event => setMethod(event.target.value)}>{[...new Set([...incomeReceptionMethods, method, linkedMovement?.paymentMethod])].filter(Boolean).map(item => <option key={item}>{item}</option>)}</select></label>
@@ -240,7 +243,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
             }}><option value="">Crear un movimiento al confirmar</option>{paymentMovements.map(movement => <option key={movement.id} value={movement.id}>Vincular {movement.name} · {dayLabel(movement.date)} · {display(movement.amount)}</option>)}</select><small>Vincular un ingreso existente lo relaciona con el período sin volver a sumar dinero.</small></label>
             <label className="check-label"><input type="checkbox" checked={multiPeriod} onChange={event => { setMultiPeriod(event.target.checked); setApplications([]); setLocalError(""); }}/>Aplicar este pago a varios períodos</label>
             {multiPeriod && <div className={styles.applications}>
-              {candidates.map(item => <fieldset key={item.id}><legend>{salaryPeriodLabel(item, config)} · {dayLabel(item.start)} — {dayLabel(item.end)}</legend>{item.concepts.map(concept => {
+              {candidates.map(item => <fieldset key={item.id}><legend>{salaryPeriodLabel(item, config)} · {dayLabel(item.start)} — {dayLabel(item.end)}</legend>{salaryPaymentConcepts(ledger,item).map(concept => {
                 const pending = concept.amount - salaryConceptPaid(ledger,item.id,concept.id);
                 if (pending <= 0) return null;
                 const applied = applications.find(application => application.periodId === item.id && application.conceptId === concept.id)?.amount ?? "";

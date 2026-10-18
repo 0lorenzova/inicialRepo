@@ -34,7 +34,7 @@ assert.equal(JSON.stringify(d),stable,'Failed operations never partially apply')
 assert.throws(()=>saveSalaryPeriod(d,{...d.salary.periods[0],concepts:[]},d.salary.periods[0],today,'ajuste'),/conceptos/);
 assert.throws(()=>saveSalaryPeriod(d,{...d.salary.periods[0],earned:false},d.salary.periods[0],today,'ajuste'),/pagado/);
 assert.throws(()=>saveSalaryPeriod(d,{...p2,id:'overlap'},null,today,'ajuste'),/superpone/);
-d=saveSalaryConfig(d,{...config,base:2000},config);
+d=saveSalaryConfig(d,{...d.salary.configs[0],base:2000,effectiveFrom:"2026-09-22"},d.salary.configs[0]);
 assert.equal(d.salary.periods[1].concepts[0].amount,1000,'Config editing preserves prior amounts');
 d=generateSalaryPeriods(d,'c',1);
 assert.equal(d.salary.periods[3].concepts[0].amount,2000);

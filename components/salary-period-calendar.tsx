@@ -13,9 +13,9 @@ export function SalaryPeriodCalendar({ledger,config,selected,today,month,onMonth
   const description=(entry:NonNullable<typeof entries[number]>)=>`${salaryPeriodLabel(entry.period,config)}: ${entry.view.state}${entry.view.overdueLabel?` · ${entry.view.overdueLabel}`:""} · ${entry.view.workState}`;
   return <div className={styles.calendar} aria-label="Seleccionar período salarial">
     <div className={styles.calendarHeading}>
-      {([-12,-1] as const).map(amount=><button key={amount} type="button" className="secondary" aria-label={amount===-12?"Año anterior":"Mes anterior"} disabled={!shiftMonth(amount)} onClick={()=>onMonth(shiftMonth(amount)!)}>{amount===-12?"«":"‹"}</button>)}
-      <label>Mes y año<input aria-label="Mes y año del almanaque salarial" type="month" min="0001-01" max="9999-12" value={month} onChange={e=>{if(/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value))onMonth(e.target.value);}}/></label>
-      {([1,12] as const).map(amount=><button key={amount} type="button" className="secondary" aria-label={amount===12?"Año siguiente":"Mes siguiente"} disabled={!shiftMonth(amount)} onClick={()=>onMonth(shiftMonth(amount)!)}>{amount===12?"»":"›"}</button>)}
+      <div className={styles.monthControls}><button type="button" className="secondary" aria-label="Mes anterior" disabled={!shiftMonth(-1)} onClick={()=>onMonth(shiftMonth(-1)!)}>‹</button><span>Mes</span><button type="button" className="secondary" aria-label="Mes siguiente" disabled={!shiftMonth(1)} onClick={()=>onMonth(shiftMonth(1)!)}>›</button></div>
+      <input aria-label="Mes y año del almanaque salarial" type="month" min="0001-01" max="9999-12" value={month} onChange={e=>{if(/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value))onMonth(e.target.value);}}/>
+      <div className={styles.yearControls}><button type="button" className="secondary" aria-label="Año anterior" disabled={!shiftMonth(-12)} onClick={()=>onMonth(shiftMonth(-12)!)}>− Año</button><button type="button" className="secondary" aria-label="Año siguiente" disabled={!shiftMonth(12)} onClick={()=>onMonth(shiftMonth(12)!)}>+ Año</button></div>
     </div>
     <div className={styles.calendarGrid}><span aria-hidden="true">Semana</span>{["L","M","X","J","V","S","D"].map((label,i)=><span key={i} aria-hidden="true">{label}</span>)}
       {weeks.map((week,row)=>{
@@ -29,6 +29,6 @@ export function SalaryPeriodCalendar({ledger,config,selected,today,month,onMonth
         </div>;
       })}
     </div>
-    <div className={styles.calendarLegend}>{[["paid","Pagado"],["neutral","Proyectado / en curso"],["partial","Parcial"],["overdue","Devengado pendiente / vencido"]].map(([tone,label])=><span key={tone}><i className={`${styles.statusDot} ${styles[tone]}`} aria-hidden="true"/>{label}</span>)}</div><small>Selecciona una fecha o el indicador de la semana. Navegar no registra pagos.</small>
+    <div className={styles.calendarLegend}>{[["paid","Pagado"],["neutral","Sin registros / proyección"],["partial","Parcial"],["overdue","Deuda confirmada vencida"]].map(([tone,label])=><span key={tone}><i className={`${styles.statusDot} ${styles[tone]}`} aria-hidden="true"/>{label}</span>)}</div><small>Selecciona una fecha o el indicador de la semana. Navegar no registra pagos.</small>
   </div>;
 }

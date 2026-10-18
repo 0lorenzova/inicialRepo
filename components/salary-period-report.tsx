@@ -1,5 +1,6 @@
 "use client";
 import {useRef,useState} from 'react';
+import {SalaryAdjustments,SalaryEstimation} from './salary-adjustments';
 import {FinanceDialog} from './finance-dialog';
 import {SalaryPeriodCalendar} from './salary-period-calendar';
 import {salaryViewerDay,salaryDateLabel,salaryWorkSchedule} from '@/lib/salary-dates';
@@ -40,8 +41,8 @@ export function SalaryPeriodReport({ledger,config,today,display,onClose,onMoveme
       <button className="secondary" onClick={onClose}>Cerrar</button>
       {notice&&<p role="status">{notice}</p>}
     </div>}
-    <div className="review-box"><span>Esperado / proyectado: <b>{display(view.expected)}</b></span><span>Realmente recibido: <b>{display(view.received)}</b></span><span>Por recibir según lo previsto: <b>{display(view.remaining)}</b></span><span>Pago previsto: <b>{day(period.payDate)}</b></span></div>
-    <small>{salaryWorkSchedule(period)}</small><h3>Conceptos</h3>{period.concepts.map(c=><p key={c.id}>{c.name}: {display(c.amount)} · Recibido {display(salaryConceptPaid(ledger,period.id,c.id))}</p>)}
+    <div className="review-box">{!view.historicalEmpty&&<span>Esperado / proyectado: <b>{view.estimateKnown?display(view.expected):"Sin proyección"}</b></span>}<span>Realmente recibido: <b>{display(view.received)}</b></span><span>Pendiente confirmado: <b>{display(view.pending)}</b></span><span>Pago previsto: <b>{day(period.payDate)}</b></span></div>
+    <SalaryEstimation key={`estimate:${period.id}`} {...{ledger,period,today,display}}/><SalaryAdjustments key={`adjust:${period.id}`} {...{ledger,period,today,display,onSave}}/><small>{salaryWorkSchedule(period)}</small>{!view.historicalEmpty&&<h3>Conceptos conservados</h3>}{!view.historicalEmpty&&view.estimateKnown&&period.concepts.map(c=><p key={c.id}>{c.name}: {display(c.amount)} · Recibido {display(salaryConceptPaid(ledger,period.id,c.id))}</p>)}
     <h3>Pagos y abonos ({payments.length})</h3>{!payments.length&&<p>No hay pagos registrados para este período.</p>}{payments.map(p=><div className="review-box" key={p.id}><b>{day(p.date)} · {display(p.applications.filter(a=>a.periodId===period.id).reduce((n,a)=>n+a.amount,0))}</b><span>{salaryPaymentTiming(period,p.date).label}</span><span>{p.historical?'Histórico; sin entrada bancaria':p.method}</span>{p.reference&&<span>{p.reference}</span>}{!p.historical&&<button className="secondary" onClick={()=>{onClose();onMovement(p.movementId);}}>Ver movimiento</button>}</div>)}
     </>:<p role="alert">No hay una referencia disponible para esta fecha. Selecciona otra fecha o consulta el período histórico que la contiene.</p>}{error&&<p role="alert">{error}</p>}
   </section></FinanceDialog>;

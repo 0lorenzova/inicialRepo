@@ -44,7 +44,7 @@
 .calendarDay[data-selected="true"]{background:var(--green);color:var(--accent-ink,#fff);font-weight:800}
 .calendarDay[data-outside="true"]{opacity:.4}
 .calendar>small{color:var(--muted);line-height:1.4}
-.statusDots{display:flex;justify-content:center;flex-wrap:wrap;gap:0}.periodStatus{display:flex;align-items:center;justify-content:center;min-width:25px;min-height:30px;padding:3px;border:0;border-radius:6px;background:transparent}.periodStatus[aria-pressed=true]{outline:1px solid var(--ink);outline-offset:-2px}.statusDot{display:block;width:10px;height:10px;border-radius:50%;border:1px solid #0005}.statusDot.paid{background:#22c55e}.statusDot.partial{background:#facc15}.statusDot.overdue{background:#ef4444}.statusDot.neutral{background:#94a3b8}.calendar button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.statusDots{display:flex;justify-content:center;flex-wrap:wrap;gap:0}.periodStatus{display:flex;align-items:center;justify-content:center;min-width:25px;min-height:30px;padding:3px;border:0;border-radius:6px;background:transparent}.periodStatus[aria-pressed=true]{outline:1px solid var(--ink);outline-offset:-2px}.statusDot{display:block;width:10px;height:10px;border-radius:50%;border:1px solid #0005}.statusDot.paid{background:#22c55e}.statusDot.partial{background:#f97316}.statusDot.overdue{background:#ef4444}.statusDot.neutral{background:#94a3b8}.calendar button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
 @media(max-width:480px){.dialog{padding:16px}.periodPicker{padding:10px}.periodHeading{grid-template-columns:36px minmax(0,1fr) 36px;gap:5px}.calendarGrid{gap:1px;font-size:11px}.calendarDay,.weekNumber{min-height:36px;border-radius:6px}.weekNumber{font-size:9px}.periodMeta{font-size:12px}}
 @media(max-width:400px){.calendarHeading{grid-template-columns:repeat(4,minmax(0,1fr))}.calendarHeading label{grid-column:1/-1;grid-row:1}.calendarHeading input{font-size:14px}.calendarHeading button{grid-row:2}}
 
@@ -59,3 +59,5 @@
 .calendarLegend>span{display:inline-flex;align-items:center;gap:5px}
 .workDays{color:var(--muted);line-height:1.5}
 @media(max-width:400px){.calendar{padding:8px}.calendarGrid{grid-template-columns:42px repeat(7,minmax(0,1fr));gap:4px 1px}.calendarDay{padding:0;min-height:36px}.periodHeading{padding:8px}}
+
+.calendarHeading{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}.calendarHeading input{min-width:0;font-size:14px}.monthControls{display:flex;align-items:center;justify-content:center;gap:12px}.monthControls button{min-width:44px}.yearControls{display:flex;justify-content:space-between;gap:10px}.yearControls button{flex:1;min-width:0}.statusDot.overdue{animation:calendarDebtPulse 2s ease-in-out infinite}@keyframes calendarDebtPulse{0%,100%{background:var(--paper)}50%{background:#ef4444}}@media(prefers-reduced-motion:reduce){.statusDot.overdue{animation:none}}
