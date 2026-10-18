@@ -20,7 +20,8 @@ d=generateSalaryPeriods(d,'c',1);assert.deepEqual(d.salary.periods[0],p);assert.
 const input={id:'pay',configId:'c',date:'2026-10-16T10:00',amount:50000,accountId:'a',method:'Efectivo',reference:'Uno',notes:'Ficticio',applications:[{periodId:p.id,conceptId:p.concepts[0].id,amount:50000}]};
 d=postSalaryPayment(d,input,'2026-10-16');
 for(const date of ['2026-10-16','2026-10-18'])assert.equal(salaryPeriodPresentation(d,p,date).tone,'partial');
-assert.equal(salaryPeriodPresentation(d,p,'2026-10-18').remaining,75000);assert.equal(salaryPeriodPresentation(d,p,'2026-10-18').overdueDays,1);assert.equal(d.salary.periods[0].earned,false);
+assert.equal(salaryPeriodPresentation(d,p,'2026-10-18').remaining,75000);assert.equal(salaryPeriodPresentation(d,p,'2026-10-18').overdueDays,0,'An unconfirmed partial receipt is not overdue debt');assert.equal(d.salary.periods[0].earned,false);
+const confirmedPartial=saveSalaryPeriod(d,{...d.salary.periods[0],earned:true},d.salary.periods[0],'2026-10-18','Confirmar la semana ficticia');assert.equal(salaryPeriodPresentation(confirmedPartial,confirmedPartial.salary.periods[0],'2026-10-18').overdueDays,1,'Confirmed unpaid balance becomes overdue after its due date');
 const first=d.salary.payments[0];d=correctSalaryPayment(d,first,{...first,amount:125000,applications:[{...first.applications[0],amount:125000}]},'2026-10-18','Corregir ficticio');
 assert.equal(d.movements.length,1);assert.equal(salaryPeriodPresentation(d,p,'2026-10-18').tone,'paid');assert.equal(salaryPeriodPresentation(d,p,'2026-10-18').fullyPaid,true);assert.equal(salaryPeriodPresentation(d,p,'2026-10-18').overdueDays,0);
 assert.equal(salaryPaymentTiming(p,'2026-10-19T10:00').days,2);assert.equal(salaryPaymentTiming(p,'2026-10-16T10:00').days,-1);

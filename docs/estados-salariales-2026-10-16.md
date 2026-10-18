@@ -2,7 +2,7 @@
 
 ## Implementado
 - Una fuente de estado para fichas, Registrar salario y almanaque: verde con importe cubierto, amarillo sin vencer, naranja con abono parcial, rojo vencido sin abonos. Vencimiento calculado exclusivamente contra `payDate`.
-- Días de atraso visibles, incluso en pagos parciales. Historial de fechas reales y atraso/anticipación por recepción conservado. Las proyecciones siguen sin crear dinero ni deuda devengada.
+- Días de atraso visibles para saldos parciales confirmados después de la fecha prevista; un abono a una semana aún no confirmada no crea por sí solo una alerta de deuda vencida. El estado parcial conserva el naranja. Fechas reales de recepción y atraso/anticipación del pago se muestran aparte; las proyecciones no crean deuda.
 - Encabezado completo y casilla Pagado con el mismo fondo. La casilla abre el registro/conciliación y solo se marca por pagos válidos; no modifica importes por sí sola.
 - Barrido naranja cada 3 segundos y pulso rojo cada 2 segundos, mediante una capa sin eventos ni movimiento del contenido. `prefers-reduced-motion` los desactiva y el texto permanece.
 - Nuevas configuraciones: lunes–viernes, semana ISO lunes–domingo, pago al día siguiente del último día laboral (sábado). Días y plazo editables.
@@ -21,7 +21,7 @@
 - Este informe y `docs/CONTINUIDAD.md`.
 
 ## Pruebas
-- Cuatro estados; no rojo antes de vencer; domingo 18/10 = 1 día después del sábado 17/10; parcial vencido conserva naranja y saldo.
+- Cuatro estados; no rojo antes de vencer; abono parcial sin devengo confirmado no se marca vencido; al confirmar el saldo y pasar la fecha prevista se calcula el atraso; parcial vencido conserva naranja y saldo.
 - Pago parcial → corrección a completo → anulación: cambio de estados, un solo movimiento por cobro, saldos conservados.
 - Año ISO: 01/01/2027 pertenece a semana 53 de 2026; 04/01/2027 a semana 1 de 2027.
 - Días personalizados, plazo de cobro, generación sin movimientos, configuración futura y conservación histórica; serialización JSON de los nuevos campos.

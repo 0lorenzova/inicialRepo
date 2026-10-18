@@ -1,3 +1,7 @@
+## Entrega 0.1.69 · 18 octubre 2026
+- Un abono parcial antes de confirmar la semana deja de activar el vencimiento rojo. El aviso de atraso empieza cuando hay deuda devengada confirmada pendiente después de la fecha prevista; el estado parcial conserva su color.
+- Se mantiene el cálculo por jornada laboral guardada y fecha de vencimiento. Sin SQL ni cambios de importes/movimientos existentes; regresión de saldo parcial antes y después de confirmar. Suites salarial de ajustes, estados, cierre y reglas, TypeScript, ESLint y build aprobados; sin QA visual.
+
 ## Entrega 0.1.68 · 18 octubre 2026 — publicada
 - Gestión salarial ofrece filtro por rango y selección de los 3/20/todos los períodos confirmados elegibles para preparar un depósito agrupado. Excluye pagos parciales/completos y ajustes sin validar; el ingreso único se revisa y confirma en el diálogo normal con cuenta y fecha real. Persistencia y movimientos siguen usando la operación existente; sin SQL.
 - La subfase no implementa múltiples depósitos independientes con fechas distintas ni el tratamiento de fechas aproximadas/desconocidas. Ver fases y limitaciones en `docs/fases-salarios-2026-10-18.md`. Sin QA visual del flujo integrado.

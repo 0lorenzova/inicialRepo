@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.68; la siguiente versión con nuevos cambios será 0.1.69.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.69; la siguiente versión con nuevos cambios será 0.1.70.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.

@@ -363,7 +363,7 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   const laborAdvances=total(payments.filter(p=>salaryReceiptDay(p.date)<=workEnd).map(amountFor));
   const late=total(payments.filter(p=>salaryReceiptDay(p.date)>period.payDate).map(amountFor));
   const remaining=Math.max(0,expected-amounts.received);
-  const overdue=(confirmed?amounts.pending>0:amounts.received>0&&remaining>0)&&period.payDate<today;
+  const overdue=confirmed&&amounts.pending>0&&period.payDate<today;
   const overdueDays=overdue?daysBetween(period.payDate,today):0;
   const overdueLabel=overdueDays?`${overdueDays} ${overdueDays===1?"día":"días"} de atraso`:"";
   const fullyPaid=expected>0&&amounts.received>=expected;
