@@ -38,3 +38,6 @@ Campos adicionales dentro del documento salarial existente, conservados por la m
 
 ## Publicación
 Bloque preparado para commit/push a main después de las pruebas. Confirmar deployment Production exitoso por SHA y comunicar URL al propietario; un push por sí solo no confirma despliegue.
+
+## Cierre confirmado
+Commit 92cdd0f subido a main. Vercel Production confirmó success: https://inicial-repo-j8jhgh5m7-myself-e673.vercel.app. Nota de cierre añadida localmente después de la publicación; código y pruebas están publicados.
