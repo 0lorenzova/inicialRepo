@@ -20,7 +20,7 @@ export type SalaryPeriod = { id:string; configId:string; start:string; end:strin
 export type SalaryApplication = { periodId:string; conceptId:string; amount:number };
 export type SalaryPayment = { id:string; configId:string; movementId:string; amount:number; date:string; accountId:string; method:string; reference:string; notes:string; applications:SalaryApplication[]; voidReason?:string; historical?:{source:string;recordedAt:string} };
 export type SalaryAudit = { id:string; date:string; action:string; entityId:string; reason:string; before?:unknown };
-export type SalaryState = { configs:SalaryConfig[]; periods:SalaryPeriod[]; payments:SalaryPayment[]; audit:SalaryAudit[]; periodAdjustments?:SalaryPeriodAdjustments[]; viewMode?:"list"|"grid"; historyOrder?:"newest"|"oldest"; lastConfigId?:string; lastReceipt?:{method:string;accountId:string} };
+export type SalaryState = { configs:SalaryConfig[]; periods:SalaryPeriod[]; payments:SalaryPayment[]; audit:SalaryAudit[]; periodAdjustments?:SalaryPeriodAdjustments[]; viewMode?:"list"|"grid"; historyOrder?:"newest"|"oldest"; lastConfigId?:string; lastReceipt?:{method:string;accountId:string}; receiptDefaultsByConfig?:Record<string,{method:string;accountId:string}> };
 export type SalaryLedger = Ledger & { salary?:SalaryState };
 export const emptySalary = ():SalaryState => ({configs:[],periods:[],payments:[],audit:[]});
 export const salaryState = (ledger:SalaryLedger) => ledger.salary ?? emptySalary();
@@ -187,8 +187,9 @@ export function adjacentSalaryPeriod(ledger:SalaryLedger,period:SalaryPeriod,dir
   if(next.id===period.id){const bounds=periodStartForDate(config,direction<0?period.start:period.end);next=salaryPeriodForDate(ledger,period.configId,direction<0?shiftSalaryDate(bounds.start,-1):bounds.next);}
   ensure(next.id!==period.id,"No hay otro período en esta fecha.");return next;
 }
-export function salaryReceiptDefaults(ledger:SalaryLedger) {
-  const remembered=salaryState(ledger).lastReceipt;
+export function salaryReceiptDefaults(ledger:SalaryLedger,configId?:string) {
+  const state=salaryState(ledger),sourceDefault=configId?state.receiptDefaultsByConfig?.[configId]:undefined;
+  const remembered=sourceDefault??state.lastReceipt;
   return {method:incomeReceptionMethods.some(m=>m===remembered?.method)?remembered!.method:"Transferencia",accountId:ledger.accounts.find(a=>a.active&&a.id===remembered?.accountId)?.id??""};
 }
 /** Read-only shortcut: skip settled history, including gaps without saved rows. */
@@ -326,7 +327,8 @@ export function postSalaryPayment<T extends SalaryLedger>(ledger:T,input:SalaryP
   }
   const linked=next.movements.find(m=>m.id===movementId)!;
   const payment:SalaryPayment={id:input.id,configId:config.id,movementId,amount:input.amount,date:input.date,accountId:input.accountId,method:linked.paymentMethod??"Sin especificar",reference:linked.reference??"",notes:input.notes,applications:input.applications.map(a=>({...a}))};
-  return {...ledger,...next,salary:{...state,payments:[...state.payments,payment],lastConfigId:config.id,lastReceipt:{method:payment.method,accountId:payment.accountId},audit:audit(state,payment.id,"Registrar pago salarial",input.existingMovementId?"Ingreso existente vinculado; sin duplicar dinero":"Ingreso y aplicaciones guardados juntos")}};
+  const receiptDefaultsByConfig={...(state.receiptDefaultsByConfig??{}),[config.id]:{method:payment.method,accountId:payment.accountId}};
+  return {...ledger,...next,salary:{...state,payments:[...state.payments,payment],lastConfigId:config.id,lastReceipt:{method:payment.method,accountId:payment.accountId},receiptDefaultsByConfig,audit:audit(state,payment.id,"Registrar pago salarial",input.existingMovementId?"Ingreso existente vinculado; sin duplicar dinero":"Ingreso y aplicaciones guardados juntos")}};
 }
 export function unlinkSalaryPayment<T extends SalaryLedger>(ledger:T,paymentId:string,reason:string):T {
   const state=salaryState(ledger),payment=state.payments.find(p=>p.id===paymentId&&!p.voidReason);

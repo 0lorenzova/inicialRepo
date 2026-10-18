@@ -1,4 +1,9 @@
-## Entrega 0.1.66 · 18 octubre 2026
+## Entrega 0.1.67 · 18 octubre 2026
+- Registrar salario recuerda por fuente la última cuenta y el medio de recepción usados tras guardar un pago. Al cambiar de empleador se cargan sus valores; fuentes antiguas sin preferencia específica conservan el último valor global y las cuentas inactivas no se sugieren.
+- Preferencias opcionales en el JSON salarial existente, sin SQL ni cambios en movimientos/saldos. 14 suites `verify-salary-*.mjs`, TypeScript, ESLint dirigido y build de producción aprobados. Sin revisión visual en navegador.
+- El propietario indicó continuar con los pendientes y autorizó todos los pasos sin preguntas intermedias; cerrar y publicar al confirmar build y verificaciones.
+
+## Entrega 0.1.66 · 18 octubre 2026 — publicada
 - Catálogo recurrente por fuente con versiones fechadas: cada nueva versión inicia en un período futuro y no recalcula las anteriores. El catálogo existente queda como base histórica no recurrente.
 - Los conceptos recurrentes se muestran como estimaciones por período. Se pueden ajustar o quitar de una semana; solo la confirmación semanal los incluye en la deuda devengada. Aguinaldo, vacaciones y demás beneficios nunca se repiten automáticamente.
 - Las cantidades habituales por hora/día permiten estimar únicamente cuando hay cantidad y tarifa explícitas. Sin SQL nuevo; sin crear movimientos ni acreditar dinero al configurar el catálogo.
@@ -10,7 +15,7 @@
 - Registrar salario prepara el importe estándar de la semana actual si la estimación es conocida y no hay pagos previos; precarga la fecha/hora real y requiere revisar y confirmar en el flujo existente.
 - Build de producción y TypeScript aprobados; ESLint de los cuatro archivos afectados terminó correctamente. En la ronda siguiente se revalidaron las 14 suites `verify-salary-*.mjs` con el resolvedor de extensiones TS; no hubo QA visual. Sin SQL nuevo.
 - El propietario confirma que la información usada actualmente es de prueba, aunque parezca realista; avisará cuando un dato sea real. No detener cambios solo por apariencia realista de los datos.
-- Production success confirmado el 18 de octubre de 2026 a las 22:30:37 UTC para `f1e961882ec8337ae2e856d0bc5df98068b292bd`: https://inicial-repo-mq6yw1l7a-myself-e673.vercel.app. El catálogo recurrente con historial de vigencias se implementa en 0.1.66.
+- Production success confirmado el 18 de octubre de 2026 a las 23:03:40 UTC para `c406fa9861b29fa4328facc4c3ecac40da13e66c`: https://inicial-repo-pa16xo9om-myself-e673.vercel.app. El catálogo recurrente con historial de vigencias se implementa en 0.1.66.
 
 ## Entrega 0.1.64 — reglas por empleador y catálogo compacto
 - Ver `docs/fases-salarios-2026-10-18.md`: alcance real, pruebas, UI y conciliación de las cinco fases del prompt integral. Pago por día/cierre/días antes con vigencia; relación laboral; catálogo compacto; Calendario y etiquetas relativas. No afirmar que el registro masivo o los cálculos legales estén implementados. Próximo bloque: fase 2. Sin SQL nuevo.
@@ -24,7 +29,7 @@
 - Después de esta publicación vuelve a regir: no publicar nuevos cambios sin petición explícita.
 
 ## Norma vigente y cambios locales · 18 octubre 2026
-- PUBLICACIÓN: el propietario revocó la publicación automática. No hacer push ni desplegar hasta que lo solicite expresamente. La excepción requiere una nueva indicación «publica a tiempo lo que tengas». Sustituye las normas anteriores de publicación por créditos.
+- PUBLICACIÓN: el propietario autorizó continuar con los pendientes y publicar el trabajo listo sin preguntas intermedias. Esta instrucción sustituye para esta ronda la norma anterior de publicación revocada; confirmar Production por SHA.
 - LOCAL, sin commit/push/despliegue: Registrar salario muestra «Esta semana», «Navegar en el calendario» y retorno al último período pendiente; ficha visible y formulario inferior plegado conservando valores. El sábado inicial ya existía; no se alteraron fechas históricas.
 - LOCAL: fuente salarial con vigencias/jornada plegadas; resumen del período con base y abonos plegados; proyección con resultado arriba y cambio de intervalo plegado; detalle de movimiento con información adicional/productos/clasificación plegados. Catálogo, estimaciones y desgloses existentes reutilizados. Campos con validación nativa abren la sección al fallar. Sin cambios de motor o SQL.
 - Comprobación TypeScript (`tsc --noEmit --incremental false`) aprobada. No se ejecutaron tests ni revisión visual de este bloque; pendiente revisión en navegador y teléfono. Conservar los cambios anteriores del formulario al continuar.

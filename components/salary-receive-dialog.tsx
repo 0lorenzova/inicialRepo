@@ -52,9 +52,9 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const [periodDate, setPeriodDate] = useState(startingProjection?.start ?? today);
   const suggest=(p:SalaryPeriod)=>p.end<viewerDay&&!salaryHistoricalEstimate(ledger,p)?"":String(salaryPeriodRemaining(ledger,p));
   const [amount, setAmount] = useState(startingProjection ? suggest(startingProjection) : "");
-  const [accountId, setAccountId] = useState(salaryReceiptDefaults(ledger).accountId || incomeDefaults(incomePreferences, ledger.accounts).accountId);
+  const [accountId, setAccountId] = useState(salaryReceiptDefaults(ledger,startingConfigId).accountId || incomeDefaults(incomePreferences, ledger.accounts).accountId);
   const [receivedAt, setReceivedAt] = useState(localNow);
-  const [method, setMethod] = useState<string>(salaryReceiptDefaults(ledger).method);
+  const [method, setMethod] = useState<string>(salaryReceiptDefaults(ledger,startingConfigId).method);
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [advanced, setAdvanced] = useState(false);
@@ -142,6 +142,9 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
 
   const changeConfig = (nextConfigId: string) => {
     setConfigId(nextConfigId);
+    const receiptDefaults=salaryReceiptDefaults(ledger,nextConfigId);
+    setAccountId(receiptDefaults.accountId||incomeDefaults(incomePreferences,ledger.accounts).accountId);
+    setMethod(receiptDefaults.method);
     setExistingMovementId("");
     setApplications([]);
     setMultiPeriod(false);
@@ -237,7 +240,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
         <label htmlFor="salary-received-amount">Importe recibido</label>
         <div className="currency-input"><span>₡</span><input id="salary-received-amount" type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); setLocalError(""); }}/></div>
         <p className={styles.balance}>Recibido: {display(receivedAmount)} · Pendiente confirmado: {display(presentation?.pending??0)}{!presentation?.historicalEmpty&&presentation?.estimateKnown&&<> · Restante estimado: {display(pendingAmount)}</>} · {period&&presentation?.paymentCount?salaryPeriodPaymentLabel(ledger,period):"Abonos: 0"}</p>
-        {linkedMovement?<div className={styles.accountValue}><span>Cuenta del ingreso existente</span><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div>:<AccountSelector label="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/>}
+        {linkedMovement?<div className={styles.accountValue}><span>Cuenta del ingreso existente</span><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div>:<><AccountSelector label="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/><small>Al guardar un pago, su cuenta y medio se sugerirán la próxima vez para esta fuente.</small></>}
 
         <label>Medio de recepción<select value={linkedMovement?.paymentMethod ?? method} disabled={Boolean(linkedMovement)} onChange={event => setMethod(event.target.value)}>{[...new Set([...incomeReceptionMethods, method, linkedMovement?.paymentMethod])].filter(Boolean).map(item => <option key={item}>{item}</option>)}</select></label>
 
