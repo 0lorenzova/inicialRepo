@@ -2,17 +2,17 @@
 
 ## Conciliación del 18 de octubre de 2026
 
-- Fuente: API de despliegues de GitHub del repositorio `0lorenzova/inicialRepo`, creados por Vercel; se consultaron los estados de los 62 registros disponibles (una página completa de resultados inferior al límite de 100).
-- 61 despliegues Production con estado `success`, correspondientes a 61 commits distintos.
+- Fuente: API de despliegues de GitHub del repositorio `0lorenzova/inicialRepo`, creados por Vercel. La conciliación inicial encontró 62 registros; la publicación 0.1.65 añadió un registro Production exitoso.
+- 62 despliegues Production con estado `success`, correspondientes a 62 commits distintos.
 - 1 intento fallido: `0361b8c`, 28 de septiembre de 2026; excluido del recuento.
 - Hasta la publicación `9a61644`, el número visible 0.1.1 no representaba este historial. El paquete había mantenido 0.1.0 desde el inicio.
-- Esta corrección reserva **0.1.62** para la publicación exitosa número 62. La entrega al usuario debe confirmar el estado success de su commit en Production.
+- La corrección reservó **0.1.62** para la publicación exitosa número 62. La 0.1.65 es la publicación exitosa número 62, confirmada en Production.
 
 ## Regla para próximas publicaciones
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.64; la siguiente versión con nuevos cambios será 0.1.65.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.65; la siguiente versión con nuevos cambios será 0.1.66.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -84,6 +84,7 @@ El ordinal indica el orden de publicaciones exitosas; no afirma que estas versio
 | 59 | 2026-10-18T04:07:13Z | `661d85a` |
 | 60 | 2026-10-18T11:41:33Z | `92cdd0f` |
 | 61 | 2026-10-18T16:17:17Z | `9a61644` |
+| 62 | 2026-10-18T22:30:37Z | `f1e9618` |
 
 ## Entrega 0.1.63
 
@@ -95,4 +96,8 @@ Configuración de día de pago por empleador, vigencias, catálogo compacto y re
 
 ## Entrega 0.1.65
 
-Cantidades por hora/día en conceptos y preparación del recibo estándar semanal. El propietario autorizó la publicación; registrar su fecha y commit cuando Production confirme `success`.
+Cantidades por hora/día en conceptos y preparación del recibo estándar semanal. Publicada en Production el 18 de octubre de 2026 a las 22:30:37 UTC desde el commit `f1e961882ec8337ae2e856d0bc5df98068b292bd`; GitHub confirmó `success` (`Deployment has completed`). Despliegue: https://inicial-repo-mq6yw1l7a-myself-e673.vercel.app.
+
+## Entrega 0.1.66
+
+Catálogo recurrente por fuente con versiones efectivas futuras; las estimaciones históricas no se recalculan, los ajustes permanecen estimados hasta confirmación por período y beneficios como aguinaldo/vacaciones no se repiten automáticamente. El SHA y el resultado de Production se consultan en los despliegues del repositorio.

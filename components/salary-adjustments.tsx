@@ -1,6 +1,6 @@
 "use client";
 import {useState} from "react";
-import {salaryAdjustments,salaryCatalog,salaryExpected,salaryHistoricalEstimate,salaryPeriodPresentation,salaryState,salaryMeasuredAmount,saveSalaryAdjustments,type SalaryAdjustment,type SalaryLedger,type SalaryPeriod} from "@/lib/salary-tracking";
+import {salaryAdjustments,salaryCatalogAt,salaryExpected,salaryHistoricalEstimate,salaryPeriodPresentation,salaryState,salaryMeasuredAmount,saveSalaryAdjustments,type SalaryAdjustment,type SalaryLedger,type SalaryPeriod} from "@/lib/salary-tracking";
 import styles from "./salary-planning.module.css";
 type Props={ledger:SalaryLedger;period:SalaryPeriod;today:string;display:(n:number)=>string;onSave?:(operation:(current:SalaryLedger)=>SalaryLedger)=>void};
 export function SalaryEstimation({ledger,period,today,display}:Props) {
@@ -12,13 +12,13 @@ export function SalaryAdjustments({ledger,period,today,display,onSave}:Props) {
   const original=salaryAdjustments(ledger,period),[editing,setEditing]=useState(false);
   const adjustment=salaryExpected(ledger,period)-period.concepts.reduce((n,c)=>n+c.amount,0);
   return <details className={styles.panel}><summary>Conceptos adicionales{original.length?` · ${display(adjustment)}`:""}</summary>
-    {!editing?<><p>{original.length?"Ajustes de esta semana":"Sin ajustes adicionales en esta semana."}</p>{original.map(a=><p key={a.id}>{a.name}: {a.quantity!==undefined&&a.unit&&a.rate?`${a.quantity} ${a.unit==="hour"?"horas":"días"} × ${display(a.rate)} = `:""}{a.sign==="subtract"?"−":"+"}{display(a.amount)} · {a.status==="confirmed"?"Confirmado":"Estimado"}</p>)}{onSave&&<button type="button" className="secondary" onClick={()=>setEditing(true)}>Editar conceptos de esta semana</button>}</>:<AdjustmentEditor key={period.id+JSON.stringify(original)} {...{ledger,period,today,display,onSave}} original={original} onClose={()=>setEditing(false)}/>}
+    {!editing?<><p>{original.some(a=>a.id.startsWith("catalog-recurring:"))?"Incluye estimaciones recurrentes del catálogo; puedes corregirlas o quitarlas solo de esta semana.":original.length?"Ajustes de esta semana":"Sin ajustes adicionales en esta semana."}</p>{original.map(a=><p key={a.id}>{a.name}: {a.quantity!==undefined&&a.unit&&a.rate?`${a.quantity} ${a.unit==="hour"?"horas":"días"} × ${display(a.rate)} = `:""}{a.sign==="subtract"?"−":"+"}{display(a.amount)} · {a.status==="confirmed"?"Confirmado":"Estimado"}{a.id.startsWith("catalog-recurring:")?" · Recurrente":""}</p>)}{onSave&&<button type="button" className="secondary" onClick={()=>setEditing(true)}>Editar conceptos de esta semana</button>}</>:<AdjustmentEditor key={period.id+JSON.stringify(original)} {...{ledger,period,today,display,onSave}} original={original} onClose={()=>setEditing(false)}/>}
   </details>;
 }
 function AdjustmentEditor({ledger,period,display,onSave,original,onClose}:Props&{original:SalaryAdjustment[];onClose:()=>void}) {
   const [items,setItems]=useState(original.map(a=>({...a}))),[error,setError]=useState("");
   const config=salaryState(ledger).configs.find(c=>c.id===period.configId)!;
-  const catalog=salaryCatalog(config).filter(c=>c.active&&!items.some(a=>a.catalogId===c.id));
+  const catalog=salaryCatalogAt(config,period.start).filter(c=>c.active&&!items.some(a=>a.catalogId===c.id));
   const update=(id:string,value:Partial<SalaryAdjustment>)=>setItems(items.map(a=>a.id===id?{...a,...value}:a));
   const addCatalogConcept=(catalogId:string)=>{
     const c=catalog.find(item=>item.id===catalogId);if(!c)return;

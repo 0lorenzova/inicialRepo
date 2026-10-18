@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {saveSalaryConfig,salaryPeriodForDate,salaryPeriodPresentation,salaryHistoricalEstimate,saveSalaryAdjustments,salaryAdjustments,salaryExpected,salaryReceived,salaryCatalog,saveSalaryCatalog,salaryPeriodApplications,postSalaryPayment,saveSalaryPeriod,correctSalaryPayment,salaryPeriodRemaining} from '../lib/salary-tracking.ts';
+import {saveSalaryConfig,salaryPeriodForDate,salaryPeriodPresentation,salaryHistoricalEstimate,saveSalaryAdjustments,salaryAdjustments,salaryExpected,salaryReceived,salaryPeriodTotals,salaryCatalog,salaryCatalogAt,salaryCatalogNextEffectiveFrom,saveSalaryCatalog,salaryPeriodApplications,postSalaryPayment,saveSalaryPeriod,correctSalaryPayment,salaryPeriodRemaining} from '../lib/salary-tracking.ts';
 import {salaryProjection,salaryProjectionRange} from '../lib/salary-projection.ts';
 const today='2026-10-18';
 const initial={accounts:[{id:'a',name:'Prueba',type:'Banco',active:true,balance:0}],envelopes:[],movements:[],loans:[]};
@@ -10,7 +10,7 @@ const older=salaryPeriodForDate(d,'c','2026-08-03');assert.equal(salaryHistorica
 const legacy={...d,salary:{...d.salary,configs:[config]}};assert.equal(salaryHistoricalEstimate(legacy,p),null);
 let view=salaryPeriodPresentation(d,p,today);assert.equal(view.state,'Sin registros');assert.equal(view.tone,'neutral');assert.equal(view.received,0);assert.equal(view.pending,0);assert.equal(view.overdue,false);
 const catalog=[{id:'extra',name:'Horas extra',sign:'add',usualAmount:15000,active:true},{id:'ded',name:'Deducción',sign:'subtract',usualAmount:5000,active:true}];
-d=saveSalaryCatalog(d,'c',catalog,[]);assert.equal(salaryCatalog(d.salary.configs[0]).length,2);assert.equal(salaryExpected(d,p),125000,'Catalogue does not automatically apply');
+d=saveSalaryCatalog(d,'c',catalog,[],'2026-10-19',today);assert.equal(salaryCatalog(d.salary.configs[0]).length,2);assert.equal(salaryExpected(d,p),125000,'Catalogue does not automatically apply');assert.equal(salaryCatalogNextEffectiveFrom(d.salary.configs[0],today),'2026-10-26');assert.equal(salaryCatalogAt(d.salary.configs[0],'2026-10-18').length,0);
 const items=[{id:'x',catalogId:'extra',name:'Horas extra',sign:'add',amount:15000,status:'estimated'},{id:'m',name:'Moto',sign:'add',amount:10000,status:'confirmed'},{id:'d',catalogId:'ded',name:'Deducción',sign:'subtract',amount:5000,status:'confirmed'}];
 const finances=JSON.stringify({accounts:d.accounts,envelopes:d.envelopes,movements:d.movements});
 d=saveSalaryAdjustments(d,p,items,[]);assert.equal(d.salary.periods.length,0);assert.equal(salaryExpected(d,p),145000);assert.equal(salaryPeriodPresentation(d,p,today).pending,0);
@@ -18,7 +18,7 @@ assert.equal(JSON.stringify({accounts:d.accounts,envelopes:d.envelopes,movements
 assert.throws(()=>saveSalaryAdjustments(d,p,items,[]),/cambiaron/);
 assert.throws(()=>saveSalaryAdjustments(d,p,[...items,{...items[0],id:'dup'}],items),/ya está/);
 const p2=salaryPeriodForDate(d,'c','2026-10-12');d=saveSalaryAdjustments(d,p2,[{...items[0],id:'second',amount:20000}],[]);assert.equal(salaryExpected(d,p2),145000);assert.equal(salaryExpected(d,p),145000);
-d=saveSalaryCatalog(d,'c',catalog.map(c=>({...c,active:false,usualAmount:99999})),catalog);assert.equal(salaryExpected(d,p),145000);
+d=saveSalaryCatalog(d,'c',catalog.map(c=>({...c,active:false,usualAmount:99999})),catalog,'2026-10-26',today);assert.equal(salaryExpected(d,p),145000);
 let temporary={...d,salary:{...d.salary,periods:[p]}};const applications=salaryPeriodApplications(temporary,'c',p.id,145000);assert.equal(applications.reduce((s,a)=>s+a.amount,0),145000);
 const pay={id:'one',configId:'c',date:'2026-10-18T08:00',amount:145000,accountId:'a',method:'Transferencia',reference:'1',notes:'',applications,preparedPeriod:p};
 let paid=postSalaryPayment(d,pay,today);assert.equal(paid.movements.length,1);assert.equal(paid.accounts[0].balance,145000);assert.equal(paid.salary.periods[0].earned,false);assert.equal(salaryPeriodPresentation(paid,p,today).tone,'paid');
@@ -44,6 +44,36 @@ assert.equal(salaryPeriodForDate(hourly,'hour','2026-10-05').concepts[0].amount,
 const daily=saveSalaryConfig(initial,{...config,id:'day',remuneration:'day',dailyRate:16000},null);
 assert.equal(salaryPeriodForDate(daily,'day','2026-10-05').concepts[0].amount,80000);
 console.log('OK: hourly and daily estimates use configured usual workdays, without crediting actual work.');
+
+let recurring=saveSalaryConfig(initial,{...config,id:'recurring',start:'2026-10-12'},null);
+const recurringCatalog=[{id:'transport',name:'Transporte',sign:'add',usualAmount:5000,recurring:true,active:true},{id:'benefit',name:'Vacaciones',sign:'add',usualAmount:10000,kind:'benefit',active:true}];
+recurring=saveSalaryCatalog(recurring,'recurring',recurringCatalog,[],'2026-10-19',today);
+const prior=salaryPeriodForDate(recurring,'recurring','2026-10-16'),firstRecurring=salaryPeriodForDate(recurring,'recurring','2026-10-22');
+assert.equal(salaryExpected(recurring,prior),125000,'Future catalog versions do not change the current unsaved estimate');
+assert.equal(salaryExpected(recurring,firstRecurring),130000,'Explicit recurring catalog estimates apply from their effective period');
+assert.deepEqual(salaryAdjustments(recurring,firstRecurring).map(item=>item.catalogId),['transport'],'Benefits never become recurring estimates');
+const savedPrior=saveSalaryPeriod(recurring,prior,null,today,'Referencia de prueba');
+const revised=saveSalaryCatalog(recurring,'recurring',recurringCatalog.map(item=>item.id==='transport'?{...item,usualAmount:7000}:item),recurringCatalog,'2026-10-26',today);
+assert.equal(salaryExpected(revised,firstRecurring),130000,'A later catalog revision preserves an earlier unsaved estimate');
+assert.equal(salaryExpected(revised,salaryPeriodForDate(revised,'recurring','2026-10-27')),132000,'The revised recurring estimate applies from its own effective period');
+assert.equal(salaryExpected(revised,savedPrior.salary.periods[0]),125000,'Saved historical estimates remain unchanged');
+assert.throws(()=>saveSalaryCatalog(revised,'recurring',[{id:'vac',name:'Aguinaldo',sign:'add',usualAmount:50000,kind:'benefit',recurring:true,active:true}],salaryCatalog(revised.salary.configs.find(c=>c.id==='recurring')),'2026-11-02',today),/recurrentes|beneficios/i);
+const suppressed=saveSalaryAdjustments(revised,firstRecurring,[],salaryAdjustments(revised,firstRecurring));
+assert.equal(salaryExpected(suppressed,firstRecurring),125000,'An estimate can be removed for one period without changing its recurrence history');
+let measured=saveSalaryConfig(initial,{...config,id:'measured'},null);
+const measuredCatalog=[{id:'hours',name:'Horas habituales',sign:'add',unit:'hour',rate:2000,usualQuantity:2.5,recurring:true,active:true}];
+measured=saveSalaryCatalog(measured,'measured',measuredCatalog,[],'2026-10-19',today);
+const measuredPeriod=salaryPeriodForDate(measured,'measured','2026-10-22'),measuredAdjustment=salaryAdjustments(measured,measuredPeriod)[0];
+assert.equal(measuredAdjustment.amount,5000,'Recurring hourly estimates use the habitual quantity and explicit rate');
+assert.equal(measuredAdjustment.status,'estimated');
+assert.throws(()=>saveSalaryCatalog(measured,'measured',[{...measuredCatalog[0],usualQuantity:undefined}],measuredCatalog,'2026-10-26',today),/habitual/i);
+let recognized=saveSalaryPeriod(measured,{...measuredPeriod,earned:true},null,'2026-10-26','Trabajo de prueba confirmado');
+const recognizedPeriod=recognized.salary.periods[0];
+assert.equal(salaryPeriodTotals(recognized,recognizedPeriod,'2026-10-26').pending,125000,'An estimated variable quantity is not a confirmed debt');
+const confirmedItems=salaryAdjustments(recognized,measuredPeriod).map(item=>({...item,status:'confirmed'}));
+recognized=saveSalaryAdjustments(recognized,measuredPeriod,confirmedItems,salaryAdjustments(recognized,measuredPeriod));
+assert.equal(salaryPeriodTotals(recognized,recognizedPeriod,'2026-10-26').pending,130000,'A per-period confirmation adds the recurrent estimate to confirmed debt');
+console.log('OK: recurring concepts use future period-start versions; older projections, saved periods and benefits remain protected.');
 
 assert.equal(salaryPeriodPresentation(d,salaryPeriodForDate(d,'c',today),today).state,'Sin registros');
 assert.equal(d.salary.periods.length,0,'Adjustment-only weeks do not materialize periods');

@@ -8,10 +8,11 @@ import { previewPostponement } from "./finance-recurrence";
 import {incomeReceptionMethods} from "./income-preferences";
 
 export type SalaryPayRule = {kind:"last-day"}|{kind:"days-before";days:number}|{kind:"weekday";day:number};
-export type SalaryConfig = {employmentStart?:string;employmentEnd?:string;payRule?:SalaryPayRule; id:string; employer:string; name:string; currency:"CRC"; base:number; frequency:"Semanal"|"Quincenal"|"Mensual"|"Otra"; intervalDays?:number; extraConcepts?:SalaryConcept[]; start:string; payOffset:number; calendarMode?:"iso-workdays"; workDays:number[]; active:boolean; remuneration?:"hour"|"day"|"week"|"fortnight"|"month"|"variable"; hourlyRate?:number; dailyRate?:number; hoursPerDay?:number; effectiveFrom?:string; termsHistory?:SalaryTerms[]; catalog?:SalaryCatalogConcept[] };
+export type SalaryConfig = {employmentStart?:string;employmentEnd?:string;payRule?:SalaryPayRule; id:string; employer:string; name:string; currency:"CRC"; base:number; frequency:"Semanal"|"Quincenal"|"Mensual"|"Otra"; intervalDays?:number; extraConcepts?:SalaryConcept[]; start:string; payOffset:number; calendarMode?:"iso-workdays"; workDays:number[]; active:boolean; remuneration?:"hour"|"day"|"week"|"fortnight"|"month"|"variable"; hourlyRate?:number; dailyRate?:number; hoursPerDay?:number; effectiveFrom?:string; termsHistory?:SalaryTerms[]; catalog?:SalaryCatalogConcept[]; catalogBase?:SalaryCatalogConcept[]; catalogHistory?:SalaryCatalogRevision[] };
 export type SalaryTerms = Pick<SalaryConfig,"base"|"frequency"|"intervalDays"|"start"|"payOffset"|"calendarMode"|"workDays"|"remuneration"|"hourlyRate"|"dailyRate"|"hoursPerDay"|"payRule"> & {effectiveFrom:string};
 export type SalaryQuantityUnit = "hour"|"day";
-export type SalaryCatalogConcept = {id:string;name:string;sign:"add"|"subtract";usualAmount?:number;unit?:SalaryQuantityUnit;rate?:number;usualQuantity?:number;kind?:"salary"|"benefit"|"other";active:boolean};
+export type SalaryCatalogConcept = {id:string;name:string;sign:"add"|"subtract";usualAmount?:number;unit?:SalaryQuantityUnit;rate?:number;usualQuantity?:number;kind?:"salary"|"benefit"|"other";recurring?:boolean;active:boolean};
+export type SalaryCatalogRevision = {effectiveFrom:string;items:SalaryCatalogConcept[]};
 export type SalaryAdjustment = {id:string;catalogId?:string;name:string;amount:number;sign:"add"|"subtract";status:"estimated"|"confirmed";unit?:SalaryQuantityUnit;rate?:number;quantity?:number};
 export type SalaryPeriodAdjustments = {configId:string;periodId:string;start:string;end:string;items:SalaryAdjustment[]};
 export type SalaryConcept = { id:string; name:string; amount:number };
@@ -437,7 +438,16 @@ export function salaryReceived(ledger:SalaryLedger,periodId:string) {
   return total(salaryState(ledger).payments.filter(p=>salaryPaymentValid(ledger,p)).flatMap(p=>p.applications.filter(a=>a.periodId===periodId).map(a=>a.amount)));
 }
 export function salaryAdjustments(ledger:SalaryLedger,period:SalaryPeriod) {
-  return salaryState(ledger).periodAdjustments?.find(a=>a.configId===period.configId&&a.periodId===period.id)?.items??[];
+  const state=salaryState(ledger),saved=state.periodAdjustments?.find(a=>a.configId===period.configId&&a.periodId===period.id);
+  if(saved)return saved.items;
+  const config=state.configs.find(c=>c.id===period.configId);
+  if(!config)return [];
+  return salaryCatalogAt(config,period.start).filter(c=>c.active&&c.recurring).flatMap(c=>{
+    let amount=c.usualAmount;
+    if(c.unit&&c.rate&&c.usualQuantity!==undefined)try{amount=salaryMeasuredAmount(c.usualQuantity,c.rate);}catch{return [];}
+    if(amount===undefined||!amountValid(amount))return [];
+    return [{id:`catalog-recurring:${c.id}`,catalogId:c.id,name:c.name,amount,sign:c.sign,status:"estimated" as const,...(c.unit&&c.rate&&c.usualQuantity!==undefined?{unit:c.unit,rate:c.rate,quantity:c.usualQuantity}:{})}];
+  });
 }
 export function salaryExpected(ledger:SalaryLedger,period:SalaryPeriod,confirmedOnly=false) {
   return total([...period.concepts.map(c=>c.amount),...salaryAdjustments(ledger,period).filter(a=>!confirmedOnly||a.status==="confirmed").map(a=>a.sign==="subtract"?-a.amount:a.amount)]);
@@ -448,12 +458,39 @@ export function salaryPaymentConcepts(ledger:SalaryLedger,period:SalaryPeriod):S
 export function salaryCatalog(config:SalaryConfig):SalaryCatalogConcept[] {
   return config.catalog??(config.extraConcepts??[]).map(c=>({id:c.id,name:c.name,sign:"add",usualAmount:c.amount,active:true}));
 }
-export function saveSalaryCatalog<T extends SalaryLedger>(ledger:T,configId:string,items:SalaryCatalogConcept[],original:SalaryCatalogConcept[]):T {
+export function salaryCatalogAt(config:SalaryConfig,date:string):SalaryCatalogConcept[] {
+  salaryDay(date);
+  const history=config.catalogHistory??[],revision=history.filter(h=>h.effectiveFrom<=date).sort((a,b)=>b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
+  return revision?.items??(history.length?config.catalogBase??[]:salaryCatalog(config));
+}
+export function salaryCatalogNextEffectiveFrom(config:SalaryConfig,today:string):string {
+  salaryDay(today);
+  const latest=(config.catalogHistory??[]).map(h=>h.effectiveFrom).sort().at(-1);
+  const anchor=latest&&latest>today?latest:today;
+  return periodStartForDate(config,anchor).next;
+}
+export function saveSalaryCatalog<T extends SalaryLedger>(ledger:T,configId:string,items:SalaryCatalogConcept[],original:SalaryCatalogConcept[],effectiveFrom:string,today:string):T {
   const state=salaryState(ledger),config=state.configs.find(c=>c.id===configId);
   ensure(config&&JSON.stringify(salaryCatalog(config))===JSON.stringify(original),"El catálogo cambió. Vuelve a abrirlo.");
   ensure(new Set(items.map(c=>c.id)).size===items.length&&new Set(items.map(c=>normalizeSalaryName(c.name))).size===items.length,"No repitas conceptos en el catálogo.");
-  ensure(items.every(c=>c.id&&c.name.trim()&&(c.sign==="add"||c.sign==="subtract")&&typeof c.active==="boolean"&&(c.usualAmount===undefined||amountValid(c.usualAmount))&&(!c.unit?c.rate===undefined&&c.usualQuantity===undefined:(c.unit==="hour"||c.unit==="day")&&c.usualAmount===undefined&&amountValid(c.rate??-1)&&(c.rate??0)>0&&(c.usualQuantity===undefined||salaryMeasuredAmount(c.usualQuantity,c.rate!))&&c.kind!=="benefit")),"Revisa el nombre, tipo e importe de los conceptos. Los beneficios no admiten reglas de cantidad por hora o día.");
-  return {...ledger,salary:{...state,configs:state.configs.map(c=>c.id===configId?{...c,catalog:items.map(i=>({...i,name:i.name.trim()}))}:c),audit:audit(state,configId,"Catálogo salarial","Solo referencias; no altera semanas ni pagos",original)}};
+  const validItems=items.every(c=>{
+    const commonValid=Boolean(c.id&&c.name.trim()&&(c.sign==="add"||c.sign==="subtract")&&typeof c.active==="boolean"&&(c.usualAmount===undefined||amountValid(c.usualAmount)));
+    const measurementValid=!c.unit?c.rate===undefined&&c.usualQuantity===undefined:(c.unit==="hour"||c.unit==="day")&&c.usualAmount===undefined&&amountValid(c.rate??-1)&&(c.rate??0)>0&&(c.usualQuantity===undefined||salaryMeasuredAmount(c.usualQuantity,c.rate!))&&c.kind!=="benefit";
+    const recurringValid=!c.recurring||(c.kind!=="benefit"&&(c.unit?c.usualQuantity!==undefined:c.usualAmount!==undefined));
+    return commonValid&&measurementValid&&recurringValid;
+  });
+  ensure(validItems,"Revisa los importes y la cantidad habitual de los conceptos recurrentes. Los beneficios no admiten reglas recurrentes ni cantidades por hora o día.");
+  const normalized=items.map(i=>({...i,name:i.name.trim()}));
+  if(JSON.stringify(normalized)===JSON.stringify(original))return ledger;
+  salaryDay(effectiveFrom);salaryDay(today);
+  ensure(effectiveFrom>=today,"Los cambios del catálogo deben empezar hoy o después.");
+  const effectiveStart=periodStartForDate(config,effectiveFrom).start,currentStart=periodStartForDate(config,today).start;
+  ensure(effectiveStart>currentStart,"Los cambios del catálogo se aplican desde el próximo período para conservar las estimaciones anteriores.");
+  const latest=(config.catalogHistory??[]).map(h=>h.effectiveFrom).sort().at(-1);
+  ensure(!latest||effectiveStart>latest,"La vigencia del catálogo debe ser posterior a la última versión guardada.");
+  const base=config.catalogBase??((config.catalogHistory?.length??0)>0?undefined:salaryCatalog(config).map(c=>({...c,recurring:false})));
+  const catalogHistory=[...(config.catalogHistory??[]),{effectiveFrom:effectiveStart,items:normalized.map(c=>({...c}))}];
+  return {...ledger,salary:{...state,configs:state.configs.map(c=>c.id===configId?{...c,catalog:normalized,catalogBase:base,catalogHistory}:c),audit:audit(state,configId,"Catálogo salarial",`Nueva versión vigente desde ${effectiveStart}; las semanas anteriores conservan su referencia`,original)}};
 }
 export function saveSalaryAdjustments<T extends SalaryLedger>(ledger:T,period:SalaryPeriod,items:SalaryAdjustment[],original:SalaryAdjustment[]):T {
   const state=salaryState(ledger);
@@ -466,7 +503,7 @@ export function saveSalaryAdjustments<T extends SalaryLedger>(ledger:T,period:Sa
   const current=salaryPeriodForDate(ledger,period.configId,period.start);
   ensure(current.id===period.id&&current.end===period.end,"La referencia cambió. Vuelve a seleccionar la semana.");
   const entry={configId:period.configId,periodId:period.id,start:period.start,end:period.end,items:items.map(a=>({...a,name:a.name.trim()}))};
-  const periodAdjustments=[...(state.periodAdjustments??[]).filter(a=>!(a.configId===period.configId&&a.periodId===period.id)),...(items.length?[entry]:[])];
+  const periodAdjustments=[...(state.periodAdjustments??[]).filter(a=>!(a.configId===period.configId&&a.periodId===period.id)),entry];
   const next={...ledger,salary:{...state,periodAdjustments,audit:audit(state,period.id,"Ajustes salariales","Solo planificación; no registra dinero ni confirma deuda",original)}};
   salaryExpected(next,current);salaryExpected(next,current,true);
   return next;
