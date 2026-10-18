@@ -1,3 +1,16 @@
+## Entrega 0.1.63 · 18 octubre 2026
+- Publicación autorizada explícitamente para este bloque: «Ahora sí quiero que publique estas mejoras». Incluye las mejoras compactas y textos locales descritos abajo, más Activar semana histórica pendiente.
+- `activateSalaryPeriod` reutiliza saveSalaryPeriod y el campo earned: solo pasado sin cobros/obligación, con importe confirmado positivo y condiciones conocidas. No acredita ingresos ni modifica cuentas, sobres o movimientos. Reintentos de la misma activación no crean registros duplicados. Ajustes estimados continúan estimados.
+- Casilla reutilizable en Registrar salario, Resumen del período y detalle de fichas de Gestión salarial. Guarda pendiente para cobrar ahora o después; colores/calendario compartidos actualizan la alerta vencida. Al registrar abono parcial conserva naranja; pago completo verde. Movimiento reducido respetado por CSS existente.
+- Build y TypeScript aprobados. Sin migración SQL. No se ejecutaron pruebas automatizadas de escenarios ni revisión visual de este bloque; pendiente revisión del propietario. Confirmar Production success antes de afirmar publicación.
+- Después de esta publicación vuelve a regir: no publicar nuevos cambios sin petición explícita.
+
+## Norma vigente y cambios locales · 18 octubre 2026
+- PUBLICACIÓN: el propietario revocó la publicación automática. No hacer push ni desplegar hasta que lo solicite expresamente. La excepción requiere una nueva indicación «publica a tiempo lo que tengas». Sustituye las normas anteriores de publicación por créditos.
+- LOCAL, sin commit/push/despliegue: Registrar salario muestra «Esta semana», «Navegar en el calendario» y retorno al último período pendiente; ficha visible y formulario inferior plegado conservando valores. El sábado inicial ya existía; no se alteraron fechas históricas.
+- LOCAL: fuente salarial con vigencias/jornada plegadas; resumen del período con base y abonos plegados; proyección con resultado arriba y cambio de intervalo plegado; detalle de movimiento con información adicional/productos/clasificación plegados. Catálogo, estimaciones y desgloses existentes reutilizados. Campos con validación nativa abren la sección al fallar. Sin cambios de motor o SQL.
+- Comprobación TypeScript (`tsc --noEmit --incremental false`) aprobada. No se ejecutaron tests ni revisión visual de este bloque; pendiente revisión en navegador y teléfono. Conservar los cambios anteriores del formulario al continuar.
+
 ## Corrección de numeración · 18 octubre 2026
 - Auditoría: 61 publicaciones Production exitosas (61 commits), 1 intento fallido. La corrección del contador corresponde a 0.1.62. Ver `docs/versiones-publicadas.md` para evidencia y norma de incremento; próxima entrega con cambios: 0.1.63.
 - Reemplaza la numeración 0.1.1 de la nota anterior; no modifica datos ni SQL.

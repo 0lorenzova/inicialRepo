@@ -1,9 +1,10 @@
 "use client";
+import {SalaryPeriodActivation} from "./salary-period-activation";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { salaryViewerDay, salaryDateLabel, salaryWorkSchedule } from "@/lib/salary-dates";
 import { SalaryAdjustments, SalaryEstimation } from "./salary-adjustments";
-import { salaryHistoricalEstimate, salaryPaymentConcepts, salaryTemporalLabel, salaryPeriodPaymentLabel } from "@/lib/salary-tracking";
+import { salaryHistoricalEstimate, salaryPaymentConcepts, salaryTemporalLabel, salaryPeriodPaymentLabel, latestSalaryPeriodPending } from "@/lib/salary-tracking";
 import { AccountSelector } from "@/components/account-selector";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { SalaryReceiptDialog } from "./salary-receipt-dialog";
@@ -58,6 +59,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const [notes, setNotes] = useState("");
   const [advanced, setAdvanced] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [formExpanded, setFormExpanded] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState((startingProjection?.start ?? today).slice(0, 7));
   const [multiPeriod, setMultiPeriod] = useState(false);
   const [applications, setApplications] = useState<SalaryApplication[]>([]);
@@ -99,9 +101,11 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const applicationTotal = calculatedApplications.reduce((sum, item) => sum + item.amount, 0);
   const applicationBalance = numericAmount - applicationTotal;
   const presentation=period?salaryPeriodPresentation(ledger,period,today):null;
+  const temporalLabel=period?salaryTemporalLabel(ledger,period,viewerDay):"";
+  const registrationTemporalLabel=temporalLabel==="Hoy"&&(period?.frequency??config?.frequency)==="Semanal"?"Esta semana":temporalLabel;
   const expectedAmount=presentation?.expected??0;
   let lastPending:SalaryPeriod|null=null;
-  try {if(config)lastPending=salaryPeriodForDate(ledger,config.id,viewerDay);}catch{/* Date boundary; ordinary navigation remains available. */}
+  try {if(config)lastPending=latestSalaryPeriodPending(ledger,config.id,viewerDay);}catch{/* Date boundary; ordinary navigation remains available. */}
   const receivedAmount=presentation?.received??0;
   const pendingAmount=presentation?.remaining??0;
   const selectedAccount = ledger.accounts.find(account => account.id === accountId && account.active);
@@ -159,7 +163,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   };
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (savingRef.current) return;
+    if (!formExpanded || savingRef.current) return;
     setLocalError("");
     if (!config || !period) { setLocalError(periodError || "Selecciona un período salarial."); return; }
     if (!dateValid) { setLocalError("Indica la fecha real de recepción, igual o anterior a hoy."); setAdvanced(true); return; }
@@ -208,21 +212,25 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
         <section className={styles.periodPicker} aria-label="Período salarial">
           <div className={`${styles.periodHeading} ${statusStyles.surface}`} data-tone={presentation?.tone??"neutral"}>
             <button type="button" className="secondary" aria-label="Período anterior" onClick={() => movePeriod(-1)} disabled={!period || period.start <= "0001-01-01"}>‹</button>
-            <div><strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>{period && <><span className={styles.temporalLabel}>{salaryTemporalLabel(ledger,period,viewerDay)}</span><small>{presentation?.state}{presentation?.overdueLabel?` · ${presentation.overdueLabel}`:""}</small><small>{dayLabel(period.start)} — {dayLabel(period.end)}</small></>}</div>
+            <div><strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>{period && <><span className={styles.temporalLabel}>{registrationTemporalLabel}</span><small>{presentation?.state}{presentation?.overdueLabel?` · ${presentation.overdueLabel}`:""}</small><small>{dayLabel(period.start)} — {dayLabel(period.end)}</small></>}</div>
             <button type="button" className="secondary" aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}>›</button>
-            <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Explorar períodos en calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar almanaque":"Elegir en almanaque"}</button>
+            <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Navegar en el calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar almanaque":"Navegar en el calendario"}</button>
           </div>
           {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(period.payDate)}</b></span>{!presentation?.historicalEmpty&&<span>Esperado: <b>{presentation?.estimateKnown?display(expectedAmount):"Sin proyección"}</b></span>}</div>}
           {period?.scheduledWorkDays&&<small className={styles.workDays}>{salaryWorkSchedule(period)}</small>}
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
-          {lastPending&&lastPending.id!==period?.id&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(lastPending!.start)}>Volver a última semana en curso</button>}
+          {lastPending&&lastPending.id!==period?.id&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(lastPending!.start)}>Volver al último período pendiente: {salaryPeriodLabel(lastPending,config)}</button>}
           {period && numericAmount>0 && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{presentation? ` · ${presentation.workState}`:""}</p>}
+          {period&&<SalaryPeriodActivation key={`activate:${period.id}`} ledger={ledger} period={period} today={today} display={display} onSave={onSave}/>}
         </section>
 
+        <details className={styles.receiptSection} open={formExpanded} onToggle={event=>setFormExpanded(event.currentTarget.open)}>
+          <summary>{formExpanded?"Ocultar formulario":"Desplegar formulario para registrar salario"}<span aria-hidden="true">{formExpanded?"⌃":"⌄"}</span></summary>
+          <fieldset className={styles.receiptFields} disabled={!formExpanded} aria-label="Datos del salario recibido">
         {period&&<><SalaryEstimation key={`estimate:${period.id}`} ledger={ledger} period={period} today={today} display={display}/><SalaryAdjustments key={`adjust:${period.id}`} ledger={ledger} period={period} today={today} display={display} onSave={operation=>{if(!onSave(operation))throw new Error("No se pudieron guardar los ajustes.");}}/></>}
         <label htmlFor="salary-received-amount">Importe recibido</label>
-        <div className="currency-input"><span>₡</span><input id="salary-received-amount" autoFocus type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); setLocalError(""); }}/></div>
+        <div className="currency-input"><span>₡</span><input id="salary-received-amount" type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); setLocalError(""); }}/></div>
         <p className={styles.balance}>Recibido: {display(receivedAmount)} · Pendiente confirmado: {display(presentation?.pending??0)}{!presentation?.historicalEmpty&&presentation?.estimateKnown&&<> · Restante estimado: {display(pendingAmount)}</>} · {period&&presentation?.paymentCount?salaryPeriodPaymentLabel(ledger,period):"Abonos: 0"}</p>
         {linkedMovement?<div className={styles.accountValue}><span>Cuenta del ingreso existente</span><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div>:<AccountSelector label="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/>}
 
@@ -258,6 +266,8 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
         {(localError || externalError || applicationError || duplicateExists) && <p className="form-error" role="alert">{localError || externalError || (duplicateExists ? "Ya existe un ingreso con estos mismos datos. Vincúlalo desde Más opciones para evitar duplicarlo." : applicationError)}</p>}
         <button className="primary wide" type="submit" disabled={!canSave}>{saving ? "Registrando…" : linkedMovement ? "Vincular ingreso al salario" : "Confirmar y registrar salario"}</button>
         <button type="button" className="secondary wide" onClick={onClose}>Cancelar</button>
+          </fieldset>
+        </details>
       </>}
     </form>
   </FinanceDialog>;

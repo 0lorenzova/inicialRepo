@@ -6,6 +6,12 @@
 .dialog label{display:grid;gap:6px;min-width:0}
 .dialog input,.dialog select,.dialog textarea{max-width:100%;min-width:0}
 .configLabel{margin-top:2px}
+.receiptSection{min-width:0;border-top:1px solid var(--line);padding-top:8px}
+.receiptSection>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;cursor:pointer;font-weight:650;list-style:none;overflow-wrap:anywhere}
+.receiptSection>summary::-webkit-details-marker{display:none}
+.receiptSection>summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+.receiptSection>summary>span{flex-shrink:0}
+.receiptFields{display:grid;gap:14px;min-width:0;margin:0;padding:14px 0 0;border:0}
 .periodPicker{display:grid;gap:10px;border:1px solid var(--line);border-radius:14px;padding:12px}
 .periodHeading{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;border:1px solid;border-radius:12px;padding:10px}
 .periodHeading>div{grid-column:1/-1;grid-row:1}

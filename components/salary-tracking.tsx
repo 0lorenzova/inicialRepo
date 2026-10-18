@@ -1,4 +1,5 @@
 "use client";
+import {SalaryPeriodActivation} from "./salary-period-activation";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useSalaryToday } from "./salary-earned-control";
 import { SalaryImport } from "./salary-import";
@@ -80,6 +81,7 @@ export function SalaryTracking({ledger,today:initialToday,display,onSave,onMovem
              <span>{salaryPeriodPaymentLabel(ledger,p)}{sum.early>0?" · Antes de la fecha de pago":""}{sum.laborAdvances>0?" · Adelanto laboral":""}{sum.late>0?" · Pago atrasado":""}<small className={styles.workState}>{sum.workState}</small></span>
             <div className={styles.periodAmounts}>{!sum.historicalEmpty&&<span>Esperado<strong className={styles.earned}>{sum.estimateKnown?display(sum.expected):"Sin proyección"}</strong></span>}<span>Recibido<strong className={styles.received}>{display(sum.received)}</strong></span><span>Pendiente confirmado<strong className={styles.pending}>{display(sum.pending)}</strong></span></div>
           </summary>
+          <SalaryPeriodActivation ledger={ledger} period={p} today={today} display={display} onSave={onSave}/>
           <p>Fecha prevista de pago: {day(p.payDate)} · Estado laboral: {sum.workState}</p>
           {p.scheduledWorkDays&&<small>{salaryWorkSchedule(p)}</small>}{(p.workedDays??[]).length>0&&<p>Días registrados como trabajados: {p.workedDays!.map(value=>day(value)).join(", ")}</p>}
           {!sum.historicalEmpty&&sum.estimateKnown&&p.concepts.map(c=><div className={styles.concept} key={c.id}><b>{c.name}</b><span>{display(c.amount)} · Recibido {display(salaryConceptPaid(ledger,p.id,c.id))}</span></div>)}

@@ -228,6 +228,18 @@ export function saveSalaryPeriod<T extends SalaryLedger>(ledger:T,requested:Sala
   const value={...requested,frequency:requested.frequency??state.configs.find(c=>c.id===requested.configId)?.frequency,concepts:requested.concepts.map(c=>({...c,name:c.name.trim()}))};
   return {...ledger,salary:{...state,periods:original?state.periods.map(p=>p.id===value.id?value:p):[...state.periods,value],audit:audit(state,value.id,"Guardar período",reason.trim(),original)}};
 }
+/** Explicitly recognize a past salary obligation without receiving or distributing money. */
+export function activateSalaryPeriod<T extends SalaryLedger>(ledger:T,requested:SalaryPeriod,today:string):T {
+  const period=salaryPeriodForDate(ledger,requested.configId,requested.start);
+  const original=salaryState(ledger).periods.find(p=>p.id===period.id)??null;
+  ensure(period.id===requested.id,"La semana cambió. Vuelve a seleccionarla.");
+  if(original?.earned)return ledger;
+  ensure(JSON.stringify(period)===JSON.stringify(requested),"Los datos de la semana cambiaron. Revísalos antes de activar.");
+  ensure(salaryPeriodPresentation(ledger,period,today).historicalEmpty,"Solo puedes activar una semana pasada sin pagos ni obligación confirmada.");
+  ensure(salaryHistoricalEstimate(ledger,period)!==null,"Configura las condiciones salariales vigentes de esta semana antes de activarla.");
+  ensure(salaryExpected(ledger,period,true)>0,"El importe confirmado debe ser mayor que cero para activar el pendiente.");
+  return saveSalaryPeriod(ledger,{...period,earned:true},original,today,"El usuario activó la semana como salario pendiente; no registra un ingreso.");
+}
 export type SalaryPaymentInput = { id:string; configId:string; date:string; amount:number; accountId:string; method:string; reference:string; notes:string; name?:string; applications:SalaryApplication[]; existingMovementId?:string; manual?:Record<string,string>; selections?:FundingSelection[]; allowAdvance?:boolean; preparedPeriod?:SalaryPeriod };
 export function salaryPeriodApplications(ledger:SalaryLedger,configId:string,periodId:string,amount:number,advanceDate?:string):SalaryApplication[] {
   void advanceDate;
