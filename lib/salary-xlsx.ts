@@ -30,12 +30,15 @@ export function salarySheetPreview(sheet:SalarySheet,fingerprint:string,filename
   const periods=starts.map((row,index)=>{
     const last=(starts[index+1]??Math.max(...rows)+1)-1;
     const id=`xlsx:${fingerprint}:Hoja1:${row}`,warnings:string[]=[];
+    if(cell("F",row)?.formula)warnings.push(`F${row}: inicio del período calculado; confirma el valor guardado.`);
+    if(cell("G",row)?.formula)warnings.push(`G${row}: fin del período calculado; confirma el valor guardado.`);
     const conceptRows=rows.filter(r=>r>=row&&r<=last&&value("H",r).trim()&&!/^(total|pendiente|abono|devengado|concepto)/i.test(value("H",r).trim()));
-    const concepts=conceptRows.map(r=>{const c=cell("I",r);if(!c?.value)warnings.push(`I${r}: importe devengado vacío; no equivale a cero.`);if(c?.formula)warnings.push(`I${r}: resultado guardado de una fórmula; comprueba su vigencia.`);return {id:`${id}:H${r}`,name:value("H",r).trim(),amount:c?.value??"",included:true};});
+    const concepts=conceptRows.map(r=>{const c=cell("I",r);if(cell("H",r)?.formula)warnings.push(`H${r}: nombre del concepto calculado; confirma el texto guardado.`);if(!c?.value)warnings.push(`I${r}: importe devengado vacío; no equivale a cero.`);if(c?.formula)warnings.push(`I${r}: resultado guardado de una fórmula; comprueba su vigencia.`);return {id:`${id}:H${r}`,name:value("H",r).trim(),amount:c?.value??"",included:true};});
     const receipts=["J","K","L","M"].flatMap(column=>{
       const amounts=Object.fromEntries(conceptRows.flatMap((r,i)=>{const c=cell(column,r);if(c?.formula)warnings.push(`${column}${r}: abono calculado; revisar el resultado guardado.`);return c&&(c.value!==""&&c.value!=="0"||c.formula&&c.value==="")?[[concepts[i].id,c.value]]:[];}));
       if(!Object.keys(amounts).length)return [];
-      const paymentDate=date(column,row-1);
+      const dateCell=cell(column,row-1),paymentDate=date(column,row-1);
+      if(dateCell?.formula)warnings.push(`${column}${row-1}: fecha del abono calculada; confirma la fecha real de recepción.`);
       if(!paymentDate)warnings.push(`${column}${row-1}: falta la fecha real del abono.`);
       return [{id:`${id}:payment:${column}`,column,date:paymentDate,movementId:"",mode:"review" as const,amounts}];
     });
