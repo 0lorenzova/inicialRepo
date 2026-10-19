@@ -35,6 +35,10 @@ export function salaryLocalToday(now = new Date()) {
   const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:SALARY_TIME_ZONE,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(now).map(p=>[p.type,p.value]));
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
+export function salaryLocalDateTime(now = new Date()) {
+  const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:SALARY_TIME_ZONE,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(now).map(p=>[p.type,p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
 export function canConfirmSalaryPeriod(period:string|{start:string;end:string;scheduledWorkDays?:number[]},today:string) {
   const end=typeof period==="string"?period:salaryWorkEnd(period);
   return validMovementDate(`${end}T12:00`)&&validMovementDate(`${today}T12:00`)&&end<today;

@@ -22,7 +22,7 @@ export function SalaryPeriodCalendar({ledger,config,selected,today,month,onMonth
         const firstEntry=week.find(Boolean),iso=firstEntry?isoWeek(firstEntry.date):null;
         const periods=[...new Map(week.filter(e=>e!==null).map(e=>[e.period.id,e])).values()];
         return <div className={styles.calendarWeek} key={row}>
-          <div className={styles.weekNumber}>{iso&&<span>{iso.week} · {iso.year}</span>}
+          <div className={styles.weekNumber}>{iso&&(config.frequency==="Semanal"&&periods.length===1?<button type="button" className={styles.weekJump} aria-label={`Seleccionar semana ${iso.week} de ${iso.year}`} title={description(firstEntry!)} onClick={()=>onSelect(firstEntry!.date)}>{iso.week} · {iso.year}</button>:<span>{iso.week} · {iso.year}</span>)}
             <div className={styles.statusDots}>{periods.map(entry=><button key={entry.period.id} type="button" className={styles.periodStatus} aria-label={`Seleccionar ${description(entry)}`} title={description(entry)} aria-pressed={entry.period.id===selected?.id} onClick={()=>onSelect(entry.date)}><span className={`${styles.statusDot} ${styles[entry.view.tone]}`} aria-hidden="true"/></button>)}</div>
           </div>
           {week.map((entry,i)=>entry?<button type="button" key={i} className={styles.calendarDay} data-today={entry.date===today} aria-current={entry.date===today?"date":undefined} data-outside={entry.date.slice(0,7)!==month} data-selected={entry.period.id===selected?.id} aria-pressed={entry.period.id===selected?.id} aria-label={`${entry.date} · ${description(entry)}`} title={description(entry)} onClick={()=>onSelect(entry.date)}>{Number(entry.date.slice(-2))}</button>:<span key={i}/>)}
