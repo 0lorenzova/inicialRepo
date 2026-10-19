@@ -1,7 +1,7 @@
 "use client";
 import {SalaryPeriodActivation} from "./salary-period-activation";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { salaryViewerDay, salaryDateLabel, salaryWorkSchedule } from "@/lib/salary-dates";
 import { SalaryAdjustments, SalaryEstimation } from "./salary-adjustments";
 import { salaryHistoricalEstimate, salaryPaymentConcepts, salaryTemporalLabel, salaryPeriodPaymentLabel, latestSalaryPeriodPending } from "@/lib/salary-tracking";
@@ -141,6 +141,16 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
     catch(cause) {setLocalError(cause instanceof Error?cause.message:"No se pudo cambiar de período.");}
   };
 
+  const handleKeyboardNavigation = (event: ReactKeyboardEvent<HTMLFormElement>) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const target = event.target;
+    if (target instanceof HTMLElement && (target.isContentEditable || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target instanceof HTMLInputElement && !["checkbox", "radio"].includes(target.type))) return;
+    if (event.key === "ArrowLeft") { event.preventDefault(); movePeriod(-1); }
+    else if (event.key === "ArrowRight") { event.preventDefault(); movePeriod(1); }
+    else if (event.key === "ArrowDown") { event.preventDefault(); setFormExpanded(true); }
+    else if (event.key === "ArrowUp") { event.preventDefault(); setFormExpanded(false); }
+  };
+
   const changeConfig = (nextConfigId: string) => {
     setConfigId(nextConfigId);
     const receiptDefaults=salaryReceiptDefaults(ledger,nextConfigId);
@@ -211,7 +221,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   </FinanceDialog>;
 
   return <FinanceDialog label="Registrar salario" onClose={onClose} maxWidth={620}>
-    <form className={`flow-modal flow-body ${styles.dialog}`} onSubmit={onSubmit}>
+    <form className={`flow-modal flow-body ${styles.dialog}`} onSubmit={onSubmit} onKeyDown={handleKeyboardNavigation}>
       <header><div><small>INGRESO SALARIAL</small><h2>Registrar salario</h2></div><button type="button" aria-label="Cerrar" onClick={onClose}>×</button></header>
       <label className={styles.configLabel}>Configuración salarial<select value={configId} onChange={event => changeConfig(event.target.value)}>{state.configs.map(item => <option key={item.id} value={item.id}>{item.employer} · {item.name}{item.active ? "" : " (inactiva)"}</option>)}</select></label>
       {config && <>
@@ -222,6 +232,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
             <button type="button" className="secondary" aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}>›</button>
             <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Navegar en el calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar calendario":"Navegar en el calendario"}</button>
           </div>
+          <small className={styles.keyboardHelp}>Teclado: ←/→ cambia de semana · ↓ muestra el formulario · ↑ lo oculta</small>
           {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(period.payDate)}</b></span>{!presentation?.historicalEmpty&&<span>Esperado: <b>{presentation?.estimateKnown?display(expectedAmount):"Sin proyección"}</b></span>}</div>}
           {period?.scheduledWorkDays&&<small className={styles.workDays}>{salaryWorkSchedule(period)}</small>}
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}

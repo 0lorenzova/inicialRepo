@@ -1,3 +1,9 @@
+## Entrega 0.1.77 — plantilla para semana salarial histórica
+- En Registrar salario, semana actual y calendario permanecen igual. El selector histórico ahora abre un formulario precargado con pago previsto, trabajo previsto y conceptos; permite revisar el pago y los conceptos antes de guardar la semana como pendiente. La casilla parpadea a 1 Hz mientras la revisión está abierta; cancelar detiene el parpadeo. Guardar no crea un movimiento ni registra dinero.
+- Flechas izquierda/derecha cambian la semana; abajo abre el formulario de cobro y arriba lo oculta, excepto al editar campos para conservar las teclas de navegación nativas. La activación histórica ya no bloquea el acceso a la plantilla por falta de estimación conocida.
+- Aclaración del historial: 0.1.63 implementó una casilla de activación directa y deshabilitada cuando faltaba estimación; no dejó una plantilla de semana histórica. Las plantillas de distribución existentes son otra función.
+- `npx tsc --noEmit --incremental false` y `npm run build` aprobados. No se ejecutaron pruebas automatizadas ni revisión visual.
+
 ## Entrega 0.1.76 · 19 octubre 2026
 - El editor de aportes recurrentes permite guardar la última fecha de la serie. Se conserva la fecha en el JSON existente; el calendario y los recordatorios dejan de proyectar aportes posteriores. La repetición permanece manual y requiere confirmación. `verify-envelope-settings.mjs`, TypeScript, lint afectado y build pasan; QA visual pendiente.
 

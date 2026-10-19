@@ -278,11 +278,12 @@ export function activateSalaryPeriod<T extends SalaryLedger>(ledger:T,requested:
   const original=salaryState(ledger).periods.find(p=>p.id===period.id)??null;
   ensure(period.id===requested.id,"La semana cambió. Vuelve a seleccionarla.");
   if(original?.earned)return ledger;
-  ensure(JSON.stringify(period)===JSON.stringify(requested),"Los datos de la semana cambiaron. Revísalos antes de activar.");
   ensure(salaryPeriodPresentation(ledger,period,today).historicalEmpty,"Solo puedes activar una semana pasada sin pagos ni obligación confirmada.");
-  ensure(salaryHistoricalEstimate(ledger,period)!==null,"Configura las condiciones salariales vigentes de esta semana antes de activarla.");
-  ensure(salaryExpected(ledger,period,true)>0,"El importe confirmado debe ser mayor que cero para activar el pendiente.");
-  return saveSalaryPeriod(ledger,{...period,earned:true},original,today,"El usuario activó la semana como salario pendiente; no registra un ingreso.");
+  ensure(requested.configId===period.configId&&requested.start===period.start&&requested.end===period.end,"La plantilla debe conservar las fechas de la semana seleccionada.");
+  ensure(requested.frequency===period.frequency&&JSON.stringify(requested.scheduledWorkDays??[])===JSON.stringify(period.scheduledWorkDays??[]),"La jornada de la semana cambió. Vuelve a revisarla.");
+  const reviewed={...period,payDate:requested.payDate,concepts:requested.concepts.map(concept=>({...concept})),earned:true};
+  ensure(salaryExpected(ledger,reviewed,true)>0,"El importe confirmado debe ser mayor que cero para activar el pendiente.");
+  return saveSalaryPeriod(ledger,reviewed,original,today,"El usuario revisó y guardó la plantilla de la semana histórica como salario pendiente; no registra un ingreso.");
 }
 export type SalaryPaymentInput = { id:string; configId:string; date:string; amount:number; accountId:string; method:string; reference:string; notes:string; name?:string; applications:SalaryApplication[]; existingMovementId?:string; manual?:Record<string,string>; selections?:FundingSelection[]; allowAdvance?:boolean; preparedPeriod?:SalaryPeriod };
 export function salaryPeriodApplications(ledger:SalaryLedger,configId:string,periodId:string,amount:number,advanceDate?:string):SalaryApplication[] {
