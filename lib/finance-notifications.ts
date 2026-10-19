@@ -1,7 +1,7 @@
 import { envelopeLabel } from "./envelope-label";
 import { globalPlanningItems, plannedPaymentDelay, plannedPaymentDelayText, type PlanningEnvelope, type PlanningItem } from "./envelope-planning";
 import { getTemporalState, type GoalTemporalState } from "./envelope-goals";
-import type { LedgerMovement } from "./finance-ledger";
+import type { LedgerMovement, Loan } from "./finance-ledger";
 import { isRecurrenceDue, recurrenceDueDate, type Recurrence } from "./finance-recurrence";
 
 export const notificationTones = ["Suave", "Campana", "Breve"] as const;
@@ -17,14 +17,14 @@ export type NotificationState = {
   dismissedIds: string[];
   deliveredIds: string[];
 };
-export type NotificationDestination = { page: "Movimientos" | "Recordatorios" | "Cronograma"; movementId?: string; envelopeId?: string; itemId?: string; itemKind?: PlanningItem["kind"] };
+export type NotificationDestination = { page: "Movimientos" | "Recordatorios" | "Cronograma" | "Préstamos"; movementId?: string; envelopeId?: string; itemId?: string; itemKind?: PlanningItem["kind"] };
 export type FinanceNotification = {
   id: string;
   title: string;
   detail: string;
   date: string;
   amount: number;
-  kind: "movement" | "reminder" | "attention";
+  kind: "movement" | "reminder" | "attention" | "loan";
   tone?: GoalTemporalState["tone"];
   covered?: boolean;
   plannedLate?: boolean;
@@ -62,7 +62,7 @@ export function normalizeNotificationState(value?: Partial<NotificationState> | 
 
 // Notification contents are projections of the ledger and due reminders. Only
 // read/dismiss/delivery preferences are persisted; no financial copy is created.
-export function deriveFinanceNotifications(movements: LedgerMovement[], envelopes: NotificationEnvelope[], today: string): FinanceNotification[] {
+export function deriveFinanceNotifications(movements: LedgerMovement[], envelopes: NotificationEnvelope[], today: string, loans: Loan[] = []): FinanceNotification[] {
   const result = new Map<string, FinanceNotification>();
   // Ordinary activity belongs exclusively to Movimientos.
   void movements;
@@ -81,6 +81,30 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
       id, title: "Aporte pendiente", detail: `${envelopeLabel(envelope.name)}. ${temporal.explanation}`, tone: temporal.tone,
       amount: envelope.recurrence.amount, date: `${dueDate}T00:00`, kind: "reminder",
       destination: { page: "Recordatorios", envelopeId: envelope.id },
+    });
+  }
+  for (const loan of loans) {
+    if (!loan.dueDate || !Number.isSafeInteger(loan.outstanding) || loan.outstanding <= 0) continue;
+    let daysRemaining: number;
+    let temporal: GoalTemporalState;
+    try {
+      const state = getTemporalState(loan.dueDate, today);
+      daysRemaining = state.daysRemaining;
+      if (daysRemaining > 0 || !state.temporal) continue;
+      temporal = state.temporal;
+    } catch {
+      // Older or imported malformed data should not break the notification list.
+      continue;
+    }
+    const stage = daysRemaining < 0 ? "overdue" : "today";
+    const id = `loan:${encodeURIComponent(loan.id)}:${loan.dueDate}:${stage}`;
+    const title = stage === "overdue" ? "Devolución de préstamo vencida" : "Devolución de préstamo vence hoy";
+    const detail = stage === "overdue"
+      ? `${loan.targetName} debe devolver a ${loan.sourceName}. La fecha límite pasó hace ${Math.abs(daysRemaining)} ${Math.abs(daysRemaining) === 1 ? "día" : "días"}.`
+      : `${loan.targetName} debe devolver a ${loan.sourceName}. La fecha límite es hoy.`;
+    result.set(id, {
+      id, title, detail, date: `${loan.dueDate}T00:00`, amount: loan.outstanding, kind: "loan", tone: temporal.tone,
+      destination: { page: "Préstamos" },
     });
   }
   // Overdue obligations first, then nearest deadline. IDs keep delivery idempotent.

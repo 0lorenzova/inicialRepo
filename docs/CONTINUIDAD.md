@@ -1,6 +1,10 @@
+## Entrega 0.1.75 · 19 octubre 2026
+- La campana global y la atención inicial incluyen devoluciones de préstamos con fecha límite alcanzada o vencida y saldo pendiente. El aviso de hoy cambia una sola vez a vencido al pasar el día; préstamos cerrados, sin fecha, futuros o con fechas inválidas no generan avisos.
+- Los eventos se derivan del préstamo, respetan la privacidad global y abren Gestión de préstamos. No crean movimientos, alteran saldos ni devuelven dinero. `verify-finance-notifications.mjs`, TypeScript, ESLint afectado, `git diff --check` y build pasan. QA visual pendiente; publicación aún no confirmada.
+
 ## Entrega 0.1.74 · 19 octubre 2026
 - Al crear un préstamo entre sobres, la fecha límite de devolución es opcional. Gestión de préstamos la muestra como próxima, hoy o vencida; para históricos sin dato indica que no tienen fecha límite.
-- La fecha se conserva en el préstamo y en las devoluciones parciales. Es solo informativa: no registra devoluciones ni cambia calendarios/avisos globales. `verify-envelope-operation.mjs`, `verify-finance-ledger.mjs`, `verify-finance-history.mjs`, TypeScript, ESLint afectado y build pasan; QA visual pendiente.
+- La fecha se conserva en el préstamo y en las devoluciones parciales. La integración de avisos globales se añadió en 0.1.75. `verify-envelope-operation.mjs`, `verify-finance-ledger.mjs`, `verify-finance-history.mjs`, TypeScript, ESLint afectado y build pasan; QA visual pendiente. Production para `d3dd868` quedó sin confirmación accesible en esta sesión.
 
 ## Entrega 0.1.73 · 19 octubre 2026 — publicada
 - Gestión salarial explica cómo registrar por separado varios depósitos recibidos en fechas distintas: seleccionar un grupo de períodos por ingreso, confirmar su fecha real y repetir. Cada confirmación conserva su propio movimiento y fecha.

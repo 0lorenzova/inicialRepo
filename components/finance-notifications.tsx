@@ -11,7 +11,7 @@ import {
   type NotificationState, type NotificationTone, type NotificationUpdate,
 } from "@/lib/finance-notifications";
 import { playNotificationTone, stopNotificationAudio, supportsNotificationAudio } from "@/lib/notification-audio";
-import type { LedgerMovement } from "@/lib/finance-ledger";
+import type { LedgerMovement, Loan } from "@/lib/finance-ledger";
 import styles from "./finance-notifications.module.css";
 
 const dateLabel = (date: string) => {
@@ -31,7 +31,7 @@ function subscribeCapabilities(listener: () => void) {
 const serverCapabilities = () => "unsupported|silent";
 
 export function FinanceNotifications({
-  state, onChange, movements, envelopes, today, ready = true, privateMode = false,
+  state, onChange, movements, envelopes, loans, today, ready = true, privateMode = false,
   onNavigate, open, onOpen, onClose, renderPayment,
 }: {
   renderPayment: (destination: NotificationDestination) => ReactNode;
@@ -39,6 +39,7 @@ export function FinanceNotifications({
   onChange: NotificationUpdate;
   movements: LedgerMovement[];
   envelopes: NotificationEnvelope[];
+  loans: Loan[];
   today: string;
   ready?: boolean;
   privateMode?: boolean;
@@ -51,7 +52,7 @@ export function FinanceNotifications({
   const [pageSize, setPageSize] = useState(20);
   const attempted = useRef(new Set<string>());
   const activeNotices = useRef(new Set<Notification>());
-  const events = useMemo(() => deriveFinanceNotifications(movements, envelopes, today), [movements, envelopes, today]);
+  const events = useMemo(() => deriveFinanceNotifications(movements, envelopes, today, loans), [movements, envelopes, today, loans]);
   const visible = useMemo(() => visibleNotifications(state, events), [state, events]);
   const read = useMemo(() => new Set(initializeNotifications(state, events).readIds), [state, events]);
   const unread = state.internal ? visible.filter(event => !read.has(event.id)).length : 0;

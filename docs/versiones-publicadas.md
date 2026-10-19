@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual publicada es 0.1.73; la siguiente versión con nuevos cambios será 0.1.74.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La última entrega con éxito Production confirmada en este historial es 0.1.73 (`166549c`). Se envió 0.1.74 (`d3dd868`), pero no se pudo consultar su estado de Production desde esta sesión. El código actual es 0.1.75; cada versión se declara publicada solo después de confirmar Production `success`.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -118,6 +118,10 @@ Un abono parcial solo queda vencido si el período fue confirmado como devengado
 ## Entrega 0.1.74
 - Fecha límite opcional al registrar préstamos entre sobres, visible en su listado como próxima, de hoy o vencida. Se conserva tras devoluciones parciales; sin devoluciones automáticas ni cambios a notificaciones globales.
 - `verify-envelope-operation.mjs`, `verify-finance-ledger.mjs`, `verify-finance-history.mjs`, TypeScript, ESLint afectado y build de producción pasan; QA visual pendiente.
+
+## Entrega 0.1.75
+- Avisos globales de devolución de préstamo para fecha límite de hoy o vencida y saldo abierto, incluidos en campana y atención inicial; privacidad global conservada y apertura directa de Gestión de préstamos.
+- Los avisos son derivados: no registran devoluciones, movimientos ni cambios de saldo. El estado de Production se confirmará después de que Vercel procese el commit.
 
 ## Entrega 0.1.73 · 19 octubre 2026 — publicada
 - Gestión salarial indica el flujo para separar depósitos con fechas reales distintas: seleccionar únicamente los períodos de cada depósito, registrarlo con su fecha y repetir para el siguiente.
