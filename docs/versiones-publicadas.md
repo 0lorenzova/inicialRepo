@@ -130,7 +130,7 @@ Un abono parcial solo queda vencido si el período fue confirmado como devengado
 - Gestión salarial reparte períodos confirmados entre varios depósitos. Fechas exactas crean un movimiento por depósito; fechas aproximadas o desconocidas se guardan como histórico sin movimiento ni cambios de saldo, y se muestran con esa precisión.
 - Aguinaldo y vacaciones presentan estimaciones del régimen general del sector privado de Costa Rica basadas en períodos salariales confirmados. Se informan cruces, vacíos y ajustes sin confirmar; se puede registrar lo reconocido, recibido y disfrutado sin crear movimientos.
 - Falta el QA de sincronización real en dos dispositivos con una cuenta de prueba aislada. Las migraciones SQL ya aplicadas no deben repetirse.
-- TypeScript y ESLint dirigido pasaron; el build de producción y `git diff --check` también pasaron. No se ejecutaron pruebas automatizadas. Production queda pendiente de confirmar por SHA después del push; no afirmar publicación antes de `success`.
+- TypeScript y ESLint dirigido pasaron; el build de producción y `git diff --check` también pasaron. No se ejecutaron pruebas automatizadas. Vercel confirmó Production `success` para `848916e` el 19 de octubre de 2026 a las 03:06:52 UTC: https://inicial-repo-lt2ziv5rk-myself-e673.vercel.app.
 
 ## Entrega 0.1.73 · 19 octubre 2026 — publicada
 - Gestión salarial indica el flujo para separar depósitos con fechas reales distintas: seleccionar únicamente los períodos de cada depósito, registrarlo con su fecha y repetir para el siguiente.
