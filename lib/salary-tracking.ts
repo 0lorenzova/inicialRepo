@@ -440,18 +440,18 @@ export function recordStandardSalaryPayment<T extends SalaryLedger>(ledger:T,per
   const original=state.periods.find(item=>item.id===period.id)??null;
   if(original)ensure(JSON.stringify(original)===JSON.stringify(period),"La semana cambió. Vuelve a seleccionarla.");
   else ensure(currentPeriod.start===period.start&&currentPeriod.end===period.end,"La semana cambió. Vuelve a seleccionarla.");
-  const defaults=standardSalaryReceipt(ledger,period,input.today);
-  ensure(defaults,"Esta semana necesita revisión antes de registrar el salario.");
+  const amount=standardSalaryAmount(ledger,period,input.today);
+  ensure(amount!==null,"Esta semana necesita revisión antes de registrar el salario.");
   ensure(ledger.accounts.some(account=>account.id===input.accountId&&account.active),"Selecciona una cuenta receptora activa.");
   ensure(incomeReceptionMethods.includes(input.method as typeof incomeReceptionMethods[number]),"Selecciona un medio de recepción válido.");
   const confirmedPeriod={...period,earned:period.earned||canConfirmSalaryPeriod(period,input.today)};
   const confirmWork=confirmedPeriod.earned&&!period.earned;
   const applicationLedger=original?ledger:{...ledger,salary:{...state,periods:[...state.periods,confirmedPeriod]}};
-  const applications=salaryPeriodApplications(applicationLedger,config.id,period.id,defaults.amount);
+  const applications=salaryPeriodApplications(applicationLedger,config.id,period.id,amount);
   const operation=(current:T):T=>{
     const currentOriginal=salaryState(current).periods.find(item=>item.id===period.id)??null;
     const prepared=confirmWork?saveSalaryPeriod(current,confirmedPeriod,currentOriginal,input.today,"Semana estándar confirmada junto con el registro del ingreso salarial"):current;
-    return postSalaryPayment(prepared,{id:input.id,configId:config.id,date:input.date,amount:defaults.amount,accountId:input.accountId,method:input.method,reference:"",notes:"",name:`Salario · ${config.employer} · ${salaryPeriodLabel(period,config)}`,applications,manual:{},selections:[],preparedPeriod:original||confirmWork?undefined:confirmedPeriod},input.today);
+    return postSalaryPayment(prepared,{id:input.id,configId:config.id,date:input.date,amount,accountId:input.accountId,method:input.method,reference:"",notes:"",name:`Salario · ${config.employer} · ${salaryPeriodLabel(period,config)}`,applications,manual:{},selections:[],preparedPeriod:original||confirmWork?undefined:confirmedPeriod},input.today);
   };
   return operation(ledger);
 }
@@ -503,18 +503,43 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   return {...amounts,expected,remaining,confirmed,fullyPaid,noRecords,historicalEmpty,estimateKnown,early,late,advances:early,laborAdvances,hasAdvance:early>0||laborAdvances>0,workEnd,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
 }
 export type StandardSalaryReceipt={amount:number;accountId:string;method:string};
-/** A one-click receipt is available only for a known, unmodified weekly estimate. */
-export function standardSalaryReceipt(ledger:SalaryLedger,period:SalaryPeriod,today:string,fallbackAccountId=""):StandardSalaryReceipt|null {
+/** Returns a safe full-week amount only when every saved addition is confirmed. */
+export function standardSalaryAmount(ledger:SalaryLedger,period:SalaryPeriod,today:string):number|null {
   const state=salaryState(ledger),config=state.configs.find(item=>item.id===period.configId);
   if(!config||(period.frequency??config.frequency)!=="Semanal")return null;
   const view=salaryPeriodPresentation(ledger,period,today);
   if(!view.estimateKnown||view.paymentCount||view.received||view.expected<=0)return null;
-  if(state.periodAdjustments?.some(item=>item.configId===period.configId&&item.periodId===period.id&&item.items.length))return null;
+  if(state.payments.some(payment=>!payment.voidReason&&payment.configId===period.configId&&payment.applications.some(application=>application.periodId===period.id)))return null;
+  const adjustments=salaryAdjustments(ledger,period);
+  if(adjustments.some(item=>item.status!=="confirmed"||item.sign!=="add"))return null;
+  if(view.expected!==salaryExpected(ledger,period,true))return null;
+  return view.expected;
+}
+/** A one-click receipt also needs an unambiguous configured destination account. */
+export function standardSalaryReceipt(ledger:SalaryLedger,period:SalaryPeriod,today:string,fallbackAccountId=""):StandardSalaryReceipt|null {
+  const amount=standardSalaryAmount(ledger,period,today);
+  if(amount===null)return null;
+  const state=salaryState(ledger),config=state.configs.find(item=>item.id===period.configId);
+  if(!config)return null;
   const defaults=salaryReceiptDefaults(ledger,config.id);
-  const accountId=ledger.accounts.find(account=>account.active&&account.id===defaults.accountId)?.id
+  const activeAccounts=ledger.accounts.filter(account=>account.active);
+  const accountId=activeAccounts.find(account=>account.id===defaults.accountId)?.id
     ??ledger.accounts.find(account=>account.active&&account.id===fallbackAccountId)?.id
-    ??ledger.accounts.find(account=>account.active)?.id;
-  return accountId?{amount:view.expected,accountId,method:defaults.method}:null;
+    ??(activeAccounts.length===1?activeAccounts[0].id:"");
+  return accountId?{amount,accountId,method:defaults.method}:null;
+}
+/** Keeps an already recorded salary movement on the detailed linking path instead of creating a second income. */
+export function hasUnlinkedSalaryIncome(ledger:SalaryLedger,period:SalaryPeriod,amount:number,accountId:string) {
+  const config=salaryState(ledger).configs.find(item=>item.id===period.configId);
+  if(!config||!accountId)return false;
+  const linked=new Set(salaryState(ledger).payments.filter(payment=>!payment.voidReason&&!payment.historical).map(payment=>payment.movementId));
+  const employer=normalizeSalaryName(config.employer);
+  return ledger.movements.some(movement=>movement.type==="Ingreso"&&!linked.has(movement.id)&&movement.accountId===accountId&&movement.amount===amount&&(
+    normalizeSalaryName(movement.category??"")==="salario"||
+    normalizeSalaryName(movement.name).includes("salario")||
+    normalizeSalaryName(movement.name).includes("sueldo")||
+    (employer.length>=3&&normalizeSalaryName(movement.name).includes(employer))
+  ));
 }
 export function salaryPaymentTiming(period:SalaryPeriod,receivedAt:string) {
   const receivedDay=salaryReceiptDay(receivedAt);

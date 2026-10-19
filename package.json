@@ -1,12 +1,13 @@
 {
   "name": "app-finanzas",
-  "version": "0.1.81",
+  "version": "0.1.82",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "verify:salary-quick": "node --import ./scripts/register-local-typescript.mjs scripts/verify-salary-quick-registration.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
