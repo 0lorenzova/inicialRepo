@@ -39,6 +39,8 @@ const reorderedThresholds = { ...goalOriginal, goalThresholds: { red: 5, green: 
 assert.equal(saveGoalSettings([live], { ...goalOriginal, goalDisplay: "surplus" }, reorderedThresholds)[0].goalDisplay, "surplus");
 const customOriginal = { ...goalOriginal, recurrence: { amount: 100, frequency: "Personalizado", intervalDays: 10, nextDate: "2026-10-01" } };
 assert.equal(saveGoalSettings([customOriginal], { ...customOriginal, recurrence: { ...customOriginal.recurrence, intervalDays: 15 } }, customOriginal)[0].recurrence.intervalDays, 15);
+const boundedOriginal = { ...customOriginal, recurrence: { ...customOriginal.recurrence, endDate: "2026-12-31" } };
+assert.equal(saveGoalSettings([boundedOriginal], { ...boundedOriginal, recurrence: { ...boundedOriginal.recurrence, endDate: "2027-03-01" } }, boundedOriginal)[0].recurrence.endDate, "2027-03-01");
 assert.throws(() => saveGoalSettings([{ ...customOriginal, recurrence: { ...customOriginal.recurrence, intervalDays: 20 } }], { ...customOriginal, recurrence: { ...customOriginal.recurrence, intervalDays: 15 } }, customOriginal), /cambió/);
 assert.throws(() => saveGoalSettings([customOriginal], { ...customOriginal, recurrence: { ...customOriginal.recurrence, intervalDays: 0 } }, customOriginal), /cantidad de días/);
 console.log("OK: edición de sobres conserva saldo vigente y aportes actualizados; detecta edición concurrente y archivado.");

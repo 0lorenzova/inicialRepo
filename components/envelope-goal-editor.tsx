@@ -38,6 +38,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
   const [frequency, setFrequency] = useState<Recurrence["frequency"]>(envelope.recurrence?.frequency ?? "Mensual");
   const [intervalDays, setIntervalDays] = useState(String(envelope.recurrence?.intervalDays ?? 15));
   const [nextDate, setNextDate] = useState(() => envelope.recurrence?.nextDate ?? nextContributionDate(today, "Mensual"));
+  const [endDate, setEndDate] = useState(envelope.recurrence?.endDate ?? "");
   const [error, setError] = useState("");
   const submitting = useRef(false);
 
@@ -76,6 +77,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
         recurrence = {
           ...envelope.recurrence,
           amount: numeric(recurringAmount), frequency, nextDate,
+          endDate: endDate || undefined,
           anchorDay: nextDate===envelope.recurrence?.nextDate ? envelope.recurrence.anchorDay : Number(nextDate.slice(-2)),
           intervalDays: frequency === "Personalizado" ? numeric(intervalDays) : undefined,
           snoozedUntil: nextDate === envelope.recurrence?.nextDate ? envelope.recurrence?.snoozedUntil : undefined,
@@ -129,6 +131,9 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
             <label htmlFor={`${id}-next-date`}>Próximo aporte</label>
             <input id={`${id}-next-date`} type="date" value={nextDate} onChange={event => setNextDate(event.target.value)} />
             <p className={styles.hint}>{nextDate && !Number.isNaN(new Date(`${nextDate}T12:00:00Z`).getTime()) ? `Próximo aporte: ${dateLabel(nextDate)}. ` : ""}Al cambiar la frecuencia se propone una fecha desde hoy; puedes ajustarla.</p>
+            <label htmlFor={`${id}-end-date`}>Última fecha del aporte (opcional)</label>
+            <input id={`${id}-end-date`} type="date" value={endDate} onChange={event => setEndDate(event.target.value)} />
+            <p className={styles.hint}>Después de esta fecha la programación termina. Los aportes siguen requiriendo confirmación manual.</p>
           </div>}
         </section>
         {error && <p className={styles.error} role="alert">{error}</p>}

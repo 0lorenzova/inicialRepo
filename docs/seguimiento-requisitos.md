@@ -20,7 +20,7 @@ Auditoría limitada a los pedidos disponibles en el chat, documentos recientes, 
 | P01 | Proximidad, cobertura y visibilidad independientes | IMPLEMENTADO Y VERIFICADO | envelope-planning; indicadores conservan cinco colores funcionales | QA de combinación de cuatro colores en un día sigue pendiente | Alta |
 | P02 | Fecha prevista independiente y persistente por ocurrencia | IMPLEMENTADO Y VERIFICADO | 1fb6765, planned-payment, calendar-futures | Ninguna identificada en cálculo | Alta |
 | P03 | Calendario semana inicial, navegación plegada y accesos rápidos | IMPLEMENTADO Y VERIFICADO | 1fb6765; revisión local del calendario móvil | Ninguna identificada | Media |
-| P04 | Recurrencias futuras virtuales, excepciones y finalización | IMPLEMENTADO PARCIALMENTE | 5cb3ba8; verify-calendar-futures | Editor de fecha final no existe; dato endDate sí se respeta | Media |
+| P04 | Recurrencias futuras virtuales, excepciones y finalización | IMPLEMENTADO | 5cb3ba8 y 0.1.76; verify-calendar-futures, verify-envelope-settings | QA visual del editor de fecha final pendiente | Media |
 | P05 | Tooltip estable mientras permanece el cursor | IMPLEMENTADO PARCIALMENTE | Ancla estable y Tooltip interactivo | Prueba física de hover sostenido | Media |
 | P06 | Menú contextual mantiene sobre; iconos y acciones financieras | IMPLEMENTADO Y VERIFICADO | Informe complementario11oct; menú Hogar local | Gestos físicos y revisión exhaustiva de todos los contextos | Media |
 | H01 | Historial separado/cronológico y detalle textual reutilizado | IMPLEMENTADO Y VERIFICADO | 7a22e2f/bd26a7e; CONTINUIDAD13oct | Ninguna identificada | Media |

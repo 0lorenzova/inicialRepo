@@ -1,6 +1,9 @@
+## Entrega 0.1.76 · 19 octubre 2026
+- El editor de aportes recurrentes permite guardar la última fecha de la serie. Se conserva la fecha en el JSON existente; el calendario y los recordatorios dejan de proyectar aportes posteriores. La repetición permanece manual y requiere confirmación. `verify-envelope-settings.mjs`, TypeScript, lint afectado y build pasan; QA visual pendiente.
+
 ## Entrega 0.1.75 · 19 octubre 2026
 - La campana global y la atención inicial incluyen devoluciones de préstamos con fecha límite alcanzada o vencida y saldo pendiente. El aviso de hoy cambia una sola vez a vencido al pasar el día; préstamos cerrados, sin fecha, futuros o con fechas inválidas no generan avisos.
-- Los eventos se derivan del préstamo, respetan la privacidad global y abren Gestión de préstamos. No crean movimientos, alteran saldos ni devuelven dinero. `verify-finance-notifications.mjs`, TypeScript, ESLint afectado, `git diff --check` y build pasan. QA visual pendiente; publicación aún no confirmada.
+- Los eventos se derivan del préstamo, respetan la privacidad global y abren Gestión de préstamos. No crean movimientos, alteran saldos ni devuelven dinero. `verify-finance-notifications.mjs`, TypeScript, ESLint afectado, `git diff --check` y build pasan. QA visual pendiente; commit `bcef97a` enviado a `main`, Production no se pudo verificar en esta sesión.
 
 ## Entrega 0.1.74 · 19 octubre 2026
 - Al crear un préstamo entre sobres, la fecha límite de devolución es opcional. Gestión de préstamos la muestra como próxima, hoy o vencida; para históricos sin dato indica que no tienen fecha límite.
