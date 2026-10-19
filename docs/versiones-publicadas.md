@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La última entrega con éxito Production confirmada en este historial es 0.1.73 (`166549c`). Se enviaron 0.1.74 (`d3dd868`) y 0.1.75 (`bcef97a`), pero no se pudo consultar su estado de Production desde esta sesión. El código actual es 0.1.76; cada versión se declara publicada solo después de confirmar Production `success`.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. El código previo a esta ronda era 0.1.77; la entrega siguiente es 0.1.78. La última entrega con éxito Production confirmada en este historial es 0.1.73 (`166549c`). Se enviaron 0.1.74 (`d3dd868`) y 0.1.75 (`bcef97a`), pero no se pudo consultar su estado de Production desde esta sesión. Cada versión se declara publicada solo después de confirmar Production `success`.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -125,6 +125,12 @@ Un abono parcial solo queda vencido si el período fue confirmado como devengado
 
 ## Entrega 0.1.76
 - Campo para limitar la última fecha de una recurrencia, usando el dato `endDate` que ya respetaban el calendario y la lógica de aportes. Production pendiente de confirmar.
+
+## Entrega 0.1.78
+- Gestión salarial reparte períodos confirmados entre varios depósitos. Fechas exactas crean un movimiento por depósito; fechas aproximadas o desconocidas se guardan como histórico sin movimiento ni cambios de saldo, y se muestran con esa precisión.
+- Aguinaldo y vacaciones presentan estimaciones del régimen general del sector privado de Costa Rica basadas en períodos salariales confirmados. Se informan cruces, vacíos y ajustes sin confirmar; se puede registrar lo reconocido, recibido y disfrutado sin crear movimientos.
+- Falta el QA de sincronización real en dos dispositivos con una cuenta de prueba aislada. Las migraciones SQL ya aplicadas no deben repetirse.
+- TypeScript y ESLint dirigido pasaron; el build de producción y `git diff --check` también pasaron. No se ejecutaron pruebas automatizadas. Production queda pendiente de confirmar por SHA después del push; no afirmar publicación antes de `success`.
 
 ## Entrega 0.1.73 · 19 octubre 2026 — publicada
 - Gestión salarial indica el flujo para separar depósitos con fechas reales distintas: seleccionar únicamente los períodos de cada depósito, registrarlo con su fecha y repetir para el siguiente.

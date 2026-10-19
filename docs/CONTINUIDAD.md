@@ -1,3 +1,13 @@
+## Corrección local — guardar una semana histórica también registra el ingreso
+- Aclaración del propietario: en Registrar salario, la casilla abre y deja parpadeando la plantilla precargada mientras se revisa; el mismo botón Guardar confirma los datos de la semana y registra el ingreso salarial con cuenta y fecha real. Ya no se guarda como pendiente por separado en este flujo.
+- Resumen del período y Gestión salarial conservan su acción separada para guardar una semana pendiente. La corrección es local y no se publicó; TypeScript pasa. No se ejecutaron pruebas automatizadas ni revisión visual.
+
+## Entrega 0.1.78 — depósitos múltiples y beneficios CR
+- Preparación de varios depósitos independientes con fecha exacta, aproximada o desconocida. Los históricos no crean ingresos ni cambian saldos; fecha aproximada/desconocida no se usa para marcar adelantos o pagos atrasados.
+- Estimación de aguinaldo según salarios ordinarios y extraordinarios del período 1 diciembre–30 noviembre, y seguimiento de vacaciones por ciclos de 50 semanas. Solo suma períodos completos, confirmados y dentro del rango; resalta datos faltantes y tipos excluidos. No modela salario en especie, incapacidades, interrupciones ni modalidades especiales.
+- QA real de sincronización requiere dos sesiones/dispositivos y cuenta aislada; SQL ya aplicado el 17 octubre, no repetir.
+- Versión elevada a 0.1.78. TypeScript, ESLint dirigido, build de producción y `git diff --check` pasan; no se ejecutaron pruebas automatizadas. Push y confirmación Production por SHA pendientes.
+
 ## Entrega 0.1.77 — plantilla para semana salarial histórica
 - En Registrar salario, semana actual y calendario permanecen igual. El selector histórico ahora abre un formulario precargado con pago previsto, trabajo previsto y conceptos; permite revisar el pago y los conceptos antes de guardar la semana como pendiente. La casilla parpadea a 1 Hz mientras la revisión está abierta; cancelar detiene el parpadeo. Guardar no crea un movimiento ni registra dinero.
 - Flechas izquierda/derecha cambian la semana; abajo abre el formulario de cobro y arriba lo oculta, excepto al editar campos para conservar las teclas de navegación nativas. La activación histórica ya no bloquea el acceso a la plantilla por falta de estimación conocida.

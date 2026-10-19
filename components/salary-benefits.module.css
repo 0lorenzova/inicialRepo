@@ -1,0 +1,29 @@
+.panel{display:grid;gap:12px;min-width:0;border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:14px}
+.panel>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:650;overflow-wrap:anywhere}
+.panel>summary:focus-visible,.sources>summary:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:6px}
+.panel p{margin:0;line-height:1.55}
+.card{display:grid;gap:10px;min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px}
+.heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0}
+.heading h2{margin:0;font-size:19px}
+.heading>div{display:grid;gap:4px}
+.heading small{color:var(--muted)}
+.heading label{display:grid;gap:4px;font-size:12px}
+.heading select{max-width:180px}
+.values{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px}
+.values span{min-width:0;border-radius:9px;background:var(--pale);padding:9px;font-size:12px;overflow-wrap:anywhere}
+.values strong{display:block;margin-top:5px;font-size:16px}
+.complete,.incomplete{display:block;line-height:1.45}
+.complete{color:var(--muted)}
+.incomplete{color:var(--danger,#9f3125)}
+.sources{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.sources>summary{cursor:pointer;font-weight:600}
+.sources a{overflow-wrap:anywhere;color:var(--link,var(--green))}
+.legacy{display:grid;gap:6px;border:1px solid var(--line);border-radius:10px;padding:10px}
+.editor{display:grid;gap:13px;min-width:0;max-height:85dvh;overflow:auto;padding:22px;background:var(--paper);color:var(--ink);border-radius:18px}
+.editor label{display:grid;gap:6px;min-width:0}
+.editor input,.editor select,.editor textarea{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+.editor textarea{min-height:72px}
+.balance{border:1px solid var(--line);border-radius:10px;padding:10px;overflow-wrap:anywhere}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.actions button{min-height:44px;flex:1 1 150px}
+@media(max-width:480px){.panel,.card{padding:10px}.heading{flex-direction:column}.editor{padding:16px}}
