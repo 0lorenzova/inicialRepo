@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La versión anterior es 0.1.81; la entrega siguiente será 0.1.82. La última entrega con Production `Ready` confirmada es 0.1.81 (`25066e0`). Cada versión se declara publicada solo después de confirmar Production `Ready`.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La versión anterior es 0.1.82; la entrega siguiente será 0.1.83. La última entrega con Production confirmada es 0.1.82 (`8fcaf8a`). Cada versión se declara publicada solo después de confirmar Production.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -142,6 +142,13 @@ Un abono parcial solo queda vencido si el período fue confirmado como devengado
 - Se agruparon fechas laborales y vigencias, y los historiales de condiciones y catálogo. El selector de empleador se oculta si solo hay una fuente salarial.
 - TypeScript, ESLint dirigido, `git diff --check` y build de producción pasaron. No se ejecutaron pruebas automatizadas ni QA visual autenticado.
 - Vercel confirmó Production `Ready` para `25066e0` a las 13:33:07 UTC: https://vercel.com/myself-e673/inicial-repo/92QjMGC1RRS1sk2ncRXfzrz1otxk. Dominio: https://inicial-repo.vercel.app.
+
+## Entrega 0.1.82 · 19 octubre 2026 — publicada
+- Las fichas semanales permiten registrar el salario estándar recibido con una casilla, usando la fuente, el importe, los conceptos confirmados, la moneda y la cuenta habitual. Semanas pasadas, actuales y futuras aparecen para consulta; no se registra un adelanto futuro hasta que el usuario confirme su recepción.
+- El pago conserva período ISO, fecha real, empleador, cuenta, importe y movimiento. El estado «✓ Pagada» abre «Ver pago»; distribuir entre sobres reutiliza el ingreso existente. Fechas históricas aproximadas o desconocidas se conservan como historial sin inventar una fecha ni alterar saldos.
+- Pagos parciales, ajustes pendientes, importes distintos, ingresos sin conciliar y datos contradictorios abren el registro detallado. El flujo agrupado mantiene la diferencia entre depósitos independientes y un depósito para varios períodos. Se conserva «Conceptos extra» y su selección por casillas.
+- Las 16 verificaciones de `verify:salary-quick`, las suites `verify:salary-*`, TypeScript, ESLint y `git diff --check` pasaron. La vista se revisó en escritorio y móvil; en móvil no hay desbordamiento horizontal.
+- Vercel confirmó `success` / `Deployment has completed` para `8fcaf8a` a las 14:17:59 UTC: https://vercel.com/myself-e673/inicial-repo/5Nd71CyVEYLkkSaqL3qGxZ8DemCG. Dominio: https://inicial-repo.vercel.app.
 
 ## Entrega 0.1.79 · 19 octubre 2026 — publicada
 - Las semanas salariales estándar se registran con un toque desde la tarjeta o el selector; usa el importe previsto y la cuenta habitual, y conserva la fecha real del ingreso. El dinero queda sin asignar; ajustes y otros importes usan el formulario disponible al abrirlo.
