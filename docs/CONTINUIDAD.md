@@ -1,6 +1,7 @@
-## Entrega 0.1.73 · 19 octubre 2026
+## Entrega 0.1.73 · 19 octubre 2026 — publicada
 - Gestión salarial explica cómo registrar por separado varios depósitos recibidos en fechas distintas: seleccionar un grupo de períodos por ingreso, confirmar su fecha real y repetir. Cada confirmación conserva su propio movimiento y fecha.
-- Solo agrega una instrucción al flujo existente; no agrupa ingresos de fechas distintas ni agrega escrituras automáticas. `verify-salary-receipt.mjs`, la regresión de ciclo, TypeScript, lint completo, `git diff --check` y build de producción pasan. QA visual pendiente; el cambio 0.1.72 ya está publicado.
+- Solo agrega una instrucción al flujo existente; no agrupa ingresos de fechas distintas ni agrega escrituras automáticas. `verify-salary-receipt.mjs`, la regresión de ciclo, TypeScript, lint completo, `git diff --check` y build de producción pasan. QA visual pendiente; 0.1.72 también está publicado.
+- Vercel confirmó Production `success` para `166549c`: https://vercel.com/myself-e673/inicial-repo/13avtepP9AwvgYUKvy8Eb18ibbt6.
 
 ## Entrega 0.1.72 · 19 octubre 2026 — publicada
 - Resumen de salario confirmado en ciclo predeterminado 1 de diciembre–30 de noviembre o rango manual. Presenta períodos enteros devengados, abonos aplicados a esos períodos y pendiente confirmado.

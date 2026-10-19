@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual publicada es 0.1.72; la siguiente versión con nuevos cambios será 0.1.73.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual publicada es 0.1.73; la siguiente versión con nuevos cambios será 0.1.74.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -115,9 +115,10 @@ Selector por rango de períodos confirmados para preparar depósitos agrupados. 
 
 Un abono parcial solo queda vencido si el período fue confirmado como devengado. Vercel confirmó `success` / `Deployment has completed` para `7b41d74` (https://vercel.com/myself-e673/inicial-repo/EzKwVfnJ8BRaLaF1bXZozrPKn1Wu).
 
-## Entrega 0.1.73
+## Entrega 0.1.73 · 19 octubre 2026 — publicada
 - Gestión salarial indica el flujo para separar depósitos con fechas reales distintas: seleccionar únicamente los períodos de cada depósito, registrarlo con su fecha y repetir para el siguiente.
-- Reutiliza el flujo y la confirmación actuales; no crea ingresos, montos o fechas automáticamente. `verify-salary-receipt.mjs`, TypeScript, lint completo, `git diff --check` y build de producción pasan. QA visual y Production pendientes.
+- Reutiliza el flujo y la confirmación actuales; no crea ingresos, montos o fechas automáticamente. `verify-salary-receipt.mjs`, TypeScript, lint completo, `git diff --check` y build de producción pasan. QA visual pendiente.
+- Vercel confirmó Production `success` para `166549c`: https://vercel.com/myself-e673/inicial-repo/13avtepP9AwvgYUKvy8Eb18ibbt6.
 
 ## Entrega 0.1.72 · 19 octubre 2026 — publicada
 - Resumen de salarios confirmados por ciclo 1 de diciembre–30 de noviembre o rango personalizado. Agrupa devengado, abonos aplicados a esos períodos y saldo confirmado pendiente.

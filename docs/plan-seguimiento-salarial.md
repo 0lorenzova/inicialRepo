@@ -2,7 +2,7 @@
 
 ## Fuentes y alcance
 
-Leídos los tres pedidos: correcciones/auditoría `fd447b8e`, motor salarial `75c55058` e interfaz `ddaa7693`. Excel original consultado en modo de lectura con openpyxl; no modificado, importado ni incorporado al repositorio. Este informe describe estructura, no publica salarios personales. Implementación salarial todavía PENDIENTE.
+Leídos los tres pedidos: correcciones/auditoría `fd447b8e`, motor salarial `75c55058` e interfaz `ddaa7693`. Excel original consultado en modo de lectura con openpyxl; no modificado, importado ni incorporado al repositorio. Este informe describe el análisis inicial del 14 de octubre; la implementación y el estado vigente están conciliados al final de este documento, en `docs/CONTINUIDAD.md` y `docs/fases-salarios-2026-10-18.md`.
 
 ## Hallazgos del Excel
 
@@ -83,3 +83,10 @@ Pendientes: importador Excel con vista previa e incidencias, decisión de histó
 - Pruebas ampliadas verify-salary-import: histórico, persistencia JSON, fecha ausente/futura, exceso, duplicados por procedencia, vinculación incompatible, anulación, mezcla histórico+ingreso y cuentas/sobres/movimientos intactos. Regresión verify-salary-tracking, lint, TypeScript y build aprobados.
 - No se importaron datos reales. No SQL nuevo: metadatos opcionales en JSON por usuario existente.
 - PENDIENTES: QA visual del importador/historial en móvil y PC (bloqueo previo de navegador, no reintentado ni eludido); QA Supabase entre dispositivos; centavos/multimoneda. Anular histórico no ofrece todavía reedición/importación del mismo período: la corrección conserva la trazabilidad y puede requerir un futuro editor específico para históricos. Backlog general permanece en informes anteriores.
+
+
+## Estado conciliado — 19 octubre 2026
+
+- Motor salarial, integración financiera, pantallas principales e importador con revisión están implementados. Las 15 suites `verify-salary-*.mjs`, TypeScript, lint completo y build pasan. No se importó el libro fuente ni se cambiaron datos financieros.
+- La entrega 0.1.72 añade un resumen consultivo por ciclo/rango. La 0.1.73 documenta cómo registrar por separado depósitos con fechas distintas; ambas están publicadas en Production.
+- Siguen pendientes el QA visual integral del importador, sincronización real entre dispositivos, soporte para centavos/multimoneda, fechas de pago aproximadas/desconocidas y las fórmulas de aguinaldo/vacaciones con datos laborales suficientes. Fuentes y límites legales en `docs/fases-salarios-2026-10-18.md`.

@@ -1,6 +1,6 @@
-# Seguimiento de requisitos — 14 octubre 2026
+# Seguimiento de requisitos — conciliado el 19 octubre 2026
 
-Auditoría limitada a los pedidos disponibles en este chat, los tres documentos recientes, código consultado y evidencias registradas en CONTINUIDAD. No certifica instrucciones no disponibles ni vuelve a ejecutar pruebas anteriores. «Verificado» indica evidencia concreta, con su alcance. Salarios aún no implementado.
+Auditoría limitada a los pedidos disponibles en el chat, documentos recientes, código consultado y evidencias registradas en CONTINUIDAD. La tabla se concilió con las entregas salariales 0.1.64–0.1.73. «Verificado» indica evidencia concreta, con su alcance; no afirma QA físico ni sincronización entre dispositivos si no se registraron.
 
 | ID | Requisito | Estado | Evidencia | Corrección pendiente | Prioridad |
 |---|---|---|---|---|---|
@@ -28,11 +28,11 @@ Auditoría limitada a los pedidos disponibles en este chat, los tres documentos 
 | T01 | Productos seleccionables, seguimiento y conservación de importes | IMPLEMENTADO Y VERIFICADO | 1fb6765 y verify-finance-products; pruebas de selección documentadas | Compras de varios meses requieren QA histórica | Media |
 | N01 | Notificaciones, pago desde aviso e importes opcionales con privacidad | IMPLEMENTADO Y VERIFICADO | CONTINUIDAD y verify-finance-notifications | Notificaciones con aplicación cerrada necesitan definición | Media |
 | N02 | WhatsApp/correo para recordatorios | PENDIENTE | Pospuesto expresamente por propietario | Mantener pospuesto | Baja |
-| S01 | Motor salarial, empleadores/períodos/conceptos/abonos/aplicaciones | PENDIENTE | Plan salarial y Excel analizados | Implementar modelo e integración atómica | Alta |
-| S02 | UI salarial y consulta de deudas antiguas | PENDIENTE | Documento ddaa7693 y plan salarial | Configuración, resumen, períodos, filtros, abonos e historial | Alta |
-| S03 | Importación salarial con vista previa y confirmación | PENDIENTE | Mapeo de Hoja1 documentado | Fechas faltantes, precisión y conciliación histórica sin duplicar ingresos | Alta |
+| S01 | Motor salarial, empleadores/períodos/conceptos/abonos/aplicaciones | IMPLEMENTADO Y VERIFICADO | Entregas 0.1.64–0.1.73; `verify-salary-*.mjs`, TypeScript y build | Falta modelo de prestaciones legales y más precisión de datos; ver fases salariales | Alta |
+| S02 | UI salarial y consulta de deudas antiguas | IMPLEMENTADO; QA PARCIAL | Gestión salarial, historial, filtros, abonos parciales/agrupados, conciliación de ciclo; suites y QA anteriores documentados | QA visual integral en móvil/PC y concurrencia real de Supabase en dos dispositivos | Alta |
+| S03 | Importación salarial con vista previa y confirmación | IMPLEMENTADO Y VERIFICADO EN LÓGICA | Importador XLSX acotado, conciliación explícita, vínculo de ingreso o pago histórico, advertencias por fórmulas y datos vacíos; `verify-salary-import.mjs` | QA visual de selección/carga pendiente; conciliar manualmente fechas e importes vacíos. El libro fuente no se importó | Alta |
 | X01 | Fotos/recibos, multimoneda, plazos propios de préstamos y desempate configurable | PENDIENTE | Backlog previo de CONTINUIDAD | Definición e implementación separadas | Media |
 | X02 | Sincronización real entre dos dispositivos, gestos y movimiento reducido físico | NO VERIFICABLE | No se ha realizado esa prueba física | Sesión de QA con dispositivos | Media |
 | SQL01 | Migración RPC antigua202610010001 | PENDIENTE | docs/sync-migration.md y CONTINUIDAD | Cliente compatible, base de prueba, respaldo y autorización. No ejecutar aislada | Alta |
 
-SQL nuevo para temas/avisos: ninguno. No se alteran funciones financieras en esta entrega. Otros hallazgos de la auditoría se documentan antes de implementar cambios de lógica.
+El informe original se creó el 14 octubre; la conciliación salarial añade evidencia posterior sin ampliar lo verificado en QA. SQL nuevo para temas/avisos: ninguno. La migración RPC antigua continúa separada; no se requiere para las entregas salariales registradas aquí.
