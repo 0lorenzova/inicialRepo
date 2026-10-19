@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La versión anterior es 0.1.80; la entrega siguiente será 0.1.81. La última entrega con éxito Production confirmada es 0.1.80 (`ad5afc6`). Cada versión se declara publicada solo después de confirmar Production `success`.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La versión anterior es 0.1.81; la entrega siguiente será 0.1.82. La última entrega con Production `Ready` confirmada es 0.1.81 (`25066e0`). Cada versión se declara publicada solo después de confirmar Production `Ready`.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -136,6 +136,12 @@ Un abono parcial solo queda vencido si el período fue confirmado como devengado
 - Configuración reúne sus controles en seis grupos y quita los controles duplicados de tema y privacidad que ya están en el encabezado. El resumen cambia la privacidad de cada importe con un toque; ocultar indicadores de proximidad ya no pide confirmación.
 - TypeScript, ESLint dirigido, `git diff --check` y build de producción pasaron. No se ejecutaron pruebas automatizadas ni QA visual autenticado.
 - Vercel confirmó Production `Ready` para `ad5afc6` a las 03:36:23 UTC: https://inicial-repo-nghcux4gt-myself-e673.vercel.app. Dominio: https://inicial-repo.vercel.app.
+
+## Entrega 0.1.81 · 19 octubre 2026 — publicada
+- Las semanas muestran una casilla «Conceptos extra» que despliega el catálogo activo del empleador. Cada concepto se selecciona con una casilla; los conceptos por unidad precargan 1 unidad y su costo configurado, ambos editables. Las prestaciones con importe fijo muestran un solo importe.
+- Se agruparon fechas laborales y vigencias, y los historiales de condiciones y catálogo. El selector de empleador se oculta si solo hay una fuente salarial.
+- TypeScript, ESLint dirigido, `git diff --check` y build de producción pasaron. No se ejecutaron pruebas automatizadas ni QA visual autenticado.
+- Vercel confirmó Production `Ready` para `25066e0` a las 13:33:07 UTC: https://vercel.com/myself-e673/inicial-repo/92QjMGC1RRS1sk2ncRXfzrz1otxk. Dominio: https://inicial-repo.vercel.app.
 
 ## Entrega 0.1.79 · 19 octubre 2026 — publicada
 - Las semanas salariales estándar se registran con un toque desde la tarjeta o el selector; usa el importe previsto y la cuenta habitual, y conserva la fecha real del ingreso. El dinero queda sin asignar; ajustes y otros importes usan el formulario disponible al abrirlo.
