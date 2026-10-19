@@ -1,11 +1,12 @@
 ## Entrega 0.1.70 · 18 octubre 2026
 - El importador salarial advierte cuando el inicio/fin del período, el nombre del concepto o la fecha de recepción proceden de fórmulas. Conserva el valor guardado para revisión; nunca ejecuta fórmulas ni lo trata como fecha real confirmada.
 - Revisado el libro de prueba del importador: `Hoja1` coincide con la plantilla F/G/H/I/J:M/N, ocho períodos encontrados; todos empiezan sin seleccionar ni confirmar devengo. Se mantienen visibles importes vacíos y fechas reales faltantes; las hojas de presupuesto quedan excluidas. El libro original no se modificó ni importó.
-- `verify-salary-import.mjs`, `verify-salary-receipt.mjs`, TypeScript, ESLint dirigido, `git diff --check` y build de producción pasan. QA visual no realizado. El check Vercel de 0.1.69 seguía pendiente sin estados al preparar esta corrección; revisar el SHA de 0.1.70 antes de declarar publicación.
+- `verify-salary-import.mjs`, `verify-salary-receipt.mjs`, TypeScript, ESLint dirigido, `git diff --check` y build de producción pasan. QA visual no realizado; el navegador bloqueó la URL local por política. Vercel confirmó `success` / `Deployment has completed` para `6c0b4fa`: https://vercel.com/myself-e673/inicial-repo/2cc83WeEeEEQWVSZpydMi2NsxLkw.
 
-## Entrega 0.1.69 · 18 octubre 2026
+## Entrega 0.1.69 · 18 octubre 2026 — publicada
 - Un abono parcial antes de confirmar la semana deja de activar el vencimiento rojo. El aviso de atraso empieza cuando hay deuda devengada confirmada pendiente después de la fecha prevista; el estado parcial conserva su color.
 - Se mantiene el cálculo por jornada laboral guardada y fecha de vencimiento. Sin SQL ni cambios de importes/movimientos existentes; regresión de saldo parcial antes y después de confirmar. Suites salarial de ajustes, estados, cierre y reglas, TypeScript, ESLint y build aprobados; sin QA visual.
+- Vercel confirmó `success` / `Deployment has completed` para `7b41d74`: https://vercel.com/myself-e673/inicial-repo/EzKwVfnJ8BRaLaF1bXZozrPKn1Wu.
 
 ## Entrega 0.1.68 · 18 octubre 2026 — publicada
 - Gestión salarial ofrece filtro por rango y selección de los 3/20/todos los períodos confirmados elegibles para preparar un depósito agrupado. Excluye pagos parciales/completos y ajustes sin validar; el ingreso único se revisa y confirma en el diálogo normal con cuenta y fecha real. Persistencia y movimientos siguen usando la operación existente; sin SQL.

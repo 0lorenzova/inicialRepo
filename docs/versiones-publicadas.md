@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.69; la siguiente versión con nuevos cambios será 0.1.70.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.70; la siguiente versión con nuevos cambios será 0.1.71.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -110,3 +110,11 @@ Preferencias de cuenta y medio recordadas por fuente salarial después de guarda
 ## Entrega 0.1.68
 
 Selector por rango de períodos confirmados para preparar depósitos agrupados. Vercel confirmó `success` / `Deployment has completed` para `30f1c5e` (https://vercel.com/myself-e673/inicial-repo/5BxSr9j4RMsAnJeZrDtFgLk1P1R6).
+
+## Entrega 0.1.69
+
+Un abono parcial solo queda vencido si el período fue confirmado como devengado. Vercel confirmó `success` / `Deployment has completed` para `7b41d74` (https://vercel.com/myself-e673/inicial-repo/EzKwVfnJ8BRaLaF1bXZozrPKn1Wu).
+
+## Entrega 0.1.70
+
+Avisos para valores de fechas y conceptos calculados en el importador salarial, más auditoría de solo lectura del libro de prueba. Vercel confirmó `success` / `Deployment has completed` para `6c0b4fa` (https://vercel.com/myself-e673/inicial-repo/2cc83WeEeEEQWVSZpydMi2NsxLkw).
