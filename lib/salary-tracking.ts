@@ -473,6 +473,9 @@ export function salaryBatchCandidates(ledger:SalaryLedger,configId:string,from:s
     return [{period,amount:view.pending,applications}];
   });
 }
+export function salaryBatchPresetIds(candidates:readonly {period:Pick<SalaryPeriod,"id">}[],preset:3|20|"all") {
+  return (preset==="all"?candidates:candidates.slice(0,preset)).map(candidate=>candidate.period.id);
+}
 export function salaryCatalog(config:SalaryConfig):SalaryCatalogConcept[] {
   return config.catalog??(config.extraConcepts??[]).map(c=>({id:c.id,name:c.name,sign:"add",usualAmount:c.amount,active:true}));
 }

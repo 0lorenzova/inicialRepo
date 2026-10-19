@@ -1,4 +1,8 @@
-## Entrega 0.1.70 · 18 octubre 2026
+## Entrega 0.1.71 · 18 octubre 2026
+- La selección agrupada 3/20/todos usa un resolvedor puro probado con 25 períodos: conserva orden de más reciente a más antiguo y limita 3/20 correctamente.
+- Sin cambios en movimientos o importación; el diálogo y la confirmación existentes conservan el registro del ingreso único. `verify-salary-receipt.mjs`, TypeScript, ESLint afectado, `git diff --check` y build de producción pasaron. QA visual no realizado; verificar Vercel para este SHA.
+
+## Entrega 0.1.70 · 18 octubre 2026 — publicada
 - El importador salarial advierte cuando el inicio/fin del período, el nombre del concepto o la fecha de recepción proceden de fórmulas. Conserva el valor guardado para revisión; nunca ejecuta fórmulas ni lo trata como fecha real confirmada.
 - Revisado el libro de prueba del importador: `Hoja1` coincide con la plantilla F/G/H/I/J:M/N, ocho períodos encontrados; todos empiezan sin seleccionar ni confirmar devengo. Se mantienen visibles importes vacíos y fechas reales faltantes; las hojas de presupuesto quedan excluidas. El libro original no se modificó ni importó.
 - `verify-salary-import.mjs`, `verify-salary-receipt.mjs`, TypeScript, ESLint dirigido, `git diff --check` y build de producción pasan. QA visual no realizado; el navegador bloqueó la URL local por política. Vercel confirmó `success` / `Deployment has completed` para `6c0b4fa`: https://vercel.com/myself-e673/inicial-repo/2cc83WeEeEEQWVSZpydMi2NsxLkw.

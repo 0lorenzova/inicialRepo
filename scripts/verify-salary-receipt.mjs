@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {saveSalaryConfig,salaryPeriodForDate,saveSalaryPeriod,saveSalaryAdjustments,salaryBatchCandidates,salaryPeriodApplications,postSalaryPayment,salaryPeriodPresentation,salaryReceiptDefaults} from '../lib/salary-tracking.ts';
+import {saveSalaryConfig,salaryPeriodForDate,saveSalaryPeriod,saveSalaryAdjustments,salaryBatchCandidates,salaryBatchPresetIds,salaryPeriodApplications,postSalaryPayment,salaryPeriodPresentation,salaryReceiptDefaults} from '../lib/salary-tracking.ts';
 import {distributeSavedIncome} from '../lib/distribute-saved-income.ts';
 import {incomeDistribution} from '../lib/income-trace.ts';
 import {totals} from '../lib/finance-ledger.ts';
@@ -45,6 +45,9 @@ assert.equal(salaryBatchCandidates(batchLedger,'batch','2026-09-14','2026-10-18'
 const allocatedBatch=salaryBatchCandidates(batchLedger,'batch','2026-09-14','2026-10-18','2026-10-18');
 assert.equal(allocatedBatch[0].period.id,savedBatchPeriods.at(-1).id,'Batch candidates are ordered newest first');
 assert.ok(allocatedBatch.every(item=>item.amount===100&&item.applications.reduce((sum,application)=>sum+application.amount,0)===item.amount));
+const presetCandidates=Array.from({length:25},(_,i)=>({period:{id:`p${i}`}}));
+assert.equal(salaryBatchPresetIds(presetCandidates,3).length,3);assert.equal(salaryBatchPresetIds(presetCandidates,20).length,20);assert.equal(salaryBatchPresetIds(presetCandidates,'all').length,25);
+assert.deepEqual(salaryBatchPresetIds(presetCandidates,3),['p0','p1','p2'],'Presets keep the newest-first ordering from the candidate list');
 batchLedger=saveSalaryAdjustments(batchLedger,savedBatchPeriods.at(-1),[{id:'estimated-extra',name:'Extra estimado',sign:'add',amount:10,status:'estimated'}],[]);
 assert.equal(salaryBatchCandidates(batchLedger,'batch','2026-09-14','2026-10-18','2026-10-18').length,4,'Unvalidated adjustments are excluded');
 const partialPeriod=savedBatchPeriods[3],partialApplications=salaryPeriodApplications(batchLedger,'batch',partialPeriod.id,50);
