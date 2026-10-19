@@ -1,40 +1,284 @@
 "use client";
-import {useState} from "react";
-import {salaryAdjustments,salaryCatalogAt,salaryExpected,salaryHistoricalEstimate,salaryPeriodPresentation,salaryState,salaryMeasuredAmount,saveSalaryAdjustments,type SalaryAdjustment,type SalaryLedger,type SalaryPeriod} from "@/lib/salary-tracking";
+
+import { useState } from "react";
+import {
+  salaryAdjustments,
+  salaryCatalogAt,
+  salaryExpected,
+  salaryHistoricalEstimate,
+  salaryMeasuredAmount,
+  salaryPeriodPresentation,
+  salaryState,
+  saveSalaryAdjustments,
+  type SalaryAdjustment,
+  type SalaryCatalogConcept,
+  type SalaryConfig,
+  type SalaryLedger,
+  type SalaryPeriod,
+} from "@/lib/salary-tracking";
 import styles from "./salary-planning.module.css";
-type Props={ledger:SalaryLedger;period:SalaryPeriod;today:string;display:(n:number)=>string;onSave?:(operation:(current:SalaryLedger)=>SalaryLedger)=>void};
-export function SalaryEstimation({ledger,period,today,display}:Props) {
-  const view=salaryPeriodPresentation(ledger,period,today),estimate=salaryHistoricalEstimate(ledger,period);
-  if(!view.historicalEmpty)return null;
-  return <details key={period.id} className={styles.panel}><summary>Ver estimación</summary>{estimate?<><p>Estimación histórica: <b>{display(estimate.amount)}</b></p><small>Base de cálculo: {estimate.basis}</small></>:<p>Sin información suficiente para estimar este período.</p>}<p>Esta cifra es una estimación; no representa un ingreso registrado ni una deuda confirmada.</p></details>;
+
+type Props = {
+  ledger: SalaryLedger;
+  period: SalaryPeriod;
+  today: string;
+  display: (n: number) => string;
+  onSave?: (operation: (current: SalaryLedger) => SalaryLedger) => void;
+};
+
+export function SalaryEstimation({ ledger, period, today, display }: Props) {
+  const view = salaryPeriodPresentation(ledger, period, today);
+  const estimate = salaryHistoricalEstimate(ledger, period);
+  if (!view.historicalEmpty) return null;
+
+  return (
+    <details key={period.id} className={styles.panel}>
+      <summary>Ver estimación</summary>
+      {estimate ? (
+        <>
+          <p>Estimación histórica: <b>{display(estimate.amount)}</b></p>
+          <small>Base de cálculo: {estimate.basis}</small>
+        </>
+      ) : (
+        <p>Sin información suficiente para estimar este período.</p>
+      )}
+      <p>Esta cifra es una estimación; no representa un ingreso registrado ni una deuda confirmada.</p>
+    </details>
+  );
 }
-export function SalaryAdjustments({ledger,period,today,display,onSave}:Props) {
-  const original=salaryAdjustments(ledger,period),[editing,setEditing]=useState(false);
-  const adjustment=salaryExpected(ledger,period)-period.concepts.reduce((n,c)=>n+c.amount,0);
-  return <details className={styles.panel}><summary>Conceptos adicionales{original.length?` · ${display(adjustment)}`:""}</summary>
-    {!editing?<><p>{original.some(a=>a.id.startsWith("catalog-recurring:"))?"Incluye estimaciones recurrentes del catálogo; puedes corregirlas o quitarlas solo de esta semana.":original.length?"Ajustes de esta semana":"Sin ajustes adicionales en esta semana."}</p>{original.map(a=><p key={a.id}>{a.name}: {a.quantity!==undefined&&a.unit&&a.rate?`${a.quantity} ${a.unit==="hour"?"horas":"días"} × ${display(a.rate)} = `:""}{a.sign==="subtract"?"−":"+"}{display(a.amount)} · {a.status==="confirmed"?"Confirmado":"Estimado"}{a.id.startsWith("catalog-recurring:")?" · Recurrente":""}</p>)}{onSave&&<button type="button" className="secondary" onClick={()=>setEditing(true)}>Editar conceptos de esta semana</button>}</>:<AdjustmentEditor key={period.id+JSON.stringify(original)} {...{ledger,period,today,display,onSave}} original={original} onClose={()=>setEditing(false)}/>}
-  </details>;
+
+export function SalaryAdjustments({ ledger, period, display, onSave }: Props) {
+  const original = salaryAdjustments(ledger, period);
+  const [expanded, setExpanded] = useState(false);
+  const adjustment = salaryExpected(ledger, period) - period.concepts.reduce((total, concept) => total + concept.amount, 0);
+  const config = salaryState(ledger).configs.find(item => item.id === period.configId);
+  const selectedCount = original.length;
+
+  return (
+    <section className={styles.extraPanel}>
+      <label className={styles.extraToggle}>
+        <input type="checkbox" checked={expanded} onChange={event => setExpanded(event.target.checked)} />
+        <span>Conceptos extra{selectedCount ? ` · ${selectedCount} seleccionados · ${display(adjustment)}` : ""}</span>
+      </label>
+      {expanded && config && (
+        <AdjustmentChecklist
+          key={period.id}
+          ledger={ledger}
+          period={period}
+          display={display}
+          onSave={onSave}
+          original={original}
+          config={config}
+        />
+      )}
+    </section>
+  );
 }
-function AdjustmentEditor({ledger,period,display,onSave,original,onClose}:Props&{original:SalaryAdjustment[];onClose:()=>void}) {
-  const [items,setItems]=useState(original.map(a=>({...a}))),[error,setError]=useState("");
-  const config=salaryState(ledger).configs.find(c=>c.id===period.configId)!;
-  const catalog=salaryCatalogAt(config,period.start).filter(c=>c.active&&!items.some(a=>a.catalogId===c.id));
-  const update=(id:string,value:Partial<SalaryAdjustment>)=>setItems(items.map(a=>a.id===id?{...a,...value}:a));
-  const addCatalogConcept=(catalogId:string)=>{
-    const c=catalog.find(item=>item.id===catalogId);if(!c)return;
-    const quantity=c.usualQuantity;
-    let amount=c.usualAmount??0;
-    if(c.unit&&c.rate&&quantity!==undefined)try{amount=salaryMeasuredAmount(quantity,c.rate);}catch{amount=0;}
-    setItems([...items,{id:crypto.randomUUID(),catalogId:c.id,name:c.name,sign:c.sign,amount,status:"estimated",...(c.unit&&c.rate?{unit:c.unit,rate:c.rate,...(quantity!==undefined?{quantity}:{})}:{})}]);
+
+function AdjustmentChecklist({
+  ledger,
+  period,
+  display,
+  onSave,
+  original,
+  config,
+}: Pick<Props, "ledger" | "period" | "display" | "onSave"> & { original: SalaryAdjustment[]; config: SalaryConfig }) {
+  const [items, setItems] = useState(original.map(item => ({ ...item })));
+  const [error, setError] = useState("");
+  const catalog = salaryCatalogAt(config, period.start).filter(concept => concept.active);
+  const catalogIds = new Set(catalog.map(concept => concept.id));
+  const customItems = items.filter(item => !item.catalogId || !catalogIds.has(item.catalogId));
+  const dirty = JSON.stringify(items) !== JSON.stringify(original);
+  const canEstimate = salaryHistoricalEstimate(ledger, period) !== null;
+  const base = period.concepts.reduce((total, concept) => total + concept.amount, 0);
+  const delta = items.reduce((total, item) => total + (item.sign === "subtract" ? -item.amount : item.amount), 0);
+  const measurementInvalid = items.some(item => item.unit && (
+    !item.rate || !item.quantity || item.quantity <= 0 ||
+    !Number.isInteger(item.quantity * 4) || !Number.isSafeInteger(item.quantity * item.rate)
+  ));
+
+  const update = (id: string, change: Partial<SalaryAdjustment>) => {
+    setItems(current => current.map(item => item.id === id ? { ...item, ...change } : item));
+    setError("");
   };
-  const measurementInvalid=items.some(a=>a.unit&&(!a.rate||!a.quantity||a.quantity<=0||!Number.isInteger(a.quantity*4)||!Number.isSafeInteger(a.quantity*a.rate!)));
-  const canEstimate=salaryHistoricalEstimate(ledger,period)!==null;
-  const base=period.concepts.reduce((n,c)=>n+c.amount,0),delta=items.reduce((n,a)=>n+(a.sign==="subtract"?-a.amount:a.amount),0);
-  return <div className={styles.editor}>
-    <label>Añadir desde catálogo<select value="" onChange={e=>addCatalogConcept(e.target.value)}><option value="">Seleccionar concepto</option>{catalog.map(c=><option key={c.id} value={c.id}>{c.name}{c.unit?` · por ${c.unit==="hour"?"hora":"día"}`:""}</option>)}</select></label>
-    {items.map(a=><fieldset key={a.id}><legend>{a.name||"Nuevo concepto"}</legend><label>Concepto<input value={a.name} onChange={e=>update(a.id,{name:e.target.value})}/></label>{a.unit&&a.rate?<><label>Cantidad ({a.unit==="hour"?"horas":"días"})<input type="number" min="0.25" step="0.25" required value={a.quantity??""} onChange={e=>{const quantity=e.target.value===""?undefined:Number(e.target.value);let amount=0;if(quantity!==undefined)try{amount=salaryMeasuredAmount(quantity,a.rate!);}catch{/* Keep the amount empty until the quantity produces whole colones. */}update(a.id,{quantity,amount});}}/></label><small>Tarifa: {display(a.rate)} por {a.unit==="hour"?"hora":"día"}. El importe debe quedar en colones enteros.</small><label>Importe calculado<input type="number" readOnly value={a.amount}/></label></>:<label>Importe<input type="number" min="0" step="1" value={a.amount} onChange={e=>update(a.id,{amount:Number(e.target.value)})}/></label>}<label>Ajuste<select value={a.sign} onChange={e=>update(a.id,{sign:e.target.value as SalaryAdjustment["sign"]})}><option value="add">Suma</option><option value="subtract">Resta</option></select></label><label>Estado<select value={a.status} onChange={e=>update(a.id,{status:e.target.value as SalaryAdjustment["status"]})}><option value="estimated">Estimado</option><option value="confirmed">Confirmado</option></select></label><button type="button" className="secondary" onClick={()=>setItems(items.filter(i=>i.id!==a.id))}>Quitar de esta semana</button></fieldset>)}
-    <button type="button" className="secondary" onClick={()=>setItems([...items,{id:crypto.randomUUID(),name:"",amount:0,sign:"add",status:"estimated"}])}>Añadir personalizado</button>
-    <p>Ajustes: {display(delta)} · Esperado ajustado: {canEstimate?display(base+delta):"Sin información suficiente"}</p><small>Confirmar un concepto no registra ingresos ni reconoce toda la deuda salarial. Los pagos existentes se conservan.</small>
-    {measurementInvalid&&<p role="alert">Completa la cantidad; el producto por la tarifa debe ser un importe entero en colones.</p>}{error&&<p role="alert">{error}</p>}<div className={styles.actions}><button type="button" className="primary" disabled={measurementInvalid} onClick={()=>{try{onSave?.(d=>saveSalaryAdjustments(d,period,items,original));onClose();}catch(e){setError(e instanceof Error?e.message:"No se pudieron guardar los ajustes.");}}}>Guardar ajustes</button><button type="button" className="secondary" onClick={onClose}>Cancelar</button></div>
-  </div>;
+
+  const toggleConcept = (concept: SalaryCatalogConcept, selected: boolean) => {
+    if (!selected) {
+      setItems(current => current.filter(item => item.catalogId !== concept.id));
+      setError("");
+      return;
+    }
+
+    const measured = Boolean(concept.unit && concept.rate);
+    const quantity = measured ? 1 : undefined;
+    let amount = concept.usualAmount ?? 0;
+    if (measured) {
+      try {
+        amount = salaryMeasuredAmount(quantity!, concept.rate!);
+      } catch {
+        setError(`Revisa el costo configurado para ${concept.name}.`);
+        return;
+      }
+    }
+
+    setItems(current => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        catalogId: concept.id,
+        name: concept.name,
+        sign: concept.sign,
+        amount,
+        status: "estimated",
+        ...(measured ? { unit: concept.unit, rate: concept.rate, quantity } : {}),
+      },
+    ]);
+    setError("");
+  };
+
+  const save = () => {
+    if (!onSave || measurementInvalid) return;
+    try {
+      onSave(current => saveSalaryAdjustments(current, period, items, original));
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudieron guardar los conceptos.");
+    }
+  };
+
+  return (
+    <div className={styles.extraOptions}>
+      {catalog.length > 0 ? (
+        <div className={styles.extraList}>
+          {catalog.map(concept => {
+            const selected = items.find(item => item.catalogId === concept.id);
+            return (
+              <div className={styles.extraItem} key={concept.id}>
+                <label className={styles.extraCheck}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(selected)}
+                    disabled={!onSave}
+                    onChange={event => toggleConcept(concept, event.target.checked)}
+                  />
+                  <span>{concept.name}{concept.recurring ? " · Recurrente" : ""}</span>
+                </label>
+                {selected && (
+                  selected.unit && selected.rate !== undefined ? (
+                    <>
+                      <div className={`${styles.two} ${styles.extraFields}`}>
+                        <label>
+                          Unidades
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min="0.25"
+                            step="0.25"
+                            required
+                            value={selected.quantity ?? ""}
+                            disabled={!onSave}
+                            onChange={event => {
+                              const quantity = event.target.value === "" ? undefined : Number(event.target.value);
+                              let amount = 0;
+                              if (quantity !== undefined) {
+                                try { amount = salaryMeasuredAmount(quantity, selected.rate!); } catch { /* Se completa al ingresar unidades válidas. */ }
+                              }
+                              update(selected.id, { quantity, amount });
+                            }}
+                          />
+                        </label>
+                        <label>
+                          Costo
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            step="1"
+                            required
+                            value={selected.rate ?? ""}
+                            disabled={!onSave}
+                            onChange={event => {
+                              const rate = event.target.value === "" ? undefined : Number(event.target.value);
+                              let amount = 0;
+                              if (rate !== undefined && selected.quantity !== undefined) {
+                                try { amount = salaryMeasuredAmount(selected.quantity, rate); } catch { /* Se completa al ingresar un costo válido. */ }
+                              }
+                              update(selected.id, { rate, amount });
+                            }}
+                          />
+                        </label>
+                      </div>
+                      <small className={styles.extraAmount}>
+                        {selected.unit === "day" ? "Costo por día" : "Costo por hora"} · Total: {display(selected.amount)}
+                      </small>
+                    </>
+                  ) : (
+                    <label className={styles.extraAmountField}>
+                      Importe
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        step="1"
+                        value={selected.amount}
+                        disabled={!onSave}
+                        onChange={event => update(selected.id, { amount: Number(event.target.value) })}
+                      />
+                    </label>
+                  )
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p>Este empleador no tiene conceptos activos en su catálogo.</p>
+      )}
+
+      {customItems.map(item => (
+        <div className={styles.extraItem} key={item.id}>
+          <label className={styles.extraCheck}>
+            <input
+              type="checkbox"
+              checked
+              disabled={!onSave}
+              onChange={() => setItems(current => current.filter(candidate => candidate.id !== item.id))}
+            />
+            <span>{item.name}{!item.catalogId ? " · Personalizado" : " · Inactivo en catálogo"}</span>
+          </label>
+          {item.unit && item.rate !== undefined ? (
+            <small className={styles.extraAmount}>
+              {item.quantity} unidades · {display(item.rate)} por {item.unit === "day" ? "día" : "hora"} · Total: {display(item.amount)}
+            </small>
+          ) : (
+            <label className={styles.extraAmountField}>
+              Importe
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                step="1"
+                value={item.amount}
+                disabled={!onSave}
+                onChange={event => update(item.id, { amount: Number(event.target.value) })}
+              />
+            </label>
+          )}
+        </div>
+      ))}
+
+      <div className={styles.extraSummary}>
+        <span>Conceptos extra: {display(delta)}</span>
+        <b>Esperado: {canEstimate ? display(base + delta) : "Sin información suficiente"}</b>
+      </div>
+      <small>Se guardan como estimación. No registran ingresos ni confirman una deuda.</small>
+      {measurementInvalid && <p role="alert">Completa las unidades y verifica que su costo produzca un importe entero en colones.</p>}
+      {error && <p role="alert">{error}</p>}
+      {dirty && onSave && (
+        <button type="button" className="primary" disabled={measurementInvalid} onClick={save}>
+          Guardar conceptos
+        </button>
+      )}
+    </div>
+  );
 }
