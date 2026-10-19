@@ -1,6 +1,14 @@
-## Corrección local — guardar una semana histórica también registra el ingreso
-- Aclaración del propietario: en Registrar salario, la casilla abre y deja parpadeando la plantilla precargada mientras se revisa; el mismo botón Guardar confirma los datos de la semana y registra el ingreso salarial con cuenta y fecha real. Ya no se guarda como pendiente por separado en este flujo.
-- Resumen del período y Gestión salarial conservan su acción separada para guardar una semana pendiente. La corrección es local y no se publicó; TypeScript pasa. No se ejecutaron pruebas automatizadas ni revisión visual.
+## Entrega 0.1.80 — menos menús y acciones directas
+- Configuración ahora reúne sus opciones en seis grupos; tema, tamaño y privacidad siguen disponibles directamente en el encabezado, sin repetirlos dentro de Configuración.
+- Los saldos del resumen ocultan o muestran cada importe con un toque. Ocultar indicadores de proximidad ya no abre una confirmación reversible.
+- TypeScript, ESLint dirigido, build de producción y `git diff --check` pasan. No se ejecutaron pruebas automatizadas ni se revisó visualmente la pantalla autenticada.
+- Vercel confirmó Production `Ready` para `ad5afc6` el 19 de octubre de 2026 a las 03:36:23 UTC: https://inicial-repo-nghcux4gt-myself-e673.vercel.app. Dominio: https://inicial-repo.vercel.app.
+
+## Entrega 0.1.79 — entrada estándar de salario en un toque
+- Las semanas estándar se registran desde el selector o la tarjeta con un toque, usando el importe previsto y la cuenta habitual. La fecha del ingreso es la fecha actual; el dinero queda sin asignar. «Ajustar antes de ingresar» abre el formulario solo cuando hace falta.
+- Una semana pasada se confirma como devengada junto con el ingreso; una futura permanece como adelanto. Las semanas del calendario con período inequívoco se pueden seleccionar directamente.
+- TypeScript, ESLint dirigido, build de producción y `git diff --check` pasan. No se ejecutaron pruebas automatizadas.
+- Vercel confirmó Production `Ready` para `44ec026` el 19 de octubre de 2026 a las 03:28:01 UTC: https://inicial-repo-p9zgjl1ye-myself-e673.vercel.app. Dominio: https://inicial-repo.vercel.app.
 
 ## Entrega 0.1.78 — depósitos múltiples y beneficios CR
 - Preparación de varios depósitos independientes con fecha exacta, aproximada o desconocida. Los históricos no crean ingresos ni cambian saldos; fecha aproximada/desconocida no se usa para marcar adelantos o pagos atrasados.
