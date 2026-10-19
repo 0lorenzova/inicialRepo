@@ -1,7 +1,11 @@
-## Entrega 0.1.72 · 19 octubre 2026
+## Entrega 0.1.73 · 19 octubre 2026
+- Gestión salarial explica cómo registrar por separado varios depósitos recibidos en fechas distintas: seleccionar un grupo de períodos por ingreso, confirmar su fecha real y repetir. Cada confirmación conserva su propio movimiento y fecha.
+- Solo agrega una instrucción al flujo existente; no agrupa ingresos de fechas distintas ni agrega escrituras automáticas. `verify-salary-receipt.mjs`, la regresión de ciclo, TypeScript, lint completo, `git diff --check` y build de producción pasan. QA visual pendiente; el cambio 0.1.72 ya está publicado.
+
+## Entrega 0.1.72 · 19 octubre 2026 — publicada
 - Resumen de salario confirmado en ciclo predeterminado 1 de diciembre–30 de noviembre o rango manual. Presenta períodos enteros devengados, abonos aplicados a esos períodos y pendiente confirmado.
 - Se excluyen los períodos que cruzan los límites o no están confirmados; la vista informa cuántos quedaron fuera. Sin prorrateo, fórmula de aguinaldo/vacaciones, movimientos nuevos ni cambios de saldos.
-- La regresión `verify-salary-cycle.mjs` cubre fechas del ciclo, cruces, períodos no confirmados, abono parcial, saldo, rango inválido y JSON; también pasan estados, recibos, cierre y ajustes salariales. TypeScript y ESLint aprobados. El primer build tuvo `EPERM` al generar `/_not-found`; el reintento pasó. Production por confirmar; QA visual pendiente.
+- `verify-salary-cycle.mjs` y las 14 suites salariales existentes pasan; también TypeScript, lint completo y `git diff --check`. El primer build tuvo `EPERM` al generar `/_not-found`; el reintento de producción pasó. Vercel confirmó Production `success` para `c89b58d`: https://vercel.com/myself-e673/inicial-repo/EoVQhmf4Hs23HDiV9c7TrsmyzCKx. QA visual pendiente.
 
 ## Entrega 0.1.71 · 18 octubre 2026 — publicada
 - La selección agrupada 3/20/todos usa un resolvedor puro probado con 25 períodos: conserva orden de más reciente a más antiguo y limita 3/20 correctamente.
