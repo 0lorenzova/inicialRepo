@@ -115,6 +115,10 @@ Selector por rango de períodos confirmados para preparar depósitos agrupados. 
 
 Un abono parcial solo queda vencido si el período fue confirmado como devengado. Vercel confirmó `success` / `Deployment has completed` para `7b41d74` (https://vercel.com/myself-e673/inicial-repo/EzKwVfnJ8BRaLaF1bXZozrPKn1Wu).
 
+## Entrega 0.1.74
+- Fecha límite opcional al registrar préstamos entre sobres, visible en su listado como próxima, de hoy o vencida. Se conserva tras devoluciones parciales; sin devoluciones automáticas ni cambios a notificaciones globales.
+- `verify-envelope-operation.mjs`, `verify-finance-ledger.mjs`, `verify-finance-history.mjs`, TypeScript, ESLint afectado y build de producción pasan; QA visual pendiente.
+
 ## Entrega 0.1.73 · 19 octubre 2026 — publicada
 - Gestión salarial indica el flujo para separar depósitos con fechas reales distintas: seleccionar únicamente los períodos de cada depósito, registrarlo con su fecha y repetir para el siguiente.
 - Reutiliza el flujo y la confirmación actuales; no crea ingresos, montos o fechas automáticamente. `verify-salary-receipt.mjs`, TypeScript, lint completo, `git diff --check` y build de producción pasan. QA visual pendiente.

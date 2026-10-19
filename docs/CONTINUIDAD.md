@@ -1,3 +1,7 @@
+## Entrega 0.1.74 · 19 octubre 2026
+- Al crear un préstamo entre sobres, la fecha límite de devolución es opcional. Gestión de préstamos la muestra como próxima, hoy o vencida; para históricos sin dato indica que no tienen fecha límite.
+- La fecha se conserva en el préstamo y en las devoluciones parciales. Es solo informativa: no registra devoluciones ni cambia calendarios/avisos globales. `verify-envelope-operation.mjs`, `verify-finance-ledger.mjs`, `verify-finance-history.mjs`, TypeScript, ESLint afectado y build pasan; QA visual pendiente.
+
 ## Entrega 0.1.73 · 19 octubre 2026 — publicada
 - Gestión salarial explica cómo registrar por separado varios depósitos recibidos en fechas distintas: seleccionar un grupo de períodos por ingreso, confirmar su fecha real y repetir. Cada confirmación conserva su propio movimiento y fecha.
 - Solo agrega una instrucción al flujo existente; no agrupa ingresos de fechas distintas ni agrega escrituras automáticas. `verify-salary-receipt.mjs`, la regresión de ciclo, TypeScript, lint completo, `git diff --check` y build de producción pasan. QA visual pendiente; 0.1.72 también está publicado.

@@ -5,7 +5,7 @@ import { validatePurchaseProducts, type PurchaseProduct } from "./finance-produc
 import { traceAssignmentSources, selectedIncomeSource, type IncomeSource } from "./income-trace";
 export type Account = { id: string; name: string; type: string; balance: number; active: boolean };
 export type LedgerEnvelope = { id: string; name: string; balance: number; archived?: boolean; goal?: number };
-export type Loan = { id: string; sourceId: string; sourceName: string; targetId: string; targetName: string; amount: number; outstanding: number; status: "Pendiente" | "Parcial" | "Devuelto"; date: string };
+export type Loan = { id: string; sourceId: string; sourceName: string; targetId: string; targetName: string; amount: number; outstanding: number; status: "Pendiente" | "Parcial" | "Devuelto"; date: string; dueDate?:string };
 export type LedgerAllocation = { envelopeId?: string; name: string; amount: number };
 export type LedgerMovement = { id: string; type: "Ingreso" | "Gasto" | "Asignación" | "Desasignación" | "Transferencia" | "Préstamo" | "Devolución"; name: string; amount: number; date: string; accountId?: string; accountName?: string; category?: string; categoryAllocations?: ExpenseClassification[]; description?: string; merchant?: string; reference?: string; paymentMethod?: string; tags?: string[]; allocations: LedgerAllocation[]; loanId?: string; products?:PurchaseProduct[]; incomeSources?: IncomeSource[]; scheduledAmountId?: string; distributionCorrection?: { incomeId: string; batchId: string; reason: string }; fundingTargets?: { envelopeId: string; itemId: string; kind: "goal" | "scheduled"; name: string; amount: number; deadline?: string }[] };
 export type Ledger = { accounts: Account[]; envelopes: LedgerEnvelope[]; loans: Loan[]; movements: LedgerMovement[] };
@@ -128,10 +128,11 @@ export function transfer(ledger: Ledger, sourceId: string, targetId: string, amo
   return commit(ledger, { id, type: "Transferencia", name: `${source.name} → ${target.name}`, amount, date, allocations: [{ envelopeId: source.id, name: source.name, amount }, { envelopeId: target.id, name: target.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === sourceId ? { ...item, balance: item.balance - amount } : item.id === targetId ? { ...item, balance: item.balance + amount } : item));
 }
 
-export function lend(ledger: Ledger, sourceId: string, targetId: string, amount: number, date: string, id = crypto.randomUUID()): Ledger {
+export function lend(ledger: Ledger, sourceId: string, targetId: string, amount: number, date: string, id = crypto.randomUUID(), dueDate?:string): Ledger {
   const source = ledger.envelopes.find((item) => item.id === sourceId && !item.archived), target = ledger.envelopes.find((item) => item.id === targetId && !item.archived);
   if (!source || !target || sourceId === targetId || !validAmount(amount) || source.balance < amount) throw new Error("Revisa los sobres y el saldo disponible para prestar.");
-  const loanId = crypto.randomUUID(), loan: Loan = { id: loanId, sourceId, sourceName: source.name, targetId, targetName: target.name, amount, outstanding: amount, status: "Pendiente", date };
+  if(dueDate&&(!validMovementDate(`${dueDate}T12:00`)||dueDate<date.slice(0,10)))throw new Error("Selecciona una fecha límite válida, igual o posterior a la fecha del préstamo.");
+  const loanId = crypto.randomUUID(), loan: Loan = { id: loanId, sourceId, sourceName: source.name, targetId: target.id, targetName: target.name, amount, outstanding: amount, status: "Pendiente", date,...(dueDate?{dueDate}:{}) };
   return commit(ledger, { id, type: "Préstamo", name: `${source.name} prestó a ${target.name}`, amount, date, allocations: [{ envelopeId: source.id, name: source.name, amount }, { envelopeId: target.id, name: target.name, amount }], loanId }, ledger.accounts, ledger.envelopes.map((item) => item.id === sourceId ? { ...item, balance: item.balance - amount } : item.id === targetId ? { ...item, balance: item.balance + amount } : item), [loan, ...ledger.loans]);
 }
 

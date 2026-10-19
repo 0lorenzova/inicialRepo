@@ -1,10 +1,10 @@
 import { envelopeLabel } from "./envelope-label";
-import { assign, lend, totals, transfer, unassign, type Ledger } from "./finance-ledger";
+import { assign, lend, totals, transfer, unassign, validMovementDate, type Ledger } from "./finance-ledger";
 
 export type EnvelopeAction = "Asignar dinero" | "Desasignar" | "Transferir" | "Prestar a otro sobre" | "Pedir prestado";
 const money = (amount: number) => `₡${amount.toLocaleString("es-CR")}`;
 
-export function applyEnvelopeOperation(ledger: Ledger, input: { kind: EnvelopeAction; envelopeId: string; counterpartyId?: string; amount: number; date: string; id: string }) {
+export function applyEnvelopeOperation(ledger: Ledger, input: { kind: EnvelopeAction; envelopeId: string; counterpartyId?: string; amount: number; date: string; id: string; dueDate?:string }) {
   const { kind, amount, date, id } = input;
   const envelope = ledger.envelopes.find(e => e.id === input.envelopeId && !e.archived);
   if (!envelope) throw new Error("Este sobre ya no está activo. Vuelve a la lista.");
@@ -23,8 +23,11 @@ export function applyEnvelopeOperation(ledger: Ledger, input: { kind: EnvelopeAc
   if (other.id === envelope.id) throw new Error("Selecciona un sobre diferente como contraparte.");
   const source = kind === "Pedir prestado" ? other : envelope, target = kind === "Pedir prestado" ? envelope : other;
   if (amount > source.balance) throw new Error(`El monto que intentas ${kind === "Transferir" ? "transferir" : "prestar"} es mayor que el saldo disponible en ${envelopeLabel(source.name)}.`);
+  const dueDate=input.dueDate?.trim()||undefined;
+  if(dueDate&&kind==="Transferir")throw new Error("Las transferencias no tienen fecha de devolución.");
+  if(dueDate&&!validMovementDate(`${dueDate}T12:00`))throw new Error("Selecciona una fecha límite válida.");
   return {
-    ledger: kind === "Transferir" ? transfer(ledger, source.id, target.id, amount, date, id) : lend(ledger, source.id, target.id, amount, date, id),
+    ledger: kind === "Transferir" ? transfer(ledger, source.id, target.id, amount, date, id) : lend(ledger, source.id, target.id, amount, date, id,dueDate),
     message: `${money(amount)} ${kind === "Transferir" ? "transferidos" : "prestados"} correctamente de ${envelopeLabel(source.name)} a ${envelopeLabel(target.name)}.`,
   };
 }
