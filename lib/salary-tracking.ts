@@ -55,6 +55,27 @@ export function salaryPeriodTotals(ledger:SalaryLedger,period:SalaryPeriod,today
   const pending=confirmed?Math.max(0,earned-received):0;
   return {projected:confirmed?0:projected,earned,received,pending,status:!confirmed?(received>0?"Adelanto":"Proyectado"):pending===0?"Pagado":received>0?"Parcial":"Pendiente"};
 }
+export function salaryDefaultCycle(today:string) {
+  const date=salaryDay(today),year=Number(date.slice(0,4))+(date.slice(5,7)==="12"?1:0);
+  return {from:`${year-1}-12-01`,to:`${year}-11-30`};
+}
+export function salaryCycleSummary(ledger:SalaryLedger,configId:string,from:string,to:string,today:string) {
+  salaryDay(from);salaryDay(to);salaryDay(today);
+  ensure(from<=to,"La fecha inicial del rango debe ser anterior o igual a la fecha final.");
+  const overlapping=salaryState(ledger).periods.filter(period=>period.configId===configId&&period.start<=to&&period.end>=from);
+  const crossing=overlapping.filter(period=>period.start<from||period.end>to);
+  const contained=overlapping.filter(period=>period.start>=from&&period.end<=to);
+  const confirmed=contained.filter(period=>period.earned&&canConfirmSalaryPeriod(period,today));
+  const periods=confirmed.map(period=>({period,...salaryPeriodTotals(ledger,period,today)})).sort((a,b)=>a.period.start.localeCompare(b.period.start));
+  return {
+    periods,
+    crossingCount:crossing.length,
+    unconfirmedCount:contained.length-confirmed.length,
+    earned:total(periods.map(item=>item.earned)),
+    received:total(periods.map(item=>item.received)),
+    pending:total(periods.map(item=>item.pending)),
+  };
+}
 export function saveSalaryConfig<T extends SalaryLedger>(ledger:T,requested:SalaryConfig,original:SalaryConfig|null):T {
   const state=salaryState(ledger),current=state.configs.find(c=>c.id===requested.id);
   ensure(original?JSON.stringify(current)===JSON.stringify(original):!current,"La configuración cambió. Vuelve a abrirla.");

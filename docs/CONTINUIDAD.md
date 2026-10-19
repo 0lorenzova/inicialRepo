@@ -1,6 +1,12 @@
-## Entrega 0.1.71 · 18 octubre 2026
+## Entrega 0.1.72 · 19 octubre 2026
+- Resumen de salario confirmado en ciclo predeterminado 1 de diciembre–30 de noviembre o rango manual. Presenta períodos enteros devengados, abonos aplicados a esos períodos y pendiente confirmado.
+- Se excluyen los períodos que cruzan los límites o no están confirmados; la vista informa cuántos quedaron fuera. Sin prorrateo, fórmula de aguinaldo/vacaciones, movimientos nuevos ni cambios de saldos.
+- La regresión `verify-salary-cycle.mjs` cubre fechas del ciclo, cruces, períodos no confirmados, abono parcial, saldo, rango inválido y JSON; también pasan estados, recibos, cierre y ajustes salariales. TypeScript y ESLint aprobados. El primer build tuvo `EPERM` al generar `/_not-found`; el reintento pasó. Production por confirmar; QA visual pendiente.
+
+## Entrega 0.1.71 · 18 octubre 2026 — publicada
 - La selección agrupada 3/20/todos usa un resolvedor puro probado con 25 períodos: conserva orden de más reciente a más antiguo y limita 3/20 correctamente.
-- Sin cambios en movimientos o importación; el diálogo y la confirmación existentes conservan el registro del ingreso único. `verify-salary-receipt.mjs`, TypeScript, ESLint afectado, `git diff --check` y build de producción pasaron. QA visual no realizado; verificar Vercel para este SHA.
+- Sin cambios en movimientos o importación; el diálogo y la confirmación existentes conservan el registro del ingreso único. `verify-salary-receipt.mjs`, TypeScript, ESLint afectado, `git diff --check` y build de producción pasaron. QA visual no realizado.
+- Vercel confirmó Production `success` para `d78e3fd`: https://inicial-repo-l8kgyredm-myself-e673.vercel.app.
 
 ## Entrega 0.1.70 · 18 octubre 2026 — publicada
 - El importador salarial advierte cuando el inicio/fin del período, el nombre del concepto o la fecha de recepción proceden de fórmulas. Conserva el valor guardado para revisión; nunca ejecuta fórmulas ni lo trata como fecha real confirmada.

@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual es 0.1.70; la siguiente versión con nuevos cambios será 0.1.71.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. La entrega actual publicada es 0.1.71; la siguiente versión con nuevos cambios será 0.1.72.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -114,6 +114,16 @@ Selector por rango de períodos confirmados para preparar depósitos agrupados. 
 ## Entrega 0.1.69
 
 Un abono parcial solo queda vencido si el período fue confirmado como devengado. Vercel confirmó `success` / `Deployment has completed` para `7b41d74` (https://vercel.com/myself-e673/inicial-repo/EzKwVfnJ8BRaLaF1bXZozrPKn1Wu).
+
+## Entrega 0.1.72
+- Resumen de salarios confirmados por ciclo 1 de diciembre–30 de noviembre o rango personalizado. Agrupa devengado, abonos aplicados a esos períodos y saldo confirmado pendiente.
+- Excluye los períodos que cruzan los límites y los períodos no confirmados; los informa sin prorratear. No calcula aguinaldo ni vacaciones y no crea movimientos ni cambia el libro.
+- `verify-salary-cycle.mjs` y las regresiones salariales de estados, recibos, cierre y ajustes pasan; también TypeScript, ESLint y `git diff --check`. El primer build tuvo `EPERM` al generar `/_not-found`; el reintento de producción pasó. QA visual pendiente; confirmar Production por SHA.
+
+## Entrega 0.1.71 · 18 octubre 2026 — publicada
+- La selección agrupada 3/20/todos usa un resolvedor puro probado con 25 períodos: conserva orden de más reciente a más antiguo y limita 3/20 correctamente.
+- Sin cambios en movimientos o importación; el diálogo y la confirmación existentes conservan el registro del ingreso único. `verify-salary-receipt.mjs`, TypeScript, ESLint afectado, `git diff --check` y build de producción pasaron. QA visual no realizado.
+- Vercel confirmó Production `success` para `d78e3fd`: https://inicial-repo-l8kgyredm-myself-e673.vercel.app.
 
 ## Entrega 0.1.70
 
