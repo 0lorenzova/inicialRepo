@@ -5,7 +5,6 @@ import {
   salaryAdjustments,
   salaryCatalogAt,
   salaryExpected,
-  salaryHistoricalEstimate,
   salaryMeasuredAmount,
   salaryPeriodPresentation,
   salaryState,
@@ -26,28 +25,7 @@ type Props = {
   onSave?: (operation: (current: SalaryLedger) => SalaryLedger) => void;
 };
 
-export function SalaryEstimation({ ledger, period, today, display }: Props) {
-  const view = salaryPeriodPresentation(ledger, period, today);
-  const estimate = salaryHistoricalEstimate(ledger, period);
-  if (!view.historicalEmpty) return null;
-
-  return (
-    <details key={period.id} className={styles.panel}>
-      <summary>Ver estimación</summary>
-      {estimate ? (
-        <>
-          <p>Estimación histórica: <b>{display(estimate.amount)}</b></p>
-          <small>Base de cálculo: {estimate.basis}</small>
-        </>
-      ) : (
-        <p>Sin información suficiente para estimar este período.</p>
-      )}
-      <p>Esta cifra es una estimación; no representa un ingreso registrado ni una deuda confirmada.</p>
-    </details>
-  );
-}
-
-export function SalaryAdjustments({ ledger, period, display, onSave }: Props) {
+export function SalaryAdjustments({ ledger, period, today, display, onSave }: Props) {
   const original = salaryAdjustments(ledger, period);
   const [expanded, setExpanded] = useState(false);
   const adjustment = salaryExpected(ledger, period) - period.concepts.reduce((total, concept) => total + concept.amount, 0);
@@ -65,6 +43,7 @@ export function SalaryAdjustments({ ledger, period, display, onSave }: Props) {
           key={period.id}
           ledger={ledger}
           period={period}
+          today={today}
           display={display}
           onSave={onSave}
           original={original}
@@ -78,18 +57,19 @@ export function SalaryAdjustments({ ledger, period, display, onSave }: Props) {
 function AdjustmentChecklist({
   ledger,
   period,
+  today,
   display,
   onSave,
   original,
   config,
-}: Pick<Props, "ledger" | "period" | "display" | "onSave"> & { original: SalaryAdjustment[]; config: SalaryConfig }) {
+}: Pick<Props, "ledger" | "period" | "today" | "display" | "onSave"> & { original: SalaryAdjustment[]; config: SalaryConfig }) {
   const [items, setItems] = useState(original.map(item => ({ ...item })));
   const [error, setError] = useState("");
   const catalog = salaryCatalogAt(config, period.start).filter(concept => concept.active);
   const catalogIds = new Set(catalog.map(concept => concept.id));
   const customItems = items.filter(item => !item.catalogId || !catalogIds.has(item.catalogId));
   const dirty = JSON.stringify(items) !== JSON.stringify(original);
-  const canEstimate = salaryHistoricalEstimate(ledger, period) !== null;
+  const expectedKnown = salaryPeriodPresentation(ledger, period, today).estimateKnown;
   const base = period.concepts.reduce((total, concept) => total + concept.amount, 0);
   const delta = items.reduce((total, item) => total + (item.sign === "subtract" ? -item.amount : item.amount), 0);
   const measurementInvalid = items.some(item => item.unit && (
@@ -269,7 +249,7 @@ function AdjustmentChecklist({
 
       <div className={styles.extraSummary}>
         <span>Conceptos extra: {display(delta)}</span>
-        <b>Esperado: {canEstimate ? display(base + delta) : "Sin información suficiente"}</b>
+        {expectedKnown&&<b>Esperado: {display(base + delta)}</b>}
       </div>
       <small>Se guardan como estimación. No registran ingresos ni confirman una deuda.</small>
       {measurementInvalid && <p role="alert">Completa las unidades y verifica que su costo produzca un importe entero en colones.</p>}

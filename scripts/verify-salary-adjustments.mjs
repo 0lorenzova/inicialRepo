@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
-import {saveSalaryConfig,salaryPeriodForDate,salaryPeriodPresentation,salaryHistoricalEstimate,saveSalaryAdjustments,salaryAdjustments,salaryExpected,salaryReceived,salaryPeriodTotals,salaryCatalog,salaryCatalogAt,salaryCatalogNextEffectiveFrom,saveSalaryCatalog,salaryPeriodApplications,postSalaryPayment,saveSalaryPeriod,correctSalaryPayment,salaryPeriodRemaining} from '../lib/salary-tracking.ts';
+import {saveSalaryConfig,salaryPeriodForDate,salaryPeriodPresentation,saveSalaryAdjustments,salaryAdjustments,salaryExpected,salaryReceived,salaryPeriodTotals,salaryCatalog,salaryCatalogAt,salaryCatalogNextEffectiveFrom,saveSalaryCatalog,salaryPeriodApplications,postSalaryPayment,saveSalaryPeriod,correctSalaryPayment,salaryPeriodRemaining} from '../lib/salary-tracking.ts';
 import {salaryProjection,salaryProjectionRange} from '../lib/salary-projection.ts';
 const today='2026-10-18';
 const initial={accounts:[{id:'a',name:'Prueba',type:'Banco',active:true,balance:0}],envelopes:[],movements:[],loans:[]};
 const config={id:'c',name:'Salario',employer:'Ejemplo',currency:'CRC',base:125000,frequency:'Semanal',start:'2026-09-28',payOffset:1,calendarMode:'iso-workdays',workDays:[1,2,3,4,5],active:true};
 let d=saveSalaryConfig(initial,config,null);const p=salaryPeriodForDate(d,'c','2026-10-05');
-assert.equal(salaryHistoricalEstimate(d,p).amount,125000);
-const older=salaryPeriodForDate(d,'c','2026-08-03');assert.equal(salaryHistoricalEstimate(d,older),null);
-const legacy={...d,salary:{...d.salary,configs:[config]}};assert.equal(salaryHistoricalEstimate(legacy,p),null);
+assert.equal(salaryPeriodPresentation(d,p,today).estimateKnown,false);
+assert.equal(salaryPeriodPresentation(d,p,today).expected,0);
+assert.equal(salaryPeriodTotals(d,p,today).projected,0,'An unrecorded historical period has no projected amount');
+const older=salaryPeriodForDate(d,'c','2026-08-03');assert.equal(salaryPeriodPresentation(d,older,today).estimateKnown,false);
+const legacy={...d,salary:{...d.salary,configs:[config]}};assert.equal(salaryPeriodPresentation(legacy,p,today).estimateKnown,false);
 let view=salaryPeriodPresentation(d,p,today);assert.equal(view.state,'Sin registros');assert.equal(view.tone,'neutral');assert.equal(view.received,0);assert.equal(view.pending,0);assert.equal(view.overdue,false);
 const catalog=[{id:'extra',name:'Horas extra',sign:'add',usualAmount:15000,active:true},{id:'ded',name:'Deducción',sign:'subtract',usualAmount:5000,active:true}];
 d=saveSalaryCatalog(d,'c',catalog,[],'2026-10-19',today);assert.equal(salaryCatalog(d.salary.configs[0]).length,2);assert.equal(salaryExpected(d,p),125000,'Catalogue does not automatically apply');assert.equal(salaryCatalogNextEffectiveFrom(d.salary.configs[0],today),'2026-10-26');assert.equal(salaryCatalogAt(d.salary.configs[0],'2026-10-18').length,0);
@@ -28,7 +30,7 @@ const payment=paid.salary.payments[0];paid=correctSalaryPayment(paid,payment,{..
 const partialApps=salaryPeriodApplications(temporary,'c',p.id,50000);let partial=postSalaryPayment(d,{...pay,id:'partial',amount:50000,applications:partialApps},today);view=salaryPeriodPresentation(partial,p,today);assert.equal(view.tone,'partial');assert.equal(view.overdue,false,'A partial advance does not establish overdue earned debt');assert.equal(view.pending,0);assert.equal(view.overdueDays,0);
 let confirmed=saveSalaryPeriod(d,{...p,earned:true},null,today,'Obligación histórica reconocida');view=salaryPeriodPresentation(confirmed,confirmed.salary.periods[0],today);assert.equal(view.tone,'overdue');assert.equal(view.pending,130000,'Estimated extra does not become confirmed debt');
 assert.equal(salaryPeriodPresentation(confirmed,{...p,earned:true,payDate:'2026-10-25'},today).tone,'neutral','No red before due date');
-const original=d.salary.configs[0];d=saveSalaryConfig(d,{...original,base:150000,effectiveFrom:'2026-10-12'},original);assert.equal(salaryHistoricalEstimate(d,salaryPeriodForDate(d,'c','2026-10-05')).amount,145000);assert.equal(salaryHistoricalEstimate(d,salaryPeriodForDate(d,'c','2026-10-12')).amount,170000);
+const original=d.salary.configs[0];d=saveSalaryConfig(d,{...original,base:150000,effectiveFrom:'2026-10-12'},original);assert.equal(salaryPeriodPresentation(d,salaryPeriodForDate(d,'c','2026-10-05'),today).expected,0);assert.equal(salaryPeriodPresentation(d,salaryPeriodForDate(d,'c','2026-10-12'),today).expected,170000);
 assert.throws(()=>saveSalaryConfig(d,{...d.salary.configs[0],base:160000,effectiveFrom:'2026-10-21'},d.salary.configs[0]),/inicio/);
 assert.throws(()=>saveSalaryConfig(d,{...d.salary.configs[0],id:'duplicate',name:'  SALARIO  ',employer:' ejemplo '},null),/Ya existe/);
 d=saveSalaryConfig(d,{...config,id:'c2',name:'Trabajo adicional'},null);assert.equal(d.salary.configs.length,2);
@@ -37,7 +39,7 @@ assert.equal(JSON.stringify(d),before);const result=salaryProjection(partial,'20
 assert.deepEqual(salaryProjectionRange('2026-12-30','week'),{start:'2027-01-04',end:'2027-01-10'});
 assert.throws(()=>salaryProjectionRange(today,'custom',0,'days'),/entero positivo/);
 assert.equal(salaryAdjustments(d,p).length,3);
-console.log('OK: neutral unknown history, valid/unknown historical estimates, catalogue and independent signed adjustments, confirmed versus expected, stale/duplicate rejection, payments and deductions, historical preservation, multiple sources and dated terms, projection ranges, year boundary, no query writes.');
+console.log('OK: neutral unknown history without historical estimates, catalogue and independent signed adjustments, confirmed versus expected, stale/duplicate rejection, payments and deductions, historical preservation, multiple sources and dated terms, projection ranges, year boundary, no query writes.');
 
 const hourly=saveSalaryConfig(initial,{...config,id:'hour',remuneration:'hour',hourlyRate:2000,hoursPerDay:8},null);
 assert.equal(salaryPeriodForDate(hourly,'hour','2026-10-05').concepts[0].amount,80000);
@@ -80,4 +82,4 @@ assert.equal(d.salary.periods.length,0,'Adjustment-only weeks do not materialize
 console.log('OK: current empty week does not imply debt; adjustment-only weeks stay independent.');
 
 assert.equal(salaryPeriodPresentation(legacy,p,today).estimateKnown,false);
-assert.equal(salaryPeriodPresentation(d,p,today).estimateKnown,true);
+assert.equal(salaryPeriodPresentation(d,p,today).estimateKnown,false);

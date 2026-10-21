@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {saveSalaryConfig,salaryPeriodForDate,salaryHistoricalEstimate,salaryPeriodPresentation,saveSalaryPeriod,activateSalaryPeriod} from '../lib/salary-tracking.ts';
+import {saveSalaryConfig,salaryPeriodForDate,salaryPeriodPresentation,saveSalaryPeriod,activateSalaryPeriod} from '../lib/salary-tracking.ts';
 import {salaryProjection} from '../lib/salary-projection.ts';
 import {calendarRelativeLabel} from '../lib/planning-calendar.ts';
 const empty={accounts:[],envelopes:[],movements:[],loans:[]};
@@ -33,7 +33,7 @@ assert.equal(salaryPeriodForDate(ledger,'employer-a','2026-10-12').payDate,'2026
 assert.equal(salaryPeriodForDate(ledger,'employer-b','2026-10-12').payDate,'2026-10-14');
 const current=ledger.salary.configs[0];
 const ended=saveSalaryConfig(ledger,{...current,active:false,employmentEnd:'2026-10-11'},current);
-assert.equal(salaryHistoricalEstimate(ended,salaryPeriodForDate(ended,base.id,'2026-10-12')),null);
+const endedPeriod=salaryPeriodForDate(ended,base.id,'2026-10-12');assert.equal(salaryPeriodPresentation(ended,endedPeriod,'2026-10-18').estimateKnown,false);assert.equal(salaryPeriodPresentation(ended,endedPeriod,'2026-10-18').expected,0);
 assert.equal(salaryProjection(ended,'2026-10-19','2026-11-30','2026-10-18',[base.id]).expected,0);
 assert.throws(()=>saveSalaryConfig(ledger,{...current,employmentEnd:'2025-12-01'},current),/anterior al inicio/);
 const year=salaryPeriodForDate(ledger,base.id,'2027-01-01');assert.equal(year.start,'2026-12-28');assert.equal(year.payDate,'2027-01-02');

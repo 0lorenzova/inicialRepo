@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {latestSalaryPeriodPending} from '../lib/salary-tracking.ts';
 import {salaryDateLabel,salaryWorkSchedule,salaryWeekdays} from '../lib/salary-dates.ts';
 import {saveSalaryConfig,saveSalaryPeriod,salaryPeriodForDate,adjacentSalaryPeriod,salaryPeriodPresentation,salaryTemporalLabel,salaryPeriodLabel,shiftSalaryDate} from '../lib/salary-tracking.ts';
@@ -6,7 +7,7 @@ const empty={accounts:[],envelopes:[],movements:[],loans:[]};
 const c={id:'c',employer:'Ficticio',name:'Salario',currency:'CRC',base:125000,frequency:'Semanal',calendarMode:'iso-workdays',start:'2026-10-12',payOffset:1,workDays:[1,2,3,4,5],active:true};
 let d=saveSalaryConfig(empty,c,null);const original=JSON.stringify(d),current=salaryPeriodForDate(d,c.id,'2026-10-16');
 let p=current;
-for(let i=1;i<=110;i++){p=adjacentSalaryPeriod(d,p,-1);assert.equal(p.start,shiftSalaryDate(current.start,-i*7));assert.equal(salaryTemporalLabel(d,p,'2026-10-16'),i===1?'La semana pasada':`Hace ${i} semanas`);const v=salaryPeriodPresentation(d,p,'2026-10-16');assert.equal(v.received,0);assert.equal(v.paymentCount,0);assert.equal(v.expected,125000);assert.equal(salaryPeriodForDate(d,c.id,p.end).id,p.id);}
+for(let i=1;i<=110;i++){p=adjacentSalaryPeriod(d,p,-1);assert.equal(p.start,shiftSalaryDate(current.start,-i*7));assert.equal(salaryTemporalLabel(d,p,'2026-10-16'),i===1?'La semana pasada':`Hace ${i} semanas`);const v=salaryPeriodPresentation(d,p,'2026-10-16');assert.equal(v.received,0);assert.equal(v.paymentCount,0);assert.equal(v.expected,0);assert.equal(v.estimateKnown,false);assert.equal(salaryPeriodForDate(d,c.id,p.end).id,p.id);}
 for(let i=0;i<110;i++)p=adjacentSalaryPeriod(d,p,1);assert.deepEqual(p,current);assert.equal(JSON.stringify(d),original);
 for(const [date,label] of [['2026-12-31','Jv'],['2027-01-01','Vi'],['2027-01-03','Dm']])assert.ok(salaryDateLabel(date).startsWith(label+' '));
 for(let i=0;i<7;i++)assert.ok(salaryDateLabel(shiftSalaryDate('2026-10-11',i),false).startsWith(salaryWeekdays[i]+' '));
@@ -21,7 +22,16 @@ assert.equal(adjacentSalaryPeriod(d,custom,1).start,'2026-10-19');assert.equal(J
 console.log('OK: 110 weeks each direction, calendar/arrow identity, zero receipts, no writes, ISO year change, weekday labels, planned workdays and custom-history backward regression.');
 const earlierConfig={...c,start:'2026-08-03'};
 const shortcut=saveSalaryConfig(empty,earlierConfig,null),snapshot=JSON.stringify(shortcut);
-assert.equal(latestSalaryPeriodPending(shortcut,'c','2026-10-16').start,'2026-10-05');
+assert.equal(latestSalaryPeriodPending(shortcut,'c','2026-10-16'),null,'An unsaved historical gap is not suggested as pending');
 assert.equal(latestSalaryPeriodPending(shortcut,'c','2026-08-04'),null);
 assert.equal(JSON.stringify(shortcut),snapshot);
-console.log('OK: pending-period shortcut includes unsaved weeks and never creates records or pre-tracking obligations.');
+const confirmed=saveSalaryPeriod(shortcut,{...salaryPeriodForDate(shortcut,'c','2026-10-05'),earned:true},null,'2026-10-16','Obligación histórica confirmada');
+assert.equal(latestSalaryPeriodPending(confirmed,'c','2026-10-16').start,'2026-10-05','A saved historical obligation remains available as pending');
+console.log('OK: pending-period shortcut excludes unsaved historical gaps and retains explicitly confirmed obligations.');
+const receiveDialog=readFileSync(new URL('../components/salary-receive-dialog.tsx',import.meta.url),'utf8');
+const receiveStyles=readFileSync(new URL('../components/salary-receive-dialog.module.css',import.meta.url),'utf8');
+assert.match(receiveDialog,/onPointerDown=\{startPeriodGesture\}/,'The week card captures pointer gestures');
+assert.match(receiveDialog,/movePeriod\(dx>0\?-1:1\)/,'Right goes back one period; left advances one period');
+assert.match(receiveDialog,/movePeriodMonth\(dy<0\?-1:1\)/,'Up goes to the previous month; down advances one month');
+assert.match(receiveStyles,/touch-action:none;user-select:none/,'Touch and mouse drags are not consumed as scrolling or text selection');
+console.log('OK: week card touch/mouse gestures navigate weeks and months in the requested directions.');

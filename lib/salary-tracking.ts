@@ -52,7 +52,8 @@ export function salaryConceptPaid(ledger:SalaryLedger,periodId:string,conceptId:
   return total(salaryState(ledger).payments.filter(p=>salaryPaymentValid(ledger,p)).flatMap(p=>p.applications.filter(a=>a.periodId===periodId&&a.conceptId===conceptId).map(a=>a.amount)));
 }
 export function salaryPeriodTotals(ledger:SalaryLedger,period:SalaryPeriod,today=salaryLocalToday()) {
-  const projected=salaryExpected(ledger,period);
+  const saved=salaryState(ledger).periods.some(item=>item.id===period.id);
+  const projected=period.end<today&&!saved&&!period.earned?0:salaryExpected(ledger,period);
   const confirmed=period.earned&&canConfirmSalaryPeriod(period,today);
   const earned=confirmed?salaryExpected(ledger,period,true):0;
   const received=salaryReceived(ledger,period.id);
@@ -222,9 +223,11 @@ export function latestSalaryPeriodPending(ledger:SalaryLedger,configId:string,to
   const state=salaryState(ledger),config=state.configs.find(c=>c.id===configId);
   if(!config)return null;
   let period=salaryPeriodForDate(ledger,configId,today);
-  // At most each saved settled row plus the first unsaved reference is visited.
+  // At most each saved row plus the first unsaved reference is visited.
   for(let i=0;i<=state.periods.filter(p=>p.configId===configId).length+1;i++) {
-    if(salaryWorkEnd(period)<today&&salaryPeriodRemaining(ledger,period)>0)return period;
+    const saved=state.periods.some(item=>item.id===period.id);
+    const view=salaryPeriodPresentation(ledger,period,today);
+    if(saved&&view.confirmed&&view.pending>0)return period;
     if(period.start<=config.start)return null;
     period=adjacentSalaryPeriod(ledger,period,-1);
     if(period.end<config.start)return null;
@@ -284,8 +287,8 @@ export function activateSalaryPeriod<T extends SalaryLedger>(ledger:T,requested:
   if(original?.earned)return ledger;
   ensure(salaryPeriodPresentation(ledger,period,today).historicalEmpty,"Solo puedes activar una semana pasada sin pagos ni obligación confirmada.");
   ensure(requested.configId===period.configId&&requested.start===period.start&&requested.end===period.end,"La plantilla debe conservar las fechas de la semana seleccionada.");
-  ensure(requested.frequency===period.frequency&&JSON.stringify(requested.scheduledWorkDays??[])===JSON.stringify(period.scheduledWorkDays??[]),"La jornada de la semana cambió. Vuelve a revisarla.");
-  const reviewed={...period,payDate:requested.payDate,concepts:requested.concepts.map(concept=>({...concept})),earned:true};
+  ensure(requested.frequency===period.frequency,"La frecuencia de la semana cambió. Vuelve a revisarla.");
+  const reviewed={...period,payDate:requested.payDate,scheduledWorkDays:requested.scheduledWorkDays??period.scheduledWorkDays,concepts:requested.concepts.map(concept=>({...concept})),earned:true};
   ensure(salaryExpected(ledger,reviewed,true)>0,"El importe confirmado debe ser mayor que cero para activar el pendiente.");
   return saveSalaryPeriod(ledger,reviewed,original,today,"El usuario revisó y guardó la plantilla de la semana histórica como salario pendiente; no registra un ingreso.");
 }
@@ -480,8 +483,16 @@ export function salaryPeriodPaymentLabel(ledger:SalaryLedger,period:SalaryPeriod
 export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod,today:string) {
   const amounts=salaryPeriodTotals(ledger,period,today);
   const confirmed=period.earned&&canConfirmSalaryPeriod(period,today);
-  const payments=salaryState(ledger).payments.filter(p=>salaryPaymentValid(ledger,p)&&p.applications.some(a=>a.periodId===period.id));
-  const expected=salaryExpected(ledger,period);
+  const salary=salaryState(ledger);
+  const payments=salary.payments.filter(p=>salaryPaymentValid(ledger,p)&&p.applications.some(a=>a.periodId===period.id));
+  const config=salary.configs.find(c=>c.id===period.configId);
+  const saved=salary.periods.some(item=>item.id===period.id);
+  const terms=config?.termsHistory??[];
+  const withinEmployment=Boolean(config&&period.start>=config.start&&(!config.employmentStart||period.start>=config.employmentStart)&&(!config.employmentEnd||period.end<=config.employmentEnd));
+  const applicable=config&&(salaryConfigAt(config,period.start)??(terms.length?null:config));
+  const hasMidPeriodChange=terms.some(term=>term.effectiveFrom>period.start&&term.effectiveFrom<=period.end);
+  const estimateKnown=saved||period.earned||Boolean(period.end>=today&&withinEmployment&&applicable&&!hasMidPeriodChange);
+  const expected=estimateKnown?salaryExpected(ledger,period):0;
   const amountFor=(payment:SalaryPayment)=>total(payment.applications.filter(a=>a.periodId===period.id).map(a=>a.amount));
   const dateKnownPayments=payments.filter(payment=>!payment.dateAccuracy||payment.dateAccuracy==="exact");
   const early=total(dateKnownPayments.filter(p=>salaryReceiptDay(p.date)<period.payDate).map(amountFor));
@@ -494,13 +505,11 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   const overdueLabel=overdueDays?`${overdueDays} ${overdueDays===1?"día":"días"} de atraso`:"";
   const fullyPaid=expected>0&&amounts.received>=expected;
   const workState=period.start>today?"Aún no comienza":today<=workEnd?"En curso":"Jornada prevista finalizada";
-  const config=salaryState(ledger).configs.find(c=>c.id===period.configId);
-  const estimateKnown=Boolean(salaryHistoricalEstimate(ledger,period))||Boolean(config&&period.start>=today&&period.start>=config.start&&!config.termsHistory?.length&&(!config.employmentStart||period.start>=config.employmentStart)&&(!config.employmentEnd||period.end<=config.employmentEnd));
   const noRecords=!payments.length&&!confirmed;
   const historicalEmpty=noRecords&&period.end<today;
   const state=noRecords&&period.start<=today?"Sin registros":fullyPaid?"Completamente pagado":amounts.received>0?"Parcialmente pagado":overdue?"Pendiente vencido":period.start>today?"Proyectado":today<=workEnd?"En curso":"Pendiente de pago";
   const tone=fullyPaid?"paid":amounts.received>0?"partial":confirmed&&overdue?"overdue":"neutral";
-  return {...amounts,expected,remaining,confirmed,fullyPaid,noRecords,historicalEmpty,estimateKnown,early,late,advances:early,laborAdvances,hasAdvance:early>0||laborAdvances>0,workEnd,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
+  return {...amounts,projected:!confirmed&&estimateKnown?expected:0,expected,remaining,confirmed,fullyPaid,noRecords,historicalEmpty,estimateKnown,early,late,advances:early,laborAdvances,hasAdvance:early>0||laborAdvances>0,workEnd,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
 }
 export type StandardSalaryReceipt={amount:number;accountId:string;method:string};
 /** Returns a safe full-week amount only when every saved addition is confirmed. */
@@ -694,13 +703,4 @@ export function saveSalaryAdjustments<T extends SalaryLedger>(ledger:T,period:Sa
   const next={...ledger,salary:{...state,periodAdjustments,audit:audit(state,period.id,"Ajustes salariales","Solo planificación; no registra dinero ni confirma deuda",original)}};
   salaryExpected(next,current);salaryExpected(next,current,true);
   return next;
-}
-export function salaryHistoricalEstimate(ledger:SalaryLedger,period:SalaryPeriod) {
-  const config=salaryState(ledger).configs.find(c=>c.id===period.configId);
-  const saved=salaryState(ledger).periods.find(p=>p.id===period.id);
-  if(saved)return {amount:salaryExpected(ledger,saved),basis:"Condiciones e importes conservados en la referencia histórica."};
-  const applicable=config&&salaryConfigAt(config,period.start);
-  if(config&&((config.employmentStart&&period.start<config.employmentStart)||(config.employmentEnd&&period.end>config.employmentEnd)))return null;
-  if(!config||!applicable||(config.termsHistory??[]).some(t=>t.effectiveFrom>period.start&&t.effectiveFrom<=period.end))return null;
-  return {amount:salaryExpected(ledger,period),basis:`Salario base y jornada habitual configurados desde ${applicable.effectiveFrom}. No acredita horas efectivamente trabajadas.`};
 }

@@ -1,7 +1,7 @@
 "use client";
 import {SalaryPeriodActivation} from "./salary-period-activation";
 import {useRef,useState} from 'react';
-import {SalaryAdjustments,SalaryEstimation} from './salary-adjustments';
+import {SalaryAdjustments} from './salary-adjustments';
 import {FinanceDialog} from './finance-dialog';
 import {SalaryPeriodCalendar} from './salary-period-calendar';
 import {salaryViewerDay,salaryDateLabel,salaryWorkSchedule} from '@/lib/salary-dates';
@@ -44,7 +44,7 @@ export function SalaryPeriodReport({ledger,config,today,display,onClose,onMoveme
     {notice&&<p role="status">{notice}</p>}
     <div className="review-box">{!view.historicalEmpty&&<span>Esperado / proyectado: <b>{view.estimateKnown?display(view.expected):"Sin proyección"}</b></span>}<span>Realmente recibido: <b>{display(view.received)}</b></span><span>Pendiente confirmado: <b>{display(view.pending)}</b></span><span>Pago previsto: <b>{day(period.payDate)}</b></span></div>
     {onSave&&<SalaryPeriodActivation key={`activate:${period.id}`} {...{ledger,period,today,display,onSave}}/>}
-    <SalaryEstimation key={`estimate:${period.id}`} {...{ledger,period,today,display}}/><SalaryAdjustments key={`adjust:${period.id}`} {...{ledger,period,today,display,onSave}}/><details className={planning.panel}><summary>Base de cálculo y conceptos conservados</summary><p>{saved?'Referencia conservada con sus datos originales.':'Proyección calculada; no hay un período guardado.'} Consultar no registra dinero ni confirma días trabajados.</p><small>{salaryWorkSchedule(period)}</small>{!view.historicalEmpty&&<h3>Conceptos conservados</h3>}{!view.historicalEmpty&&view.estimateKnown&&period.concepts.map(c=><p key={c.id}>{c.name}: {display(c.amount)} · Recibido {display(salaryConceptPaid(ledger,period.id,c.id))}</p>)}</details>
+    <SalaryAdjustments key={`adjust:${period.id}`} {...{ledger,period,today,display,onSave}}/><details className={planning.panel}><summary>Base de cálculo y conceptos conservados</summary><p>{saved?'Referencia conservada con sus datos originales.':period.end<today?'No hay una referencia salarial guardada para esta semana.':'Proyección calculada; no hay un período guardado.'} Consultar no registra dinero ni confirma días trabajados.</p><small>{salaryWorkSchedule(period)}</small>{!view.historicalEmpty&&<h3>Conceptos conservados</h3>}{!view.historicalEmpty&&view.estimateKnown&&period.concepts.map(c=><p key={c.id}>{c.name}: {display(c.amount)} · Recibido {display(salaryConceptPaid(ledger,period.id,c.id))}</p>)}</details>
     <details className={planning.panel}><summary>Pagos y abonos ({payments.length})</summary>{!payments.length&&<p>No hay pagos registrados para este período.</p>}{payments.map(p=><div className="review-box" key={p.id}><b>{day(p.date)} · {display(p.applications.filter(a=>a.periodId===period.id).reduce((n,a)=>n+a.amount,0))}</b><span>{salaryPaymentTiming(period,p.date).label}</span><span>{p.historical?'Histórico; sin entrada bancaria':p.method}</span>{p.reference&&<span>{p.reference}</span>}{!p.historical&&<button className="secondary" onClick={()=>{onClose();onMovement(p.movementId);}}>Ver movimiento</button>}</div>)}</details>
     </>:<p role="alert">No hay una referencia disponible para esta fecha. Selecciona otra fecha o consulta el período histórico que la contiene.</p>}{error&&<p role="alert">{error}</p>}
   </section></FinanceDialog>;

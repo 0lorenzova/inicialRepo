@@ -15,8 +15,12 @@ const register=(ledger,period,id,date,accountId='a')=>recordStandardSalaryPaymen
 // 1, 6, 9, 11: historical exact receipt, different from Saturday, paid badge, and unrelated weeks/saldos.
 const past=periodFor(configured,'2026-10-08');
 assert.equal(past.start,'2026-10-05');assert.equal(past.payDate,'2026-10-10');
-assert.equal(standardSalaryReceipt(configured,past,today)?.amount,100000);
-let pastPaid=register(configured,past,'past-exact','2026-10-09T09:15');
+assert.equal(standardSalaryReceipt(configured,past,today),null,'An unrecorded past week has no estimated quick-receipt amount');
+assert.equal(standardSalaryAmount(configured,past,today),null);
+const confirmedPastLedger=saveSalaryPeriod(configured,{...past,earned:true},null,today,'Importe histórico real confirmado');
+const confirmedPast=salaryState(confirmedPastLedger).periods[0];
+assert.equal(standardSalaryReceipt(confirmedPastLedger,confirmedPast,today)?.amount,100000,'A saved historical obligation keeps its confirmed amount');
+let pastPaid=register(confirmedPastLedger,confirmedPast,'past-exact','2026-10-09T09:15');
 assert.equal(pastPaid.movements[0].date,'2026-10-09T09:15');
 assert.equal(pastPaid.salary.payments[0].applications[0].periodId,past.id);
 assert.equal(salaryPeriodPresentation(pastPaid,past,today).fullyPaid,true);
@@ -46,20 +50,21 @@ assert.equal(salaryPeriodPresentation(advance,future,today).fullyPaid,true);
 assert.throws(()=>register(configured,future,'future-date','2026-10-29T12:00'),'A future week cannot create a future-dated receipt');
 
 // 4, 5: honor the saved/default account; when ambiguous, expose the known amount and ask for an account.
-const twoAccounts={...configured,accounts:[...configured.accounts,{id:'b',name:'Otra cuenta',type:'Banco',active:true,balance:0}]};
-assert.equal(standardSalaryReceipt(twoAccounts,past,today)?.accountId,undefined,'No unconfigured account is guessed when there are several active accounts');
-assert.equal(standardSalaryReceipt(twoAccounts,past,today,'b')?.accountId,'b');
-assert.equal(standardSalaryAmount({...configured,accounts:[]},past,today),100000);
-assert.equal(standardSalaryReceipt({...configured,accounts:[]},past,today),null,'A missing account blocks one-click posting');
+const twoAccounts={...confirmedPastLedger,accounts:[...confirmedPastLedger.accounts,{id:'b',name:'Otra cuenta',type:'Banco',active:true,balance:0}]};
+assert.equal(standardSalaryReceipt(twoAccounts,confirmedPast,today)?.accountId,undefined,'No unconfigured account is guessed when there are several active accounts');
+assert.equal(standardSalaryReceipt(twoAccounts,confirmedPast,today,'b')?.accountId,'b');
+assert.equal(standardSalaryAmount({...confirmedPastLedger,accounts:[]},confirmedPast,today),100000);
+assert.equal(standardSalaryReceipt({...confirmedPastLedger,accounts:[]},confirmedPast,today),null,'A missing account blocks one-click posting');
 
 // 7: exact historical dates create a financial movement. Unknown/approximate dates stay explicitly historical.
-let unknownPrepared=activateSalaryPeriod(configured,past,today);
+const actualPast={...past,concepts:past.concepts.map(concept=>({...concept,amount:100000}))};
+let unknownPrepared=activateSalaryPeriod(configured,actualPast,today);
 const unknownApps=salaryPeriodApplications(unknownPrepared,'employer',past.id,100000);
 const unknown=postHistoricalSalaryPayment(unknownPrepared,{id:'unknown-date',configId:'employer',date:today,source:'salary-quick:unknown-date',notes:'',applications:unknownApps,dateAccuracy:'unknown'},today);
 assert.equal(unknown.movements.length,0);
 assert.equal(unknown.salary.payments[0].dateAccuracy,'unknown');
 assert.equal(salaryPeriodPresentation(unknown,past,today).tone,'paid');
-let approximatePrepared=activateSalaryPeriod(configured,past,today);
+let approximatePrepared=activateSalaryPeriod(configured,actualPast,today);
 const approximateApps=salaryPeriodApplications(approximatePrepared,'employer',past.id,100000);
 const approximate=postHistoricalSalaryPayment(approximatePrepared,{id:'approximate-date',configId:'employer',date:'2026-10-08',source:'salary-quick:approximate-date',notes:'',applications:approximateApps,dateAccuracy:'approximate'},today);
 assert.equal(approximate.movements.length,0);
@@ -69,8 +74,10 @@ assert.equal(approximate.salary.payments[0].dateAccuracy,'approximate');
 // 8: saved and validated positive extras join the standard amount; estimates and deductions require detail.
 const extraPeriod=periodFor(configured,'2026-10-08');
 let withExtra=saveSalaryAdjustments(configured,extraPeriod,[{id:'bike',name:'Moto alquiler',amount:15000,sign:'add',status:'confirmed'}],salaryAdjustments(configured,extraPeriod));
-assert.equal(standardSalaryAmount(withExtra,extraPeriod,today),115000);
-const extraPaid=register(withExtra,extraPeriod,'with-extra','2026-10-09T09:15');
+const confirmedExtraLedger=saveSalaryPeriod(withExtra,{...extraPeriod,earned:true},null,today,'Importe histórico y extra reales confirmados');
+const confirmedExtra=salaryState(confirmedExtraLedger).periods.find(item=>item.id===extraPeriod.id);
+assert.equal(standardSalaryAmount(confirmedExtraLedger,confirmedExtra,today),115000);
+const extraPaid=register(confirmedExtraLedger,confirmedExtra,'with-extra','2026-10-09T09:15');
 assert.equal(extraPaid.movements[0].amount,115000);
 assert.equal(extraPaid.salary.payments[0].applications.reduce((sum,item)=>sum+item.amount,0),115000);
 const estimated=saveSalaryAdjustments(configured,extraPeriod,[{id:'estimated',name:'Extra pendiente',amount:15000,sign:'add',status:'estimated'}],salaryAdjustments(configured,extraPeriod));
@@ -117,6 +124,7 @@ assert.equal(totals(distribution).assigned,30000);
 // 10, 15, 16: visible copy, detailed exceptions, post-save distribution, preserved extras, and responsive layout hooks.
 const component=readFileSync(new URL('../components/salary-tracking.tsx',import.meta.url),'utf8');
 const receiptDialog=readFileSync(new URL('../components/salary-receipt-dialog.tsx',import.meta.url),'utf8');
+const receiveDialog=readFileSync(new URL('../components/salary-receive-dialog.tsx',import.meta.url),'utf8');
 const css=readFileSync(new URL('../components/salary-tracking.module.css',import.meta.url),'utf8');
 assert.match(component,/Salario completo recibido/);
 assert.match(component,/✓ Pagada/);
@@ -131,6 +139,8 @@ assert.match(receiptDialog,/Continuar sin asignar/);
 assert.match(css,/@media\(max-width:600px\)/);
 assert.match(css,/\.quickReceipt input\{[^}]*width:22px/);
 assert.match(component,/date:""/,'Historical grouped payments start without an invented date');
+assert.match(receiveDialog,/presentation\?\.historicalEmpty\|\|reviewingPeriod/,'The historical checkbox stays visible while its review form is open');
+assert.match(receiveDialog,/checked=\{Boolean\(presentation\?\.confirmed\|\|reviewingPeriod\)\}/,'The inline checkbox reflects the open historical review');
 assert.equal(salaryExpected(withExtra,extraPeriod),115000,'The existing adjustment amount remains attached to the period');
 
 console.log('OK: standard past/current/future receipts, actual dates, account defaults and missing-account fallback, approximate/unknown history, duplicate prevention, confirmed extras, partial/ambiguous reconciliation, independent/shared multi-week deposits, one-time envelope distribution, paid-state/actions, and mobile/desktop layout hooks.');

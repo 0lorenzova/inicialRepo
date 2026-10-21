@@ -7,7 +7,7 @@ import { FinanceDialog } from "./finance-dialog";
 import { activateSalaryPeriod, adjacentSalaryPeriod, hasUnlinkedSalaryIncome, postHistoricalSalaryPayment, salaryBatchCandidates, salaryBatchPresetIds, salaryCycleSummary, salaryDefaultCycle, salaryPaymentTiming, salaryPeriodPaymentLabel, salaryPeriodPresentation, correctSalaryPayment, deleteSalaryPeriod, setSalaryView, salaryPeriodLabel, salaryPeriodRemaining, salaryConceptPaid, salaryPaymentValid, salaryPeriodForDate, salaryPeriodApplications, salaryReceiptDefaults, salaryState, preferredSalaryConfigId, saveSalaryPeriod, unlinkSalaryPayment, recordStandardSalaryPayment, standardSalaryAmount, standardSalaryReceipt, type SalaryApplication, type SalaryPayment, type SalaryLedger, type SalaryPeriod, type SalaryPaymentInput, type SalaryPaymentDateAccuracy, type SalaryReceiptPlan } from "@/lib/salary-tracking";
 import { SalaryBenefits } from "./salary-benefits";
 import styles from "./salary-tracking.module.css";
-import {SalaryAdjustments,SalaryEstimation} from "./salary-adjustments";
+import {SalaryAdjustments} from "./salary-adjustments";
 import {SalaryProjection} from "./salary-projection";
 import {salaryPaymentConcepts} from "@/lib/salary-tracking";
 import {SalaryPeriodReport} from "./salary-period-report";
@@ -189,7 +189,7 @@ export function SalaryTracking({ledger,envelopes,today:initialToday,display,inco
           <p>Fecha prevista de pago: {day(p.payDate)} · Estado laboral: {sum.workState}</p>
           {p.scheduledWorkDays&&<small>{salaryWorkSchedule(p)}</small>}{(p.workedDays??[]).length>0&&<p>Días registrados como trabajados: {p.workedDays!.map(value=>day(value)).join(", ")}</p>}
           {!sum.historicalEmpty&&sum.estimateKnown&&p.concepts.map(c=><div className={styles.concept} key={c.id}><b>{c.name}</b><span>{display(c.amount)} · Recibido {display(salaryConceptPaid(ledger,p.id,c.id))}</span></div>)}
-          <SalaryEstimation ledger={ledger} period={p} today={today} display={display}/><SalaryAdjustments ledger={ledger} period={p} today={today} display={display} onSave={onSave}/>
+          <SalaryAdjustments ledger={ledger} period={p} today={today} display={display} onSave={onSave}/>
           {p.notes&&<p>{p.notes}</p>}
           <details><summary>Correcciones históricas</summary><div className={styles.actions}><button className="secondary" disabled={!state.periods.some(item=>item.id===p.id)} onClick={()=>editPeriod(p)}>Corregir datos y conceptos</button><button disabled={!state.periods.some(item=>item.id===p.id)} className="secondary" onClick={()=>{setReason("");setError("");setDeleting({period:p});}}>Eliminar período</button></div></details>
           <h3>Pagos del período</h3>
