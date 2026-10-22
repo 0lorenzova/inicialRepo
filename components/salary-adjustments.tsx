@@ -1,6 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import BeachAccessOutlined from "@mui/icons-material/BeachAccessOutlined";
+import CardGiftcardOutlined from "@mui/icons-material/CardGiftcardOutlined";
+import ChecklistOutlined from "@mui/icons-material/ChecklistOutlined";
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import PaidOutlined from "@mui/icons-material/PaidOutlined";
+import DirectionsBikeOutlined from "@mui/icons-material/DirectionsBikeOutlined";
 import {
   salaryAdjustments,
   salaryCatalogAt,
@@ -17,15 +24,24 @@ import {
 } from "@/lib/salary-tracking";
 import styles from "./salary-planning.module.css";
 
+function conceptIcon(name: string) {
+  const normalized = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (normalized.includes("moto") || normalized.includes("transporte")) return <DirectionsBikeOutlined/>;
+  if (normalized.includes("vacacion")) return <BeachAccessOutlined/>;
+  if (normalized.includes("aguinaldo")) return <CardGiftcardOutlined/>;
+  return <PaidOutlined/>;
+}
+
 type Props = {
   ledger: SalaryLedger;
   period: SalaryPeriod;
   today: string;
   display: (n: number) => string;
   onSave?: (operation: (current: SalaryLedger) => SalaryLedger) => void;
+  appearance?: "receipt";
 };
 
-export function SalaryAdjustments({ ledger, period, today, display, onSave }: Props) {
+export function SalaryAdjustments({ ledger, period, today, display, onSave, appearance }: Props) {
   const original = salaryAdjustments(ledger, period);
   const [expanded, setExpanded] = useState(false);
   const adjustment = salaryExpected(ledger, period) - period.concepts.reduce((total, concept) => total + concept.amount, 0);
@@ -33,10 +49,13 @@ export function SalaryAdjustments({ ledger, period, today, display, onSave }: Pr
   const selectedCount = original.length;
 
   return (
-    <section className={styles.extraPanel}>
-      <label className={styles.extraToggle}>
+    <section className={styles.extraPanel} data-appearance={appearance}>
+      <label className={`${styles.extraToggle} ${appearance === "receipt" ? styles.receiptExtraToggle : ""}`}>
         <input type="checkbox" checked={expanded} onChange={event => setExpanded(event.target.checked)} />
-        <span>Conceptos extra{selectedCount ? ` · ${selectedCount} seleccionados · ${display(adjustment)}` : ""}</span>
+        {appearance === "receipt" && <ChecklistOutlined aria-hidden="true"/>}
+        <span>{appearance === "receipt" ? `Conceptos extra${selectedCount ? ` · ${selectedCount} seleccionados` : ""}` : `Conceptos extra${selectedCount ? ` · ${selectedCount} seleccionados · ${display(adjustment)}` : ""}`}</span>
+        {appearance === "receipt" && <InfoOutlined className={styles.receiptInfo} titleAccess="Adicionales y beneficios estimados para esta semana."/>}
+        {appearance === "receipt" && <ExpandMoreRounded className={`${styles.receiptChevron} ${expanded ? styles.receiptChevronOpen : ""}`}/>}
       </label>
       {expanded && config && (
         <AdjustmentChecklist
@@ -48,6 +67,7 @@ export function SalaryAdjustments({ ledger, period, today, display, onSave }: Pr
           onSave={onSave}
           original={original}
           config={config}
+          appearance={appearance}
         />
       )}
     </section>
@@ -62,7 +82,8 @@ function AdjustmentChecklist({
   onSave,
   original,
   config,
-}: Pick<Props, "ledger" | "period" | "today" | "display" | "onSave"> & { original: SalaryAdjustment[]; config: SalaryConfig }) {
+  appearance,
+}: Pick<Props, "ledger" | "period" | "today" | "display" | "onSave" | "appearance"> & { original: SalaryAdjustment[]; config: SalaryConfig }) {
   const [items, setItems] = useState(original.map(item => ({ ...item })));
   const [error, setError] = useState("");
   const catalog = salaryCatalogAt(config, period.start).filter(concept => concept.active);
@@ -133,7 +154,7 @@ function AdjustmentChecklist({
           {catalog.map(concept => {
             const selected = items.find(item => item.catalogId === concept.id);
             return (
-              <div className={styles.extraItem} key={concept.id}>
+              <div className={`${styles.extraItem} ${appearance === "receipt" ? styles.receiptItem : ""}`} data-selected={Boolean(selected)} key={concept.id}>
                 <label className={styles.extraCheck}>
                   <input
                     type="checkbox"
@@ -141,11 +162,32 @@ function AdjustmentChecklist({
                     disabled={!onSave}
                     onChange={event => toggleConcept(concept, event.target.checked)}
                   />
+                  {appearance === "receipt" && <span className={styles.receiptConceptIcon} aria-hidden="true">{conceptIcon(concept.name)}</span>}
                   <span>{concept.name}{concept.recurring ? " · Recurrente" : ""}</span>
                 </label>
                 {selected && (
                   selected.unit && selected.rate !== undefined ? (
-                    <>
+                    appearance === "receipt" ? <div className={styles.receiptMeasured}>
+                      <label>
+                        Unidades
+                        <input type="number" inputMode="decimal" min="0.25" step="0.25" required value={selected.quantity ?? ""} disabled={!onSave} onChange={event => {
+                          const quantity = event.target.value === "" ? undefined : Number(event.target.value);
+                          let amount = 0;
+                          if (quantity !== undefined) { try { amount = salaryMeasuredAmount(quantity, selected.rate!); } catch { /* Se completa cuando los datos sean válidos. */ } }
+                          update(selected.id, { quantity, amount });
+                        }}/>
+                      </label>
+                      <label>
+                        Costo unitario
+                        <div className={styles.unitRate}><span>₡</span><input type="number" inputMode="numeric" min="1" step="1" required value={selected.rate ?? ""} disabled={!onSave} onChange={event => {
+                          const rate = event.target.value === "" ? undefined : Number(event.target.value);
+                          let amount = 0;
+                          if (rate !== undefined && selected.quantity !== undefined) { try { amount = salaryMeasuredAmount(selected.quantity, rate); } catch { /* Se completa cuando los datos sean válidos. */ } }
+                          update(selected.id, { rate, amount });
+                        }}/></div>
+                      </label>
+                      <div className={styles.receiptTotal}><small>Total</small><b>{display(selected.amount)}</b></div>
+                    </div> : <>
                       <div className={`${styles.two} ${styles.extraFields}`}>
                         <label>
                           Unidades
@@ -216,7 +258,7 @@ function AdjustmentChecklist({
       )}
 
       {customItems.map(item => (
-        <div className={styles.extraItem} key={item.id}>
+        <div className={`${styles.extraItem} ${appearance === "receipt" ? styles.receiptItem : ""}`} data-selected="true" key={item.id}>
           <label className={styles.extraCheck}>
             <input
               type="checkbox"
@@ -224,6 +266,7 @@ function AdjustmentChecklist({
               disabled={!onSave}
               onChange={() => setItems(current => current.filter(candidate => candidate.id !== item.id))}
             />
+            {appearance === "receipt" && <span className={styles.receiptConceptIcon} aria-hidden="true">{conceptIcon(item.name)}</span>}
             <span>{item.name}{!item.catalogId ? " · Personalizado" : " · Inactivo en catálogo"}</span>
           </label>
           {item.unit && item.rate !== undefined ? (
@@ -247,11 +290,12 @@ function AdjustmentChecklist({
         </div>
       ))}
 
-      <div className={styles.extraSummary}>
-        <span>Conceptos extra: {display(delta)}</span>
-        {expectedKnown&&<b>Esperado: {display(base + delta)}</b>}
+      <div className={`${styles.extraSummary} ${appearance === "receipt" ? styles.receiptSummary : ""}`}>
+        <span>{appearance === "receipt" ? "Total semana (esperado)" : `Conceptos extra: ${display(delta)}`}</span>
+        {appearance === "receipt"?<b>{expectedKnown?display(base + delta):"Sin proyección"}</b>:expectedKnown&&<b>Esperado: {display(base + delta)}</b>}
+        {appearance === "receipt"&&<small>Salario base {display(base)} + Conceptos extra {display(delta)}</small>}
       </div>
-      <small>Se guardan como estimación. No registran ingresos ni confirman una deuda.</small>
+      {appearance !== "receipt"&&<small>Se guardan como estimación. No registran ingresos ni confirman una deuda.</small>}
       {measurementInvalid && <p role="alert">Completa las unidades y verifica que su costo produzca un importe entero en colones.</p>}
       {error && <p role="alert">{error}</p>}
       {dirty && onSave && (

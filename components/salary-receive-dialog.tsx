@@ -1,4 +1,15 @@
 "use client";
+import AccountBalanceWalletOutlined from "@mui/icons-material/AccountBalanceWalletOutlined";
+import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
+import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
+import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
+import EventAvailableOutlined from "@mui/icons-material/EventAvailableOutlined";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import PaidOutlined from "@mui/icons-material/PaidOutlined";
+import SwapHorizRounded from "@mui/icons-material/SwapHorizRounded";
+import WorkOutlineOutlined from "@mui/icons-material/WorkOutlineOutlined";
 import {SalaryPeriodActivation} from "./salary-period-activation";
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
@@ -137,6 +148,8 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const canSave = Boolean(config && period && Number.isSafeInteger(numericAmount) && numericAmount > 0 && accountValid && dateValid && enoughApplications && (!reviewingPeriod || Boolean(reviewingPeriod.scheduledWorkDays?.length)) && !applicationError && !duplicateExists && !saving);
   const standardDetails=period?standardSalaryReceipt(ledger,period,today,incomeDefaults(incomePreferences,ledger.accounts).accountId):null;
   const quickStandardWeekAvailable=Boolean(standardDetails&&!historicalAccuracy&&!initialApplications?.length&&!initialReceiptPlan&&accountValid&&activationReviewPeriod?.id!==period?.id);
+  const scheduledWorkLabel=calculationPeriod?salaryWorkSchedule(calculationPeriod).replace(/^Trabajo previsto:\s*/,""):"";
+  const scheduledWorkCount=calculationPeriod?.scheduledWorkDays?.length??0;
 
   const resetApplications = (nextPeriod: SalaryPeriod) => {
     setAmount(suggest(nextPeriod));
@@ -328,76 +341,101 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
     <section className={`flow-modal ${styles.dialog}`}><header><h2>Registrar salario</h2><button type="button" aria-label="Cerrar" onClick={onClose}>×</button></header><div className="flow-body"><p>Configura primero tu salario habitual para preparar períodos y evitar ingresos duplicados.</p><button className="primary wide" onClick={onConfigure}>Configurar salario</button><button className="secondary wide" onClick={onClose}>Cancelar</button></div></section>
   </FinanceDialog>;
 
-  return <FinanceDialog label="Registrar salario" onClose={onClose} maxWidth={620}>
+  return <FinanceDialog label="Registrar salario" onClose={onClose} maxWidth={680}>
     <form className={`flow-modal flow-body ${styles.dialog}`} onSubmit={onSubmit} onKeyDown={handleKeyboardNavigation}>
       <header><div><small>INGRESO SALARIAL</small><h2>Registrar salario</h2></div><button type="button" aria-label="Cerrar" onClick={onClose}>×</button></header>
       <label className={styles.configLabel}>Configuración salarial<select value={configId} disabled={Boolean(initialReceiptPlan)} onChange={event => changeConfig(event.target.value)}>{state.configs.map(item => <option key={item.id} value={item.id}>{item.employer} · {item.name}{item.active ? "" : " (inactiva)"}</option>)}</select></label>
       {historicalAccuracy&&<p className={styles.balance}>{historicalAccuracy==="unknown"?"Este depósito se guardará sin fecha conocida.":`Este depósito se guardará con fecha aproximada: ${dayLabel(historyDate)}.`} No creará un movimiento ni modificará los saldos de tus cuentas.</p>}
       {config && <>
-        <section className={styles.periodPicker} aria-label="Período salarial">
-          <div className={`${styles.periodHeading} ${statusStyles.surface}`} data-tone={presentation?.tone??"neutral"} onPointerDown={startPeriodGesture} onPointerUp={endPeriodGesture} onPointerCancel={cancelPeriodGesture}>
-            <button type="button" className="secondary" aria-label="Período anterior" onClick={() => movePeriod(-1)} disabled={!period || period.start <= "0001-01-01"}>‹</button>
-          <div><strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>{period && <><span className={styles.temporalLabel}>{registrationTemporalLabel}</span>{presentation?.historicalEmpty||reviewingPeriod?<label className={styles.inlineActivation}><input type="checkbox" checked={Boolean(presentation?.confirmed||reviewingPeriod)} disabled={saving||Boolean(presentation?.confirmed&&!reviewingPeriod)} aria-expanded={Boolean(reviewingPeriod)} aria-controls={`salary-activation-review-${period.id}`} onChange={event=>updateActivationReview(event.target.checked?period:null)}/><span>Sin registros → Registrar</span></label>:<small>{presentation?.state}{presentation?.overdueLabel?` · ${presentation.overdueLabel}`:""}</small>}<small>{dayLabel(period.start)} — {dayLabel(period.end)}</small></>}</div>
-            <button type="button" className="secondary" aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}>›</button>
-            <button type="button" className="secondary" aria-expanded={calendarOpen} aria-label="Navegar en el calendario" onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}>▦ {calendarOpen?"Ocultar calendario":"Navegar en el calendario"}</button>
+        <section className={styles.periodCard} aria-label="Período salarial">
+          <div className={`${styles.salaryPeriodHeader} ${statusStyles.surface}`} data-tone={presentation?.tone??"neutral"} onPointerDown={startPeriodGesture} onPointerUp={endPeriodGesture} onPointerCancel={cancelPeriodGesture}>
+            <div className={styles.periodTitleRow}>
+              <button type="button" className={styles.periodArrow} aria-label="Período anterior" onClick={() => movePeriod(-1)} disabled={!period || period.start <= "0001-01-01"}><ChevronLeftRounded/></button>
+              <div className={styles.periodTitle}>
+                <strong>{period ? salaryPeriodLabel(period, config) : "Período salarial"}</strong>
+                {period&&<span className={styles.temporalLabel}>{registrationTemporalLabel}</span>}
+                {period&&<small>{dayLabel(period.start)} — {dayLabel(period.end)}</small>}
+              </div>
+              <button type="button" className={styles.periodArrow} aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}><ChevronRightRounded/></button>
+            </div>
+            {period&&(presentation?.historicalEmpty||reviewingPeriod)&&<label className={styles.inlineActivation}><input type="checkbox" checked={Boolean(presentation?.confirmed||reviewingPeriod)} disabled={saving||Boolean(presentation?.confirmed&&!reviewingPeriod)} aria-expanded={Boolean(reviewingPeriod)} aria-controls={`salary-activation-review-${period.id}`} onChange={event=>updateActivationReview(event.target.checked?period:null)}/><span>Sin registros → Registrar</span></label>}
+            {period&&!(presentation?.historicalEmpty||reviewingPeriod)&&<small className={styles.periodState}>{presentation?.state}{presentation?.overdueLabel?` · ${presentation.overdueLabel}`:""}</small>}
+            <button type="button" className={styles.calendarButton} aria-expanded={calendarOpen} onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}><CalendarMonthOutlined/>{calendarOpen?"Cerrar calendario":"Elegir en calendario"}</button>
           </div>
-          <div className={styles.keyboardHelp}><button type="button" className={styles.infoButton} aria-label={keyboardHelpOpen?"Ocultar información de navegación":"Información de navegación"} aria-expanded={keyboardHelpOpen} onClick={()=>setKeyboardHelpOpen(value=>!value)}>ⓘ</button>{keyboardHelpOpen&&<div className={styles.helpMessage} role="note"><span>Arrastra: → semana anterior · ← semana siguiente · ↑ mes anterior · ↓ mes siguiente. Teclado: ←/→ cambia de semana · ↓ muestra el formulario · ↑ lo oculta.</span><button type="button" className="text-btn" onClick={()=>setKeyboardHelpOpen(false)}>Ocultar esta información</button></div>}</div>
-          {period && <div className={styles.periodMeta}><span>Pago previsto: <b>{dayLabel(calculationPeriod?.payDate ?? period.payDate)}</b>{presentation?.historicalEmpty&&!reviewingPeriod&&<button type="button" className={styles.editButton} aria-label="Editar fecha prevista" onClick={()=>updateActivationReview(period)}>✎</button>}</span>{!presentation?.historicalEmpty&&!unrecordedHistoricalPeriod&&<span>Esperado: <b>{presentation?.estimateKnown?display(expectedAmount):"Sin proyección"}</b></span>}</div>}
-          {calculationPeriod?.scheduledWorkDays&&<div className={styles.workLine}><small className={styles.workDays}>{salaryWorkSchedule(calculationPeriod)}</small>{presentation?.historicalEmpty&&!reviewingPeriod&&<button type="button" className={styles.editButton} aria-label="Editar trabajo previsto" onClick={()=>updateActivationReview(period!)}>✎</button>}</div>}
+
+          {period&&<div className={styles.periodFacts}>
+            <div className={styles.periodFact}><div><WorkOutlineOutlined/><span>Trabajo previsto</span></div><strong>{scheduledWorkLabel||"Sin horario configurado"}</strong>{scheduledWorkCount>0&&<small>({scheduledWorkCount} días)</small>}</div>
+            <div className={styles.periodFact}><div><PaidOutlined/><span>Salario esperado</span></div><strong>{presentation?.estimateKnown?display(expectedAmount):"Sin proyección"}</strong></div>
+            <div className={styles.periodFact}><div><EventAvailableOutlined/><span>Pago previsto</span></div><strong>{dayLabel(calculationPeriod?.payDate ?? period.payDate)}</strong></div>
+          </div>}
+
+          {presentation?.historicalEmpty&&!reviewingPeriod&&<button type="button" className={styles.editPeriodButton} onClick={()=>updateActivationReview(period!)}><EditOutlined/> Ajustar semana</button>}
+          <div className={styles.periodTools}>
+            <button type="button" className={styles.infoButton} aria-label={keyboardHelpOpen?"Ocultar información de navegación":"Información de navegación"} aria-expanded={keyboardHelpOpen} onClick={()=>setKeyboardHelpOpen(value=>!value)}>ⓘ</button>
+            {keyboardHelpOpen&&<div className={styles.helpMessage} role="note"><span>Arrastra: ←/→ cambia de semana y ↑/↓ cambia de mes. Teclado: ←/→ cambia de semana · ↓ muestra el formulario · ↑ lo oculta.</span><button type="button" className="text-btn" onClick={()=>setKeyboardHelpOpen(false)}>Ocultar esta información</button></div>}
+          </div>
           {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
           {period&&(viewerDay<period.start||viewerDay>period.end)&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(viewerDay)}>Volver a la semana en curso</button>}
-          {lastPending&&lastPending.id!==period?.id&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(lastPending!.start)}>Volver al último período pendiente: {salaryPeriodLabel(lastPending,config)}</button>}
-          {period && numericAmount>0 && <p className={styles.timing} role="status">{timing?`Si registras este pago: ${timing.label.replace("Pagado ","")}`:""}{presentation? ` · ${presentation.workState}`:""}</p>}
+          {period && numericAmount>0 && timing&&<div className={styles.timingBanner} role="status"><CalendarMonthOutlined/><span>Si registras este pago: <b>{timing.label.replace("Pagado ","")}</b>{presentation?` · ${presentation.workState}`:""}</span></div>}
           {period&&(presentation?.historicalEmpty||!quickStandardWeekAvailable)&&<SalaryPeriodActivation key={`activate:${period.id}`} ledger={ledger} period={period} today={today} display={display} onSave={onSave} receiptMode hideTrigger={Boolean(presentation?.historicalEmpty||reviewingPeriod)} openReview={activationReviewPeriod?.id===period.id} onReviewChange={updateActivationReview}/>}
         </section>
 
-        {quickStandardWeekAvailable&&standardDetails&&<section className={styles.periodPicker} aria-label="Ingreso rápido de semana estándar"><button type="button" className="primary wide" disabled={saving} onClick={registerStandardSalary}>{saving?"Ingresando salario…":`Ingresar salario estándar · ${display(standardDetails.amount)}`}</button><small>Cuenta: {ledger.accounts.find(item=>item.id===(accountId||standardDetails.accountId))?.name??"Cuenta habitual"} · {method||standardDetails.method} · Quedará sin asignar.</small><button type="button" className="text-btn" onClick={()=>{setAmount(String(standardDetails.amount));setReceivedAt(salaryLocalDateTime());setExistingMovementId("");setMultiPeriod(false);setApplications([]);setAdvanced(true);setFormExpanded(true);setLocalError("");}}>Ajustar antes de ingresar</button></section>}
-        {!quickStandardWeekAvailable&&!formExpanded&&<button type="button" className="primary wide" onClick={()=>setFormExpanded(true)}>Registrar salario</button>}
+        {quickStandardWeekAvailable&&standardDetails&&!formExpanded&&<section className={styles.quickReceipt} aria-label="Registro rápido de salario">
+          <button type="button" className={styles.quickReceiptButton} disabled={saving} onClick={registerStandardSalary}><span className={styles.quickReceiptIcon}><CheckCircleOutlineRounded/></span><span><strong>{saving?"Registrando salario…":"Salario completo recibido"}</strong><small>Registrar ingreso de {display(standardDetails.amount)}</small></span><ChevronRightRounded className={styles.quickReceiptChevron}/></button>
+          <p>Cuenta: <b>{ledger.accounts.find(item=>item.id===(accountId||standardDetails.accountId))?.name??"Cuenta habitual"}</b> · {method||standardDetails.method} · Quedará sin asignar.</p>
+          <button type="button" className={styles.adjustButton} onClick={()=>{setAmount(String(standardDetails.amount));setReceivedAt(salaryLocalDateTime());setExistingMovementId("");setMultiPeriod(false);setApplications([]);setAdvanced(false);setFormExpanded(true);setLocalError("");}}><EditOutlined/><span>Ajustar antes de registrar</span><ExpandMoreRounded/></button>
+        </section>}
 
-        <details className={styles.receiptSection} open={formExpanded} onToggle={event=>setFormExpanded(event.currentTarget.open)}>
-          <summary>{formExpanded?"Ocultar formulario":quickStandardWeekAvailable?"Ajustar datos del registro":"Ingresar otro importe"}<span aria-hidden="true">{formExpanded?"⌃":"⌄"}</span></summary>
-          <fieldset className={styles.receiptFields} disabled={!formExpanded} aria-label="Datos del salario recibido">
-        {period&&<SalaryAdjustments key={`adjust:${period.id}`} ledger={ledger} period={period} today={today} display={display} onSave={operation=>{if(!onSave(operation))throw new Error("No se pudieron guardar los ajustes.");}}/>}
-        <label htmlFor="salary-received-amount">Importe recibido</label>
-        <div className="currency-input"><span>₡</span><input id="salary-received-amount" type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); if (reviewingPeriod) setActivationAmountEdited(true); setLocalError(""); }}/></div>
-        <p className={styles.balance}>Recibido: {display(receivedAmount)} · Pendiente confirmado: {display(presentation?.pending??0)}{!presentation?.historicalEmpty&&!unrecordedHistoricalPeriod&&presentation?.estimateKnown&&<> · Restante estimado: {display(pendingAmount)}</>} · {period&&presentation?.paymentCount?salaryPeriodPaymentLabel(ledger,period):"Abonos: 0"}</p>
-        {!historicalAccuracy&&<>{linkedMovement?<div className={styles.accountValue}><span>Cuenta del ingreso existente</span><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div>:<><AccountSelector label="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/><small>Al guardar un pago, su cuenta y medio se sugerirán la próxima vez para esta fuente.</small></>}
-        <label>Medio de recepción<select value={linkedMovement?.paymentMethod ?? method} disabled={Boolean(linkedMovement)} onChange={event => setMethod(event.target.value)}>{[...new Set([...incomeReceptionMethods, method, linkedMovement?.paymentMethod])].filter(Boolean).map(item => <option key={item}>{item}</option>)}</select></label></>}
+        {period&&<SalaryAdjustments key={`adjust:${period.id}`} ledger={ledger} period={period} today={today} display={display} appearance="receipt" onSave={operation=>{if(!onSave(operation))throw new Error("No se pudieron guardar los ajustes.");}}/>}
+        {!quickStandardWeekAvailable&&!formExpanded&&<button type="button" className={styles.openFormButton} onClick={()=>setFormExpanded(true)}>Registrar salario <ChevronRightRounded/></button>}
 
-        <details className={styles.moreOptions} open={advanced} onToggle={event => setAdvanced(event.currentTarget.open)}>
-          <summary>Más opciones</summary>
-          <div className={styles.advancedFields}>
-            {!historicalAccuracy&&<><label>Fecha real de recepción<input type="datetime-local" max={localNow()} value={linkedMovement ? currentDateTime(linkedMovement.date) : receivedAt} disabled={Boolean(linkedMovement)} onChange={event => { setReceivedAt(event.target.value); setLocalError(""); }}/></label>
-            <label>Referencia<input value={linkedMovement?.reference ?? reference} disabled={Boolean(linkedMovement)} onChange={event => setReference(event.target.value)} placeholder="Opcional"/></label></>}
-            <label>Observaciones<textarea value={notes} onChange={event => setNotes(event.target.value)} placeholder="Opcional"/></label>
-            {!historicalAccuracy&&<label>Origen del ingreso<select value={existingMovementId} onChange={event => {
-              const id = event.target.value;
-              const movement = paymentMovements.find(item => item.id === id);
-              setExistingMovementId(id);
-              if (movement) { setAmount(String(movement.amount ?? "")); setAccountId(movement.accountId ?? ""); setReceivedAt(currentDateTime(movement.date)); setMethod(movement.paymentMethod ?? "Transferencia"); setReference(movement.reference ?? ""); }
-              setLocalError("");
-            }}><option value="">Crear un movimiento al confirmar</option>{paymentMovements.map(movement => <option key={movement.id} value={movement.id}>Vincular {movement.name} · {dayLabel(movement.date)} · {display(movement.amount)}</option>)}</select><small>Vincular un ingreso existente lo relaciona con el período sin volver a sumar dinero.</small></label>}
-            <label className="check-label"><input type="checkbox" checked={multiPeriod} onChange={event => { setMultiPeriod(event.target.checked); setApplications([]); setLocalError(""); }}/>Aplicar este pago a varios períodos</label>
-            {multiPeriod&&<small>Se registrará un solo ingreso por {display(numericAmount)} y se distribuirá entre los conceptos y períodos seleccionados.</small>}
-            {multiPeriod && <div className={styles.applications}>
-              {candidates.map(item => <fieldset key={item.id}><legend>{salaryPeriodLabel(item, config)} · {dayLabel(item.start)} — {dayLabel(item.end)}</legend>{salaryPaymentConcepts(ledger,item).map(concept => {
-                const pending = concept.amount - salaryConceptPaid(ledger,item.id,concept.id);
-                if (pending <= 0) return null;
-                const applied = applications.find(application => application.periodId === item.id && application.conceptId === concept.id)?.amount ?? "";
-                return <label key={concept.id}>{concept.name} · Pendiente {display(pending)}<input type="number" min="0" max={pending} step="1" value={applied} onChange={event => toggleApplication(item.id, concept.id, Number(event.target.value))}/></label>;
-              })}</fieldset>)}
-              <div className="review-box"><span>Recibido: {display(numericAmount)}</span><span>Aplicado: {display(applicationTotal)}</span><b>Por aplicar: {display(applicationBalance)}</b></div>
-            </div>}
-
+        {formExpanded&&<fieldset className={styles.receiptFields} disabled={saving} aria-label="Datos del salario recibido">
+          <div className={styles.fieldRow}>
+            <label className={styles.fieldLabel} htmlFor="salary-received-amount"><PaidOutlined/>Importe recibido</label>
+            <div className={styles.fieldControl}><div className={`currency-input ${styles.amountInput}`}><span>₡</span><input id="salary-received-amount" type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); if (reviewingPeriod) setActivationAmountEdited(true); setLocalError(""); }}/></div>
+              <p className={styles.balance}>Recibido: {display(receivedAmount)} · Pendiente confirmado: {display(presentation?.pending??0)}{!presentation?.historicalEmpty&&!unrecordedHistoricalPeriod&&presentation?.estimateKnown&&<> · Restante estimado: {display(pendingAmount)}</>} · {period&&presentation?.paymentCount?salaryPeriodPaymentLabel(ledger,period):"Abonos: 0"}</p>
+            </div>
           </div>
-        </details>
+          {!historicalAccuracy&&<>
+            {linkedMovement?<div className={styles.fieldRow}><span className={styles.fieldLabel}><AccountBalanceWalletOutlined/>Cuenta del ingreso existente</span><div className={`${styles.fieldControl} ${styles.accountValue}`}><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div></div>:<>
+              <div className={styles.fieldRow}><span className={styles.fieldLabel}><AccountBalanceWalletOutlined/>Cuenta receptora</span><div className={styles.fieldControl}><AccountSelector className={styles.inlineAccount} label="" ariaLabel="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={setAccountId} onCreate={onCreateAccount} display={display}/><small>Al guardar un pago, la cuenta y el medio se sugerirán la próxima vez para esta fuente.</small></div></div>
+              <label className={styles.fieldRow}><span className={styles.fieldLabel}><SwapHorizRounded/>Medio de recepción</span><select className={styles.fieldControl} value={method} onChange={event => setMethod(event.target.value)}>{[...new Set([...incomeReceptionMethods, method])].filter(Boolean).map(item => <option key={item}>{item}</option>)}</select></label>
+            </>}
+          </>}
 
-        {(localError || externalError || applicationError || duplicateExists) && <p className="form-error" role="alert">{localError || externalError || (duplicateExists ? "Ya existe un ingreso con estos mismos datos. Vincúlalo desde Más opciones para evitar duplicarlo." : applicationError)}</p>}
-        <button className="primary wide" type="submit" disabled={!canSave}>{saving ? "Registrando…" : historicalAccuracy ? "Guardar pago histórico" : reviewingPeriod ? "Guardar semana y registrar salario" : linkedMovement ? "Vincular ingreso al salario" : "Confirmar y registrar salario"}</button>
-        <button type="button" className="secondary wide" onClick={onClose}>Cancelar</button>
-          </fieldset>
-        </details>
+          <details className={styles.moreOptions} open={advanced} onToggle={event => setAdvanced(event.currentTarget.open)}>
+            <summary><span>Más opciones</span><ExpandMoreRounded/></summary>
+            <div className={styles.advancedFields}>
+              {!historicalAccuracy&&<><label>Fecha real de recepción<input type="datetime-local" max={localNow()} value={linkedMovement ? currentDateTime(linkedMovement.date) : receivedAt} disabled={Boolean(linkedMovement)} onChange={event => { setReceivedAt(event.target.value); setLocalError(""); }}/></label>
+              <label>Referencia<input value={linkedMovement?.reference ?? reference} disabled={Boolean(linkedMovement)} onChange={event => setReference(event.target.value)} placeholder="Opcional"/></label></>}
+              <label>Observaciones<textarea value={notes} onChange={event => setNotes(event.target.value)} placeholder="Opcional"/></label>
+              {!historicalAccuracy&&<label>Origen del ingreso<select value={existingMovementId} onChange={event => {
+                const id = event.target.value;
+                const movement = paymentMovements.find(item => item.id === id);
+                setExistingMovementId(id);
+                if (movement) { setAmount(String(movement.amount ?? "")); setAccountId(movement.accountId ?? ""); setReceivedAt(currentDateTime(movement.date)); setMethod(movement.paymentMethod ?? "Transferencia"); setReference(movement.reference ?? ""); }
+                setLocalError("");
+              }}><option value="">Crear un movimiento al confirmar</option>{paymentMovements.map(movement => <option key={movement.id} value={movement.id}>Vincular {movement.name} · {dayLabel(movement.date)} · {display(movement.amount)}</option>)}</select><small>Vincular un ingreso existente lo relaciona con el período sin volver a sumar dinero.</small></label>}
+              <label className="check-label"><input type="checkbox" checked={multiPeriod} onChange={event => { setMultiPeriod(event.target.checked); setApplications([]); setLocalError(""); }}/>Aplicar este pago a varios períodos</label>
+              {multiPeriod&&<small>Se registrará un solo ingreso por {display(numericAmount)} y se distribuirá entre los conceptos y períodos seleccionados.</small>}
+              {multiPeriod && <div className={styles.applications}>
+                {candidates.map(item => <fieldset key={item.id}><legend>{salaryPeriodLabel(item, config)} · {dayLabel(item.start)} — {dayLabel(item.end)}</legend>{salaryPaymentConcepts(ledger,item).map(concept => {
+                  const pending = concept.amount - salaryConceptPaid(ledger,item.id,concept.id);
+                  if (pending <= 0) return null;
+                  const applied = applications.find(application => application.periodId === item.id && application.conceptId === concept.id)?.amount ?? "";
+                  return <label key={concept.id}>{concept.name} · Pendiente {display(pending)}<input type="number" min="0" max={pending} step="1" value={applied} onChange={event => toggleApplication(item.id, concept.id, Number(event.target.value))}/></label>;
+                })}</fieldset>)}
+                <div className="review-box"><span>Recibido: {display(numericAmount)}</span><span>Aplicado: {display(applicationTotal)}</span><b>Por aplicar: {display(applicationBalance)}</b></div>
+              </div>}
+            </div>
+          </details>
+
+          {(localError || externalError || applicationError || duplicateExists) && <p className="form-error" role="alert">{localError || externalError || (duplicateExists ? "Ya existe un ingreso con estos mismos datos. Vincúlalo desde Más opciones para evitar duplicarlo." : applicationError)}</p>}
+          <button className={`primary wide ${styles.submitButton}`} type="submit" disabled={!canSave}><CheckCircleOutlineRounded/>{saving ? "Registrando…" : historicalAccuracy ? "Guardar pago histórico" : reviewingPeriod ? "Guardar semana y registrar salario" : linkedMovement ? "Vincular ingreso al salario" : "Confirmar y registrar salario"}{!saving&&!historicalAccuracy&&!linkedMovement&&<small>{display(numericAmount)} · {selectedAccount?.name??"Cuenta seleccionada"} · {method}</small>}</button>
+          <button type="button" className="secondary wide" onClick={onClose}>Cancelar</button>
+        </fieldset>}
+        {lastPending&&lastPending.id!==period?.id&&<button type="button" className={styles.lastPending} onClick={()=>selectPeriodDate(lastPending!.start)}><span aria-hidden="true">↶</span><b>Volver al último período pendiente</b><small>{salaryPeriodLabel(lastPending,config)}</small></button>}
       </>}
     </form>
   </FinanceDialog>;

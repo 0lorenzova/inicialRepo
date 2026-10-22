@@ -75,3 +75,105 @@
 @media(max-width:400px){.calendar{padding:8px}.calendarGrid{grid-template-columns:42px repeat(7,minmax(0,1fr));gap:4px 1px}.calendarDay{padding:0;min-height:36px}.periodHeading{padding:8px}}
 
 .calendarHeading{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}.calendarHeading input{min-width:0;font-size:14px}.monthControls{display:flex;align-items:center;justify-content:center;gap:12px}.monthControls button{min-width:44px}.yearControls{display:flex;justify-content:space-between;gap:10px}.yearControls button{flex:1;min-width:0}.statusDot.overdue{animation:calendarDebtPulse 2s ease-in-out infinite}@keyframes calendarDebtPulse{0%,100%{background:var(--paper)}50%{background:#ef4444}}@media(prefers-reduced-motion:reduce){.statusDot.overdue{animation:none}}
+
+.dialog{gap:14px;padding:clamp(16px,4vw,24px);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);box-shadow:0 20px 70px #071b2a2e}
+.dialog header{padding-bottom:12px;border-bottom:1px solid var(--line)}
+.dialog header small{font-size:11px;letter-spacing:.09em}
+.dialog header h2{font-size:clamp(23px,4vw,30px);font-weight:800;letter-spacing:-.035em}
+.dialog header>button{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:28px}
+.configLabel{gap:7px;margin:0;font-weight:700}
+.configLabel select{width:100%;min-height:48px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);font-weight:650}
+.periodCard{display:grid;gap:0;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--paper)}
+.periodHeading{display:grid;justify-items:center;gap:9px;padding:12px 14px 14px;border:0;border-radius:0;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.periodTitleRow{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;align-items:center;width:100%;gap:8px}
+.periodArrow{display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;border:1px solid currentColor;border-radius:13px;background:color-mix(in srgb,var(--paper) 45%,transparent);color:inherit}
+.periodArrow svg{font-size:22px}
+.periodTitle{display:grid;justify-items:center;gap:4px;min-width:0;text-align:center}
+.periodTitle>strong{font-size:clamp(17px,4vw,22px);line-height:1.2;overflow-wrap:anywhere}
+.periodTitle>small{font-size:14px;line-height:1.35}
+.temporalLabel{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--blue) 80%,white);color:#236c9b;font-size:12px;font-weight:750;line-height:1.2}
+.periodState{font-size:12px;font-weight:650;line-height:1.35}
+.inlineActivation{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;min-height:28px!important;cursor:pointer;font-weight:650}.inlineActivation input{width:20px;height:20px;margin:0;flex:none;accent-color:var(--green)}.inlineActivation span{line-height:1.4}
+.calendarButton{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:5px 14px;border:1px solid currentColor;border-radius:10px;background:transparent;color:inherit;font-size:12px;font-weight:650}
+.calendarButton svg{font-size:18px}
+.periodFacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));min-width:0;background:var(--paper)}
+.periodFact{display:grid;align-content:start;gap:5px;min-width:0;padding:13px 12px;border-right:1px solid var(--line)}
+.periodFact:last-child{border-right:0}
+.periodFact>div{display:flex;align-items:center;gap:7px;min-width:0;color:var(--muted);font-size:12px;line-height:1.3}
+.periodFact>div svg{flex:none;color:var(--green);font-size:21px}
+.periodFact>strong{font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.periodFact>small{color:var(--muted);font-size:11px;line-height:1.3}
+.timingBanner{display:flex;align-items:center;gap:10px;min-width:0;margin:0 10px 10px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,#dff5e9 80%,var(--paper));color:#256448;font-size:13px;line-height:1.45}
+.timingBanner svg{flex:none;font-size:22px}
+.timingBanner b{font-weight:750}
+.periodTools{display:flex;align-items:flex-start;gap:8px;padding:0 12px 12px;color:var(--muted)}
+.infoButton{display:inline-grid;place-items:center;flex:0 0 34px;width:34px;min-width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:var(--paper);color:var(--ink);font-size:17px;font-weight:700;cursor:pointer}
+.helpMessage{display:grid;gap:6px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--paper);font-size:12px;line-height:1.4}
+.helpMessage button{justify-self:start}
+.editPeriodButton{display:inline-flex;align-items:center;gap:7px;justify-self:center;margin:-4px 0 10px;padding:7px 12px;border:0;border-radius:9px;background:color-mix(in srgb,var(--pale) 78%,var(--paper));color:var(--green-dark);font-weight:650}
+.editPeriodButton svg{font-size:18px}
+.lastPending{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:2px 10px;width:100%;min-height:68px;padding:10px 14px;border:1px solid color-mix(in srgb,var(--green) 22%,var(--line));border-radius:14px;background:color-mix(in srgb,var(--blue) 55%,var(--paper));color:var(--ink);text-align:left}
+.lastPending>span{grid-row:span 2;display:grid;place-items:center;font-size:24px;color:var(--green-dark)}
+.lastPending>b{font-size:14px}
+.lastPending>small{color:var(--muted);font-size:12px}
+.quickReceipt{display:grid;gap:0;min-width:0;padding:0 0 12px;border-bottom:1px solid var(--line)}
+.quickReceiptButton{display:grid;grid-template-columns:52px minmax(0,1fr) 26px;align-items:center;gap:10px;width:100%;min-height:86px;padding:14px 16px;border:0;border-radius:16px;background:linear-gradient(115deg,#099b65,#188a5d);color:#fff;text-align:left;box-shadow:0 7px 18px #16855c24}
+.quickReceiptButton:disabled{opacity:.75;cursor:wait}
+.quickReceiptIcon{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#fff;color:#13915e}
+.quickReceiptIcon svg{font-size:33px}
+.quickReceiptButton>span:nth-child(2){display:grid;gap:3px;min-width:0}
+.quickReceiptButton strong{font-size:clamp(16px,3.4vw,19px);line-height:1.25}
+.quickReceiptButton small{font-size:14px;line-height:1.35;color:#e2fff0}
+.quickReceiptChevron{font-size:26px!important}
+.quickReceipt>p{margin:10px 2px 12px;color:var(--muted);font-size:14px;line-height:1.45}
+.quickReceipt>p b{color:var(--ink)}
+.adjustButton{display:flex;align-items:center;gap:10px;width:100%;min-height:54px;padding:9px 14px;border:1px solid color-mix(in srgb,var(--blue) 45%,var(--line));border-radius:13px;background:color-mix(in srgb,var(--blue) 76%,var(--paper));color:var(--ink);text-align:left;font-size:14px}
+.adjustButton>svg:first-child{color:var(--green-dark);font-size:22px}
+.adjustButton>span{flex:1;font-weight:650}
+.adjustButton>svg:last-child{color:var(--muted)}
+.openFormButton{display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);font-weight:700}
+.openFormButton svg{color:var(--green)}
+.receiptFields{display:grid;gap:12px;min-width:0;margin:0;padding:0;border:0}
+.fieldRow{display:grid;grid-template-columns:minmax(135px,.8fr) minmax(0,1.3fr);align-items:center;gap:12px;min-width:0}
+.fieldLabel{display:flex;align-items:center;gap:9px;min-width:0;color:var(--muted);font-size:13px;font-weight:600;line-height:1.35}
+.fieldLabel svg{flex:none;color:var(--green);font-size:21px}
+.fieldControl{display:grid;gap:7px;min-width:0}
+.fieldControl>small{color:var(--muted);font-size:11px;line-height:1.45}
+.amountInput{min-height:48px;padding:0 12px;border-radius:11px}
+.amountInput input{min-height:46px!important;padding:0 4px!important;font-size:20px!important;font-weight:750}
+.balance{margin:0;color:var(--muted);font-size:12px;line-height:1.45}
+.accountValue{display:grid;gap:4px;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:var(--paper)}
+.accountValue b{overflow-wrap:anywhere}
+.inlineAccount{display:grid;gap:6px;min-width:0}
+.inlineAccount :global(select){width:100%;min-height:48px;padding:0 12px;border:1px solid var(--line);border-radius:11px;background:var(--paper);color:var(--ink)}
+.inlineAccount :global(.text-btn){justify-self:start;min-height:30px;padding:2px 0}
+.moreOptions{border-top:1px solid var(--line);padding-top:2px}
+.moreOptions>summary{display:flex;align-items:center;justify-content:space-between;min-height:46px;cursor:pointer;list-style:none;font-weight:700}
+.moreOptions>summary::-webkit-details-marker{display:none}
+.moreOptions>summary svg{color:var(--muted);transition:transform .15s}
+.moreOptions[open]>summary svg{transform:rotate(180deg)}
+.advancedFields{display:grid;gap:13px;padding:8px 0 4px}
+.advancedFields label{display:grid;gap:6px;min-width:0;font-weight:600}
+.advancedFields input,.advancedFields select,.advancedFields textarea{width:100%;min-width:0;min-height:44px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
+.advancedFields fieldset{min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
+.advancedFields legend{max-width:100%;white-space:normal}
+.advancedFields :global(.check-label){display:flex;align-items:center;gap:8px}
+.advancedFields :global(.check-label) input{width:20px;height:20px;min-width:20px}
+.advancedFields small{color:var(--muted);line-height:1.5}
+.applications{display:grid;gap:10px}
+.submitButton{display:flex!important;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 8px;min-height:68px!important;padding:12px 16px!important;border-radius:13px!important;background:#087486!important;box-shadow:none!important;text-align:center}
+.submitButton svg{flex:none;font-size:23px}
+.submitButton small{flex-basis:100%;font-size:12px;font-weight:500;line-height:1.3;color:#d9f2f5}
+.dialog :global(.secondary.wide){min-height:48px;height:auto;border-color:var(--line);background:transparent;color:var(--ink)}
+@media(max-width:520px){.dialog{gap:12px;border-radius:16px}.periodHeading{padding:10px 9px}.periodTitleRow{grid-template-columns:38px minmax(0,1fr) 38px;gap:4px}.periodArrow{width:36px;height:40px;min-height:40px;border-radius:11px}.periodTitle>small{font-size:12px}.periodFacts{grid-template-columns:repeat(3,minmax(0,1fr))}.periodFact{gap:5px;padding:10px 7px}.periodFact>div{align-items:flex-start;gap:4px;font-size:10px}.periodFact>div svg{font-size:17px}.periodFact>strong{font-size:12px}.periodFact>small{font-size:10px}.timingBanner{margin:0 7px 8px;padding:10px;font-size:12px}.quickReceiptButton{grid-template-columns:44px minmax(0,1fr) 22px;gap:8px;min-height:76px;padding:11px}.quickReceiptIcon{width:42px;height:42px}.quickReceiptIcon svg{font-size:29px}.quickReceiptButton small{font-size:12px}.fieldRow{grid-template-columns:minmax(106px,.7fr) minmax(0,1.3fr);gap:8px}.fieldLabel{font-size:12px}.fieldLabel svg{font-size:18px}.calendarButton{min-height:36px;font-size:11px}}
+@media(max-width:390px){.fieldRow{grid-template-columns:minmax(0,1fr);gap:5px}.fieldLabel{min-height:24px}.periodFact{padding-inline:5px}.periodFact>div{display:grid;justify-items:start}.periodTitle>strong{font-size:16px}.quickReceipt>p{font-size:12px}}
+.periodHeading>.periodTitleRow{grid-column:auto;grid-row:auto;display:grid;grid-template-columns:46px minmax(0,1fr) 46px;gap:8px;text-align:initial}
+.periodHeading>button{grid-column:auto;grid-row:auto;justify-self:center;min-height:38px;padding:5px 14px}
+.periodHeading{grid-template-columns:minmax(0,1fr)}
+.periodHeading>.periodTitleRow{grid-template-columns:46px minmax(0,1fr) 46px;gap:8px}
+@media(max-width:520px){.periodHeading>.periodTitleRow{grid-template-columns:38px minmax(0,1fr) 38px;gap:4px}}
+.salaryPeriodHeader{display:grid;grid-template-columns:minmax(0,1fr);justify-items:center;gap:9px;padding:12px 14px 14px;border:0;border-radius:0;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.salaryPeriodHeader>.periodTitleRow{grid-column:1;grid-row:auto;display:grid;grid-template-columns:46px minmax(0,1fr) 46px;align-items:center;gap:8px;width:100%;text-align:initial}
+.salaryPeriodHeader>button{grid-column:1;grid-row:auto;justify-self:center}
+@media(max-width:520px){.salaryPeriodHeader{padding:10px 9px}.salaryPeriodHeader>.periodTitleRow{grid-template-columns:38px minmax(0,1fr) 38px;gap:4px}}
+@media(max-width:520px){.fieldRow{grid-template-columns:minmax(0,1fr);gap:6px}.fieldLabel{min-height:24px}.fieldLabel svg{font-size:18px}}

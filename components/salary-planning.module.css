@@ -36,3 +36,35 @@
 @media(max-width:360px){.two{grid-template-columns:minmax(0,1fr)}.panel{padding:10px}}
 
 .catalogItem{border-bottom:1px solid var(--line);min-width:0}.catalogItem>summary{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;list-style:none}.catalogItem>summary::-webkit-details-marker{display:none}.catalogItem>summary>span{min-width:0;overflow-wrap:anywhere;flex:1}.catalogItem>summary>b{text-align:right;overflow-wrap:anywhere}.catalogItem>summary::after{content:"⌄";flex-shrink:0}.catalogItem[open]>summary::after{content:"⌃"}.catalogItem>summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.extraPanel[data-appearance="receipt"]{margin:0;padding:10px 12px 12px;border-top:1px solid var(--line);border-radius:0;background:var(--paper)}
+.receiptExtraToggle{gap:10px;min-height:48px!important;color:var(--ink);font-size:16px;font-weight:750!important}
+.receiptExtraToggle>input{accent-color:#148b66}
+.receiptExtraToggle>svg:first-of-type{flex:none;color:var(--green);font-size:23px}
+.receiptExtraToggle>span{flex:1}
+.receiptInfo{flex:none;color:var(--muted);font-size:18px!important}
+.receiptChevron{flex:none;color:var(--muted);transition:transform .15s ease}
+.receiptChevronOpen{transform:rotate(180deg)}
+.extraPanel[data-appearance="receipt"] .extraOptions{gap:10px;padding:0;border:0;border-radius:0;background:transparent}
+.extraPanel[data-appearance="receipt"] .extraList{gap:7px}
+.receiptItem{padding:8px 10px!important;border:1px solid var(--line)!important;border-radius:12px;background:var(--paper)}
+.receiptItem[data-selected="true"]{border-color:color-mix(in srgb,var(--green) 28%,var(--line))!important;background:color-mix(in srgb,var(--blue) 68%,var(--paper))}
+.receiptItem .extraCheck{gap:9px;min-height:38px}
+.receiptItem .extraCheck>input{accent-color:#138a61}
+.receiptConceptIcon{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:8px;background:color-mix(in srgb,var(--green) 14%,var(--paper));color:var(--green-dark)}
+.receiptConceptIcon svg{font-size:19px}
+.receiptItem .extraCheck>span:last-child{flex:1;font-weight:650}
+.receiptMeasured{display:grid;grid-template-columns:minmax(0,70px) minmax(0,1.1fr) minmax(0,72px);align-items:end;gap:7px;min-width:0;padding-left:37px}
+.receiptMeasured>label{display:grid;gap:5px;min-width:0;color:var(--muted);font-size:12px;font-weight:550}
+.receiptMeasured input{width:100%;min-width:0;min-height:40px;padding:5px 8px;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);font-size:14px}
+.unitRate{display:grid;grid-template-columns:19px minmax(0,1fr);align-items:center;min-width:0;min-height:40px;padding-left:8px;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--muted)}
+.unitRate input{min-height:38px;padding-left:2px;border:0;background:transparent}
+.receiptTotal{display:grid;align-content:center;gap:2px;min-width:0;min-height:50px;padding:6px 9px;border-radius:9px;background:color-mix(in srgb,#dff5e9 83%,var(--paper));color:var(--ink)}
+.receiptTotal>small{color:var(--muted);font-size:10px}
+.receiptTotal>b{font-size:14px;overflow-wrap:anywhere}
+.receiptSummary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;padding:10px 12px;border-radius:11px;background:color-mix(in srgb,var(--blue) 70%,var(--paper))}
+.receiptSummary>span{align-self:center;font-weight:650}
+.receiptSummary>b{font-size:21px;letter-spacing:-.03em}
+.receiptSummary>small{grid-column:1/-1;color:var(--muted);font-size:11px;line-height:1.4}
+.extraPanel[data-appearance="receipt"] .extraOptions>small{font-size:11px}
+.extraPanel[data-appearance="receipt"] .extraOptions>button{justify-self:start;min-height:38px;padding-inline:12px}
+@media(max-width:440px){.extraPanel[data-appearance="receipt"]{padding-inline:7px}.receiptExtraToggle{gap:7px;font-size:14px}.receiptMeasured{grid-template-columns:minmax(0,56px) minmax(0,1fr) minmax(0,62px);gap:5px;padding-left:0}.receiptMeasured>label{font-size:10px}.receiptMeasured input{font-size:12px}.receiptTotal{padding:5px}.receiptTotal>b{font-size:12px}}
