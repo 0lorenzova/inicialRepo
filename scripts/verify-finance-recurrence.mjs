@@ -10,7 +10,7 @@ const hooks = registerHooks({
       ? "./finance-ledger.ts" : specifier, context);
   },
 });
-const { confirmRecurringContribution, isRecurrenceDue, postponeRecurringContribution, validateRecurrence, nextContributionDate, previewPostponement } = await import("../lib/finance-recurrence.ts");
+const { confirmRecurringContribution, isRecurrenceDue, postponeRecurringContribution, skipRecurringContribution, validateRecurrence, nextContributionDate, previewPostponement } = await import("../lib/finance-recurrence.ts");
 hooks.deregister();
 
 const seed = (recurrence = {}, balance = 100_000) => ({
@@ -62,10 +62,12 @@ assert.equal(JSON.stringify(initial), snapshot);
 assert.equal(isRecurrenceDue(confirmed.envelopes[0], "2026-10-01"), false);
 checkInvariant(confirmed);
 
-// Old UI clicks cannot confirm or postpone a date already processed.
+// Stale UI clicks cannot confirm or postpone a date already processed.
 rejectWithoutMutation(confirmed, (ledger) => confirmRecurringContribution(ledger, "savings", "2026-10-01", "2026-10-01T10:00"), /recordatorio ya cambió/);
 rejectWithoutMutation(confirmed, (ledger) => postponeRecurringContribution(ledger, "savings", "2026-10-01", "2026-10-01"), /recordatorio ya cambió/);
-rejectWithoutMutation(confirmed, (ledger) => confirmRecurringContribution(ledger, "savings", "2026-11-01", "2026-10-01T10:00"), /todavía no vence/);
+const early=confirmRecurringContribution(confirmed, "savings", "2026-11-01", "2026-10-01T10:00");
+assert.equal(early.envelopes[0].recurrence.nextDate,"2026-12-01","Un aporte confirmado antes de la fecha conserva la cadencia mensual");
+assert.equal(early.movements[0].reference,"Aporte recurrente · 2026-11-01");
 
 // Persist/reload preserves idempotency even if a due date is edited backwards.
 const reopened = JSON.parse(JSON.stringify(confirmed));
@@ -135,7 +137,8 @@ for (const [unit, amount, expected] of [["days", 1, "2026-10-02"], ["days", 7, "
   assert.equal(previewPostponement("2026-10-01", option), expected);
   const ledger = freeze(seed({ nextDate: "2026-12-01" }));
   const result = postponeRecurringContribution(ledger, "savings", "2026-12-01", "2026-10-01", option);
-  assert.equal(result.envelopes[0].recurrence.nextDate, expected);
+  assert.equal(result.envelopes[0].recurrence.nextDate, "2026-12-01", "Posponer no mueve la fecha ancla de la serie");
+  assert.equal(result.envelopes[0].recurrence.snoozedUntil, previewPostponement("2026-12-01", option));
   assert.deepEqual(result.accounts, ledger.accounts);
   assert.deepEqual(result.movements, ledger.movements);
   assert.deepEqual(totals(result), totals(ledger));
@@ -148,7 +151,7 @@ assert.equal(previewPostponement("2028-01-31", { unit: "months", amount: 1 }), "
 for (const [oldDate, expected] of [["2026-08-01", "2026-10-02"], ["2026-10-01", "2026-10-02"], ["2026-11-01", "2026-11-02"]]) {
   const ledger = freeze(seed({ nextDate: oldDate }));
   const postponed = postponeRecurringContribution(ledger, "savings", oldDate, "2026-10-01");
-  assert.equal(postponed.envelopes[0].recurrence.nextDate, expected);
+  assert.equal(postponed.envelopes[0].recurrence.nextDate, oldDate, "Posponer conserva la ocurrencia original para el historial de la serie");
   assert.equal(postponed.envelopes[0].recurrence.snoozedUntil, expected);
   assert.equal(postponed.movements, ledger.movements);
   assert.equal(postponed.accounts, ledger.accounts);
@@ -156,10 +159,19 @@ for (const [oldDate, expected] of [["2026-08-01", "2026-10-02"], ["2026-10-01", 
   assert.equal(isRecurrenceDue(postponed.envelopes[0], "2026-10-01"), false);
 }
 const snoozed = postponeRecurringContribution(initial, "savings", "2026-10-01", "2026-10-01");
-rejectWithoutMutation(snoozed, (ledger) => confirmRecurringContribution(ledger, "savings", "2026-10-02", "2026-10-01T09:00"), /todavía no vence/);
-const afterSnooze = confirmRecurringContribution(snoozed, "savings", "2026-10-02", "2026-10-02T09:00");
+rejectWithoutMutation(snoozed, (ledger) => confirmRecurringContribution(ledger, "savings", "2026-10-01", "2026-10-01T09:00"), /todavía no vence/);
+const afterSnooze = confirmRecurringContribution(snoozed, "savings", "2026-10-01", "2026-10-02T09:00");
 assert.equal(afterSnooze.envelopes[0].recurrence.snoozedUntil, undefined);
+assert.equal(afterSnooze.envelopes[0].recurrence.nextDate, "2026-11-01", "Confirmar un aporte pospuesto preserva la cadencia original");
 checkInvariant(afterSnooze);
+
+const skipped = skipRecurringContribution(freeze(seed({ nextDate: "2026-10-01" })), "savings", "2026-10-01");
+assert.equal(skipped.envelopes[0].recurrence.nextDate, "2026-11-01");
+assert.deepEqual(skipped.envelopes[0].recurrence.skippedDates, ["2026-10-01"]);
+assert.equal(skipped.movements.length, 0, "Omitir una ocurrencia no crea movimientos");
+assert.equal(isRecurrenceDue(skipped.envelopes[0], "2026-10-01"), false);
+rejectWithoutMutation(skipped, ledger => skipRecurringContribution(ledger, "savings", "2026-10-01"), /recordatorio ya cambió/);
+checkInvariant(skipped);
 
 // The second month records exactly one additional assignment after reload.
 const nextMonth = confirmRecurringContribution(JSON.parse(JSON.stringify(confirmed)), "savings", "2026-11-01", "2026-11-01T09:00");

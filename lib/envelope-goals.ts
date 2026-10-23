@@ -109,7 +109,7 @@ export function getEnvelopeGoal(envelope: GoalSettings & { balance: number }, to
     active: true, showProgress: envelope.goalProgressVisible !== false, amount, percentage, fillPercentage: Math.max(0, Math.min(100, percentage)),
     reached: balance >= amount, surplus: Math.max(0, balance - amount), daysRemaining: null, temporal: null,
   };
-  if (!envelope.goalDate) return result;
+  if (!envelope.goalDate || envelope.goalTimingEnabled === false) return result;
   try {
     validateGoalSettings(envelope);
     // Time and money are intentionally independent: reaching the amount does

@@ -67,19 +67,34 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
   // Ordinary activity belongs exclusively to Movimientos.
   void movements;
   for (const {envelopeId,envelopeName,item} of globalPlanningItems(envelopes,today)) {
-    if (!item.temporal || !["red","purple"].includes(item.temporal.tone)) continue;
+    if (!item.temporal || !["red","purple","yellow"].includes(item.temporal.tone)) continue;
     const stage = item.deadline === today ? "today" : item.temporal.tone;
     const id = `attention:${encodeURIComponent(envelopeId)}:${item.kind}:${encodeURIComponent(item.id)}:${item.deadline}:${stage}`;
-    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.amount,kind:"attention",plannedLate:plannedPaymentDelay(item)>0,plannedLateLabel:plannedPaymentDelayText(plannedPaymentDelay(item)),tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
+    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.remainingAmount??item.amount,kind:"attention",plannedLate:plannedPaymentDelay(item)>0,plannedLateLabel:plannedPaymentDelayText(plannedPaymentDelay(item)),tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
   }
   for (const envelope of envelopes) {
-    if (!isRecurrenceDue(envelope, today) || !envelope.recurrence) continue;
-    const dueDate = recurrenceDueDate(envelope.recurrence);
-    const temporal = getTemporalState(dueDate,today).temporal!;
-    const id = `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:${temporal.tone}`;
+    if (!envelope.recurrence) continue;
+    let dueDate:string, due:boolean, temporal:GoalTemporalState|null;
+    let pendingAmount=envelope.recurrence.amount;
+    try {
+      dueDate = recurrenceDueDate(envelope.recurrence);
+      if (envelope.recurrence.endDate && dueDate > envelope.recurrence.endDate) continue;
+      const reference=`Aporte recurrente · ${envelope.recurrence.nextDate}`;
+      const contributed=movements
+        .filter(movement=>movement.type==="Asignación"&&movement.reference===reference)
+        .reduce((sum,movement)=>sum+(movement.allocations.find(allocation=>allocation.envelopeId===envelope.id)?.amount??0),0);
+      pendingAmount=Math.max(0,envelope.recurrence.amount-contributed);
+      if(pendingAmount===0)continue;
+      due = isRecurrenceDue(envelope, today);
+      temporal = getTemporalState(dueDate,today).temporal;
+    } catch { continue; }
+    if (!temporal || (!due && !["yellow","red"].includes(temporal.tone))) continue;
+    const id = due
+      ? `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:${temporal.tone}`
+      : `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:upcoming`;
     result.set(id, {
-      id, title: "Aporte pendiente", detail: `${envelopeLabel(envelope.name)}. ${temporal.explanation}`, tone: temporal.tone,
-      amount: envelope.recurrence.amount, date: `${dueDate}T00:00`, kind: "reminder",
+      id, title: due ? "Aporte pendiente" : "Aporte próximo", detail: `${envelopeLabel(envelope.name)}. ${temporal.explanation}`, tone: temporal.tone,
+      amount: pendingAmount, date: `${dueDate}T00:00`, kind: "reminder",
       destination: { page: "Recordatorios", envelopeId: envelope.id },
     });
   }

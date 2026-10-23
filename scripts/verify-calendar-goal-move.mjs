@@ -30,7 +30,7 @@ assert.throws(()=>moveEnvelopeGoal([source,{...target,recurrence:source.recurren
 assert.throws(()=>moveEnvelopeGoal([{...source,goal:1500},target],source,'b','x'));
 const roundTrip=moveEnvelopeGoal(moved,moved[1],'a','unused');assert.equal(roundTrip[0].goalId,'stable-goal');
 assert.equal(JSON.stringify(envelopes),original);
-console.log('OK: calendar leap/year/week boundaries, shared schedules, snoozing, paid exclusion; stable goal move, optional recurrence, no balance change or overwritten goals.');
+console.log('OK: calendar leap/year/week boundaries, shared schedules, snoozing; stable goal move, optional recurrence, no balance change or overwritten goals.');
 
 const {interfaceScale,nextInterfaceSize,normalizeInterfaceSize}=await import('../lib/interface-size.ts');
 assert.deepEqual([0,1,2,3].map(interfaceScale),[1,1.12,1.25,1.4]);

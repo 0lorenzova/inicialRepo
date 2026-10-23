@@ -13,7 +13,18 @@
 .colors small { font-size:calc(11px * var(--ui-scale,1)); }
 .enable { display:flex; align-items:center; gap:8px; min-height:44px; min-width:0; margin:0; color:var(--ink); font-size:calc(11px * var(--ui-scale,1)); cursor:pointer; }
 .enable input { flex:none; width:18px; height:18px; margin:0; accent-color:var(--green); }
-.home { display:grid; grid-template-columns:minmax(0,1fr) auto; width:100%; gap:4px 12px; justify-content:stretch; }
-.home>.enable { grid-column:1; grid-row:1; justify-self:start; }
-.home>.all { grid-column:2; grid-row:1; justify-self:end; }
-.home>.colors { grid-column:1/-1; grid-row:2; width:100%; max-width:360px; }
+.home { display:grid; grid-template-columns:max-content minmax(0,1fr); align-items:center; width:100%; gap:0 8px; justify-content:stretch; }
+.home>.enable { grid-column:1; grid-row:1; justify-self:start; white-space:nowrap; }
+.home>.all { display:inline-flex; grid-column:1; grid-row:2; align-items:center; justify-self:start; gap:8px; min-width:112px; padding:0 12px; border-color:var(--line); border-radius:10px; background:var(--paper); font-weight:600; }
+.home>.all[aria-pressed="true"] { border-color:var(--green); background:var(--canvas); }
+.home>.colors { grid-column:2; grid-row:1 / span 2; width:100%; max-width:360px; justify-self:stretch; }
+.home>.colors>button { position:relative; padding-inline:2px; }
+.allCheck { display:inline-grid; place-items:center; width:18px; height:18px; flex:none; border:1px solid currentColor; border-radius:4px; font-size:13px; line-height:1; }
+.all[aria-pressed="true"] .allCheck { border-color:var(--green); background:var(--green); color:var(--paper); }
+
+@media (max-width:420px) {
+  .home { grid-template-columns:minmax(0,1fr) auto; column-gap:8px; }
+  .home>.enable { grid-column:1; grid-row:1; white-space:normal; gap:4px; font-size:calc(10px * var(--ui-scale,1)); }
+  .home>.colors { grid-column:2; grid-row:1 / span 2; width:clamp(130px,44vw,176px); max-width:100%; }
+  .home>.all { grid-column:1; grid-row:2; min-width:112px; justify-self:start; }
+}

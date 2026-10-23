@@ -7,3 +7,99 @@
 .batchRow{display:grid;grid-template-columns:minmax(0,2fr) minmax(120px,1fr);align-items:center;gap:10px;min-width:0;border-bottom:1px solid var(--line);padding:8px 0}.batchRow>label{min-width:0}.batchRow>label:first-child{display:flex;align-items:center;gap:8px}.batchRow>label:first-child input{width:20px;min-width:20px;height:20px}.batchGroup{display:grid;gap:10px;min-width:0;margin:0;border:1px solid var(--line);border-radius:12px;padding:12px}.batchGroup legend{font-weight:700;overflow-wrap:anywhere}.batchGroup p{margin:0}.batchGroup label{display:grid;gap:6px;min-width:0}.batchGroup input{width:100%;min-width:0;box-sizing:border-box}
 @media(max-width:480px){.batchRow{grid-template-columns:minmax(0,1fr)}.batchGroup{padding:10px}}
 .quickReceipt{display:flex;align-items:center;gap:10px;width:100%;min-width:0;margin-top:2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--canvas);cursor:pointer}.quickReceipt input{flex:none;width:22px;height:22px;accent-color:var(--green)}.quickReceipt>span{flex:1;margin:0!important;font-weight:700;overflow-wrap:anywhere}.quickReceipt small{display:block;margin-top:2px;color:var(--muted);font-weight:500}.receiptAction{display:flex;justify-content:flex-end;width:100%;margin-top:2px}.receiptAction button{min-height:44px}.quickDialog,.paymentDialog{display:grid;gap:14px;padding:24px;background:var(--paper);color:var(--ink);border-radius:18px;max-height:85dvh;overflow:auto;overscroll-behavior:contain}.quickDialog header,.paymentDialog header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.quickDialog header h2,.paymentDialog header h2{margin:4px 0 0;font-size:20px}.quickDialog header>button,.paymentDialog header>button{flex:none;min-height:44px;min-width:44px}.quickDialog label{display:grid;gap:6px;min-width:0}.quickDialog :global(.check-label){display:flex;align-items:center;gap:8px;min-height:40px}.quickDialog input[type=radio]{width:20px;height:20px;accent-color:var(--green)}.quickDialog input[type=date]{width:100%;min-height:44px;box-sizing:border-box}.dateChoices{display:grid;gap:6px;padding:10px;border:1px solid var(--line);border-radius:12px}.historicalNotice{padding:10px;border-radius:10px;background:var(--canvas);color:var(--muted)}.paymentSummary{display:grid;gap:7px;padding:12px;border:1px solid var(--line);border-radius:12px}.paymentSummary>small{overflow-wrap:anywhere;color:var(--muted)}.paymentSummary button{min-height:44px}.quickDialog :global(.account-selector){display:grid;gap:8px;min-width:0}.quickDialog :global(.account-selector select){width:100%;min-height:44px}.quickDialog :global(.account-selector fieldset){display:grid;gap:8px;min-width:0;padding:10px;border:1px solid var(--line);border-radius:10px}.quickDialog :global(.account-selector fieldset>div){display:flex;flex-wrap:wrap;gap:8px}.quickDialog :global(.account-selector fieldset button){min-height:44px;flex:1 1 140px}@media(max-width:600px){.quickReceipt{padding:10px}.receiptAction{justify-content:stretch}.receiptAction button{width:100%}.quickDialog,.paymentDialog{padding:18px!important}.quickDialog header h2,.paymentDialog header h2{font-size:18px}}
+
+:global(.page-content:has(.salary-tracking-root)) > :global(.page-title){display:none}
+.salaryRoot{margin-top:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;gap:12px}
+.pageHeading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:2px}
+.pageHeading h1{margin:0;color:var(--ink);font:750 clamp(26px,3vw,34px) Manrope,sans-serif;letter-spacing:-1px}
+.pageHeading p{margin:4px 0 0!important;color:var(--muted);font-size:14px}
+.pageHeading button{flex:none;min-height:46px}
+.noticeBanner{display:flex;align-items:center;gap:12px;padding:12px 15px;border:1px solid color-mix(in srgb,#1689a0 14%,var(--line));border-radius:12px;background:color-mix(in srgb,#d9f0f8 50%,var(--paper));color:var(--ink)}
+.noticeBanner>span,.isoNote>span{flex:none;color:#087985;font-size:20px;font-weight:700}
+.noticeBanner p{font-size:13px;line-height:1.45}
+.employerHeader{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0;margin:2px 0 0}
+.employerHeader h2{margin:0;font-size:22px;letter-spacing:-.4px}
+.employerHeader p{margin:2px 0 0!important;color:var(--muted);font-size:14px}
+.configSelector{display:grid;gap:4px;min-width:min(100%,230px);font-size:11px;color:var(--muted)}
+.sourceName{font-size:13px}
+.moreTools{padding:0 14px!important;border-radius:12px!important}
+.moreTools>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;list-style:none}
+.moreTools>summary::-webkit-details-marker{display:none}
+.moreTools>summary::after{content:"⌄";font-size:18px;color:var(--muted)}
+.moreTools[open]>summary::after{content:"⌃"}
+.summaryPanel{display:grid;gap:12px;padding:14px!important;border-radius:16px!important}
+.sectionHeading,.weeksHeading{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+.sectionHeading h2,.weeksHeading h2{margin:0;font-size:19px;letter-spacing:-.3px}
+.textAction{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:4px 2px;border:0;background:transparent;color:var(--green-dark);font-size:13px;font-weight:700;white-space:nowrap}
+.textAction span{font-size:21px}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.metric{display:flex;align-items:center;gap:9px;min-width:0;min-height:72px;padding:9px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.metricIcon,.latestIcon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--blue) 70%,var(--paper));color:#0874a7;font-size:19px;font-weight:800}
+.metricCopy{display:grid;gap:4px;min-width:0;margin:0!important}
+.metricCopy small{margin:0;color:var(--muted);font-size:11px;line-height:1.25}
+.metricCopy strong{display:block;margin:0;overflow-wrap:anywhere;font-size:clamp(14px,1.6vw,19px);letter-spacing:-.3px}
+.expected{color:#126aa4}.received{color:#167548}.pending{color:#80551e}.projected{color:#554db5}
+.metricIcon.received{background:#e4f4eb;color:#168257}.metricIcon.pending{background:#fff1d9;color:#986016}.metricIcon.projected{background:#eeecff;color:#5d57bf}
+.latestPayment{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;width:100%;min-width:0;padding:10px 12px;border:1px solid color-mix(in srgb,var(--green) 13%,var(--line));border-radius:11px;background:color-mix(in srgb,var(--pale) 60%,var(--paper));color:var(--ink);text-align:left}
+button.latestPayment{cursor:pointer}
+.latestIcon{width:30px;height:30px;border-radius:9px;background:transparent;color:var(--green-dark);font-size:19px}
+.latestCopy{display:grid;gap:2px;min-width:0;margin:0!important}
+.latestCopy b{font-size:13px}
+.latestCopy small{margin:0;color:var(--muted);font-size:11px;line-height:1.35;overflow-wrap:anywhere}
+.latestPayment>strong{font-size:15px;white-space:nowrap}
+.latestPayment>span:last-child{font-size:22px;color:var(--green-dark)}
+.noPayment{grid-template-columns:auto minmax(0,1fr);color:var(--muted)}
+.summaryNote{color:var(--muted);line-height:1.4}
+.isoNote{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;line-height:1.4}
+.isoNote>span{font-size:16px}
+.weeksHeading{margin:1px 0 -4px}
+.weeksHeading select{width:auto;min-width:112px;min-height:40px;padding:6px 10px}
+.visuallyHidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.weekHeading{display:flex;align-items:center;gap:8px;min-width:0;min-height:28px;padding-right:20px}
+.weekHeading>b{font-size:15px;letter-spacing:-.15px}
+.stateBadge{display:inline-flex;align-items:center;max-width:100%;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.25}
+.weekChevron{position:absolute;right:2px;top:15px;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .16s ease}
+.salaryCard[open]>.weekHeading .weekChevron{transform:rotate(225deg)}
+.weekMeta,.paymentMeta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;color:var(--ink);font-size:13px;line-height:1.4}
+.weekMeta small,.paymentMeta small{color:var(--muted);font-size:12px}
+.paymentMeta{color:var(--muted);font-size:12px}
+.salaryCard:not([open]) .periodAmounts{display:none}
+.salaryCard>summary .periodAmounts{margin:5px 0 0}
+.salaryCard>summary .periodAmounts span{padding:6px 8px;border-radius:8px;background:color-mix(in srgb,var(--canvas) 78%,var(--paper));color:var(--muted);text-align:center}
+.salaryCard>summary .periodAmounts strong{margin-top:3px;color:var(--ink)}
+.salaryCard>summary .quickReceipt{margin-top:8px;background:color-mix(in srgb,#dff2f8 68%,var(--paper));border-color:color-mix(in srgb,#1889a0 18%,var(--line))}
+.salaryCard>summary .receiptAction{margin-top:8px}
+.salaryCard .periodExtra{margin-top:4px}
+.summaryPanel .summary strong{font-size:clamp(14px,1.6vw,19px)}
+@media(max-width:700px){
+  .salaryRoot{gap:10px}
+  .pageHeading{align-items:flex-start;gap:10px}
+  .pageHeading h1{font-size:26px}
+  .pageHeading p{font-size:12px}
+  .pageHeading button{min-height:42px;padding:0 11px;font-size:12px}
+  .noticeBanner{padding:10px 12px}
+  .noticeBanner p{font-size:12px}
+  .employerHeader{align-items:flex-start;flex-direction:column;gap:8px}
+  .employerHeader h2{font-size:19px}
+  .configSelector{width:100%}
+  .summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .metric{min-height:64px;padding:8px}
+  .metricIcon{width:30px;height:30px}
+  .weeksHeading h2{font-size:17px}
+  .weekHeading{flex-wrap:wrap;gap:6px}
+  .weekHeading>b{font-size:14px}
+}
+@media(max-width:420px){
+  .pageHeading{flex-direction:column}
+  .pageHeading button{align-self:stretch}
+  .latestPayment{grid-template-columns:auto minmax(0,1fr) auto;gap:8px;padding:9px}
+  .latestPayment>span:last-child{display:none}
+  .latestPayment>strong{font-size:13px}
+  .metric{gap:7px}
+  .metricIcon{width:27px;height:27px;font-size:16px}
+  .metricCopy small{font-size:10px}
+  .metricCopy strong{font-size:14px}
+  .weekMeta,.paymentMeta{font-size:12px}
+}
+.salaryCard>summary{position:relative;list-style:none}
+.salaryCard[open]>summary .weekChevron{transform:rotate(225deg)}

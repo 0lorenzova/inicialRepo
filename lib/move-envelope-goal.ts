@@ -4,7 +4,7 @@ import { validateRecurrence, type Recurrence } from "./finance-recurrence";
 type GoalEnvelope = GoalSettings & { id:string; name:string; balance:number; archived?:boolean; recurrence?:Recurrence };
 const fields = ["goalId","goalName","goal","goalEnabled","goalDate","goalPlannedPaymentDate","goalTimingEnabled","goalProgressVisible","goalDisplay","goalThresholds"] as const;
 const signature = (value:GoalSettings) => JSON.stringify(fields.map(field=>field==="goalThresholds" ? [value.goalThresholds?.green,value.goalThresholds?.yellow,value.goalThresholds?.red] : value[field]));
-const recurrenceSignature = (value?:Recurrence) => value ? JSON.stringify([value.amount,value.frequency,value.nextDate,value.snoozedUntil,value.intervalDays,value.anchorDay,value.endDate]) : "";
+const recurrenceSignature = (value?:Recurrence) => value ? JSON.stringify([value.amount,value.frequency,value.nextDate,value.snoozedUntil,value.intervalDays,value.anchorDay,value.endDate,value.skippedDates]) : "";
 
 export function moveEnvelopeGoal<T extends GoalEnvelope>(envelopes:T[], original:T, targetId:string, newId:string, moveContribution=false):T[] {
   if (original.id===targetId) throw new Error("Selecciona otro sobre como destino.");

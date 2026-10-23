@@ -8,9 +8,11 @@ export type Recurrence = {
   intervalDays?: number;
   nextDate: string;
   snoozedUntil?: string;
+  skippedDates?: string[];
 };
 
-type RecurringEnvelope = LedgerEnvelope & { recurrence?: Recurrence };
+export type RecurringContributionHistoryEntry = { expectedDate: string; date: string; amount: number; frequency: Recurrence["frequency"] };
+type RecurringEnvelope = LedgerEnvelope & { recurrence?: Recurrence; recurringContributionHistory?: RecurringContributionHistoryEntry[] };
 
 // These are civil dates in Costa Rica, supplied by the caller. UTC arithmetic
 // keeps calendar changes independent of the browser's local time zone.
@@ -41,6 +43,10 @@ export function validateRecurrence(recurrence: Recurrence): void {
   if (recurrence.frequency === "Personalizado") validateDayInterval(recurrence.intervalDays);
   civilDate(recurrence.nextDate);
   if (recurrence.endDate) civilDate(recurrence.endDate);
+  if (recurrence.skippedDates !== undefined) {
+    if (!Array.isArray(recurrence.skippedDates) || recurrence.skippedDates.some(value => typeof value !== "string")) throw new Error("El historial de aportes omitidos no es válido.");
+    recurrence.skippedDates.forEach(civilDate);
+  }
   if (recurrence.anchorDay !== undefined && (!Number.isInteger(recurrence.anchorDay) || recurrence.anchorDay < 1 || recurrence.anchorDay > 31)) throw new Error("El día de repetición no es válido.");
 }
 
@@ -142,30 +148,60 @@ export function confirmRecurringContribution(
   expectedNextDate: string,
   dateTime: string,
 ): Ledger {
+  const recurrence = currentRecurrence(ledger, envelopeId, expectedNextDate);
+  const contributed = ledger.movements
+    .filter(movement => movement.type === "Asignación" && movement.reference === `Aporte recurrente · ${expectedNextDate}`)
+    .reduce((sum, movement) => sum + (movement.allocations.find(allocation => allocation.envelopeId === envelopeId)?.amount ?? 0), 0);
+  const remaining=recurrence.amount-contributed;
+  if(remaining<=0)throw new Error("El movimiento ya existe para esta ocurrencia.");
+  return recordRecurringContribution(ledger, envelopeId, expectedNextDate, remaining, dateTime);
+}
+
+/** Explicitly records a full or partial recurring contribution using the normal assignment flow. */
+export function recordRecurringContribution(
+  ledger: Ledger,
+  envelopeId: string,
+  expectedNextDate: string,
+  amount: number,
+  dateTime: string,
+): Ledger {
   if (!/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,3})?)?$/.test(dateTime)) {
     throw new Error("La fecha y hora del aporte no son válidas.");
   }
   const todayDate = dateTime.slice(0, 10);
   civilDate(todayDate);
   const recurrence = currentRecurrence(ledger, envelopeId, expectedNextDate);
-  if (recurrenceDueDate(recurrence) > todayDate) throw new Error("Este aporte todavía no vence.");
-  if (recurrence.endDate && recurrenceDueDate(recurrence)>recurrence.endDate) throw new Error("La programación de aportes ya finalizó.");
-  // Advance from the scheduled contribution, so late confirmation does not
-  // silently shift the plan. An overdue next period still needs confirmation.
+  const dueDate = recurrenceDueDate(recurrence);
+  if (recurrence.endDate && dueDate > recurrence.endDate) throw new Error("La programación de aportes ya finalizó.");
+  if (recurrence.snoozedUntil && recurrence.snoozedUntil > todayDate) throw new Error("Este aporte pospuesto todavía no vence.");
+  if (!Number.isSafeInteger(amount) || amount <= 0) throw new Error("Ingresa un monto entero mayor que cero.");
+  const reference = `Aporte recurrente · ${expectedNextDate}`;
+  const contributed = ledger.movements
+    .filter(movement => movement.type === "Asignación" && movement.reference === reference)
+    .reduce((sum, movement) => sum + (movement.allocations.find(allocation => allocation.envelopeId === envelopeId)?.amount ?? 0), 0);
+  const remaining = Math.max(0, recurrence.amount - contributed);
+  if (remaining === 0) throw new Error("El movimiento ya existe para esta ocurrencia.");
+  if (amount > remaining) throw new Error("El aporte supera el saldo pendiente de esta ocurrencia.");
+  // Advance from the scheduled contribution, so an early or late confirmation
+  // does not silently shift the plan. Partial contributions keep this date active.
   const anchorDay=recurrence.anchorDay ?? Number(recurrence.nextDate.slice(-2));
   const nextDate = previewPostponement(recurrence.nextDate, contributionStep(recurrence), anchorDay);
-  // One ID per envelope and due date also protects retries after reloading.
-  const movementId = `recurrence:${encodeURIComponent(envelopeId)}:${expectedNextDate}`;
-  const next = assign(ledger, envelopeId, recurrence.amount, dateTime, movementId);
+  const completes = contributed + amount >= recurrence.amount;
+  // Stable cumulative IDs reject retries from a stale snapshot without blocking
+  // the next intentional partial contribution.
+  const movementId = contributed === 0 && amount === recurrence.amount
+    ? `recurrence:${encodeURIComponent(envelopeId)}:${expectedNextDate}`
+    : `recurrence:${encodeURIComponent(envelopeId)}:${expectedNextDate}:${contributed}`;
+  const next = assign(ledger, envelopeId, amount, dateTime, movementId);
   return {
     ...next,
     envelopes: next.envelopes.map((envelope) => envelope.id === envelopeId ? {
       ...envelope,
-      recurrence: { ...recurrence, anchorDay, nextDate, snoozedUntil: undefined },
+      recurrence: completes ? { ...recurrence, anchorDay, nextDate, snoozedUntil: undefined } : { ...recurrence, anchorDay },
     } : envelope),
     movements: next.movements.map((movement) => movement.id === movementId ? {
       ...movement,
-      reference: `Aporte recurrente · ${expectedNextDate}`,
+      reference,
     } : movement),
   };
 }
@@ -181,14 +217,49 @@ export function postponeRecurringContribution(
   const recurrence = currentRecurrence(ledger, envelopeId, expectedNextDate);
   // Explicit choices are measured from today and shown before confirmation.
   // Keep the old four-argument call compatible with previously opened forms.
+  const scheduledDate = recurrenceDueDate(recurrence);
   const nextDate = option
-    ? previewPostponement(todayDate, option)
-    : previewPostponement(recurrence.nextDate > todayDate ? recurrence.nextDate : todayDate, { unit: "days", amount: 1 });
+    ? previewPostponement(scheduledDate > todayDate ? scheduledDate : todayDate, option)
+    : previewPostponement(scheduledDate > todayDate ? scheduledDate : todayDate, { unit: "days", amount: 1 });
   return {
     ...ledger,
     envelopes: ledger.envelopes.map((envelope) => envelope.id === envelopeId ? {
       ...envelope,
-      recurrence: { ...recurrence, nextDate, snoozedUntil: nextDate },
+      // Snooze this occurrence only. Keep nextDate as the recurrence anchor so
+      // confirming it does not shift the rest of the series.
+      recurrence: { ...recurrence, snoozedUntil: nextDate },
     } : envelope),
+  };
+}
+
+/** Omit one configured contribution without creating a movement or shifting later dates. */
+export function skipRecurringContribution(
+  ledger: Ledger,
+  envelopeId: string,
+  expectedNextDate: string,
+): Ledger {
+  const recurrence = currentRecurrence(ledger, envelopeId, expectedNextDate);
+  const occurrenceDate = recurrenceDueDate(recurrence);
+  const nextDate = previewPostponement(recurrence.nextDate, contributionStep(recurrence), recurrence.anchorDay ?? Number(recurrence.nextDate.slice(-2)));
+  return {
+    ...ledger,
+    envelopes: ledger.envelopes.map((envelope) => {
+      if (envelope.id !== envelopeId) return envelope;
+      const current = envelope as RecurringEnvelope;
+      const history = current.recurringContributionHistory ?? [];
+      return {
+        ...current,
+        recurringContributionHistory: history.some(item => item.expectedDate === recurrence.nextDate) ? history : [...history, { expectedDate: recurrence.nextDate, date: occurrenceDate, amount: recurrence.amount, frequency: recurrence.frequency }].sort((a,b)=>a.expectedDate.localeCompare(b.expectedDate)),
+        recurrence: {
+          ...recurrence,
+          anchorDay: recurrence.anchorDay ?? Number(recurrence.nextDate.slice(-2)),
+          nextDate,
+          snoozedUntil: undefined,
+          // Keep the series anchor as the stable occurrence key even when its due
+          // date had been snoozed; movement references use this original date too.
+          skippedDates: [...new Set([...(recurrence.skippedDates ?? []), recurrence.nextDate])].sort(),
+        },
+      };
+    }),
   };
 }

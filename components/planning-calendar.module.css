@@ -23,6 +23,8 @@
 .entries { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); gap:10px; }
 .entry { display:grid; gap:8px; text-align:left; min-width:0; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--paper); color:var(--ink); overflow-wrap:anywhere; }
 .entry > small { color:var(--muted); }
+.entry[data-status="completed"] { border-left:3px solid #4c9c73; }
+.entry[data-status="omitted"] { border-left:3px solid #8d9aa0; }
 .srOnly { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
 
 /* One shared phase moves the visual reminder; records and counts stay put. */

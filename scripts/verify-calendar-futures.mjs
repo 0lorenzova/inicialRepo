@@ -9,7 +9,7 @@ const seed={id:"home",name:"Hogar",balance:1000,scheduledAmounts:[item],goal:500
 const before=JSON.stringify(seed);
 let events=calendarEntries([seed],today,window);
 assert.equal(events.filter(e=>e.virtual&&e.date==="2026-03-31").length,2);
-assert.equal(events.filter(e=>e.item?.kind==="goal").length,1,"Goals stay on their single actual deadline");
+assert.equal(events.filter(e=>e.item?.kind==="goal").length,0,"An already reached goal is not shown as a pending calendar item");
 assert.ok(events.filter(e=>e.virtual).every(e=>e.recurrent&&!e.item?.payment&&e.item?.covered===undefined));
 assert.equal(JSON.stringify(seed),before,"Consultation never writes to stored data");
 assert.equal(new Set(events.map(e=>e.key)).size,events.length);

@@ -3,7 +3,7 @@
 import { envelopeLabel } from "@/lib/envelope-label";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { FinanceDialog } from "@/components/finance-dialog";
-import { previewPostponement, type PostponeOption, type Recurrence } from "@/lib/finance-recurrence";
+import { previewPostponement, recurrenceDueDate, type PostponeOption, type Recurrence } from "@/lib/finance-recurrence";
 import styles from "./envelope-goal-editor.module.css";
 
 const choices = [
@@ -27,8 +27,10 @@ export function PostponeEditor({ envelope, today, onSave, onClose }: {
   const [error, setError] = useState("");
   const submitting = useRef(false);
   const option: PostponeOption = choices.find(choice => choice.key === selected)?.option ?? { unit: "days", amount: days.trim() ? Number(days) : NaN };
+  let referenceDate = today;
+  try { const scheduled = recurrenceDueDate(envelope.recurrence); if (scheduled > referenceDate) referenceDate = scheduled; } catch { /* Keep legacy data editable; submit validation remains authoritative. */ }
   let preview = "";
-  try { preview = previewPostponement(today, option); } catch { /* Incomplete fields are validated when submitted. */ }
+  try { preview = previewPostponement(referenceDate, option); } catch { /* Incomplete fields are validated when submitted. */ }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,7 +38,7 @@ export function PostponeEditor({ envelope, today, onSave, onClose }: {
     submitting.current = true;
     try {
       if (selected === "custom" && !days.trim()) throw new Error("Debes ingresar cuántos días quieres posponer el aporte.");
-      previewPostponement(today, option);
+      previewPostponement(referenceDate, option);
       onSave(option);
       onClose();
     } catch (cause) {
@@ -49,7 +51,7 @@ export function PostponeEditor({ envelope, today, onSave, onClose }: {
     <div className="flow-modal">
       <header><div><h2>Posponer aporte</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div><button type="button" aria-label="Cerrar posposición" onClick={onClose}>×</button></header>
       <form className={`flow-body ${styles.form}`} onSubmit={submit} noValidate>
-        <p className={styles.hint}>El plazo se cuenta desde hoy: {dateLabel(today)}.</p>
+        <p className={styles.hint}>El plazo se cuenta desde {referenceDate === today ? "hoy" : "la fecha programada"}: {dateLabel(referenceDate)}.</p>
         <fieldset className={styles.choices}><legend>¿Cuánto tiempo quieres posponerlo?</legend>{choices.map(choice => <button type="button" key={choice.key} aria-pressed={selected === choice.key} onClick={() => { setSelected(choice.key); setError(""); }}>{choice.label}</button>)}</fieldset>
         {selected === "custom" && <><label htmlFor={`${id}-days`}>Cantidad de días a partir de hoy</label><input id={`${id}-days`} type="number" inputMode="numeric" min="1" step="1" value={days} onChange={event => { setDays(event.target.value); setError(""); }} autoFocus /></>}
         <div className={styles.preview} aria-live="polite"><strong>Nueva fecha del aporte</strong><span>{preview ? dateLabel(preview) : "Ingresa una cantidad válida de días para ver la fecha."}</span></div>

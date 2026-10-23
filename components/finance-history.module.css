@@ -2,3 +2,80 @@
 .filters label { display: grid; gap: 6px; flex: 1 1 130px; min-width: 0; font-size:calc(12px * var(--ui-scale, 1)); color: var(--ink); }
 .filters input { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 8px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; }
 .filters button { min-height: 44px; height: auto; }
+
+.reports { display: grid; gap: 10px; min-width: 0; }
+.reports button, .reports input, .reports select { font: inherit; }
+.reportFilters { display: grid; gap: 7px; margin: 0 0 2px; }
+.filterGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.filterField { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: calc(10px * var(--ui-scale, 1)); font-weight: 600; }
+.filterField select, .filterField input { box-sizing: border-box; width: 100%; min-width: 0; height: 42px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink); font-size: calc(11px * var(--ui-scale, 1)); }
+.periodControl { display: grid; grid-template-columns: 32px minmax(0, 1fr) 32px; align-items: center; gap: 4px; min-width: 0; }
+.periodControl input { padding: 0 6px; }
+.periodControl button { height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: 21px; line-height: 1; }
+.periodControl button:disabled { opacity: .42; cursor: default; }
+.historyToggle { justify-self: end; min-height: 31px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; color: var(--green-dark); font-size: calc(10px * var(--ui-scale, 1)) !important; font-weight: 650; }
+.periodSummary { margin: 0; color: var(--muted); font-size: calc(10px * var(--ui-scale, 1)); line-height: 1.45; }
+.periodSummary span { padding: 0 3px; }
+.reportPanel { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.panelHeading { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 43px; padding: 9px 12px; border: 0; background: transparent; color: var(--ink); text-align: left; }
+.panelTitle { min-width: 0; font-size: calc(13px * var(--ui-scale, 1)); font-weight: 700; }
+.panelHeadingEnd { display: flex; align-items: center; gap: 9px; flex: none; color: var(--green-dark); }
+.panelHeadingEnd small { color: var(--muted); font-size: calc(10px * var(--ui-scale, 1)); }
+.panelHeadingEnd > span { width: 20px; text-align: center; font-size: 19px; line-height: 1; }
+.panelBody { padding: 0 10px 10px; }
+.metricGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.metric { display: grid; align-content: start; gap: 5px; min-width: 0; min-height: 91px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); text-align: left; }
+.metric > span { color: var(--muted); font-size: calc(10px * var(--ui-scale, 1)); line-height: 1.3; }
+.metric > b { overflow: hidden; color: var(--ink); font: 750 clamp(12px, 3.8vw, 18px)/1.2 Manrope, sans-serif; letter-spacing: -.35px; text-overflow: ellipsis; white-space: nowrap; }
+.metric > small { color: var(--muted); font-size: calc(8px * var(--ui-scale, 1)); line-height: 1.35; }
+.metricIncome > b { color: #208650; }
+.metricExpense > b { color: #c95d58; }
+.metricBalance { background: var(--blue); }
+.breakdownList { display: grid; gap: 1px; }
+.breakdownItem + .breakdownItem { border-top: 1px solid var(--line); }
+.breakdownButton { display: grid; grid-template-columns: minmax(0, 1fr) max-content 18px; align-items: center; gap: 9px; width: 100%; min-height: 61px; padding: 8px 3px; border: 0; background: transparent; color: var(--ink); text-align: left; }
+.breakdownCopy { display: grid; gap: 3px; min-width: 0; }
+.breakdownCopy b { overflow: hidden; font-size: calc(11px * var(--ui-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+.breakdownCopy small { color: var(--muted); font-size: calc(9px * var(--ui-scale, 1)); }
+.bar { display: block; height: 5px; overflow: hidden; border-radius: 5px; background: var(--line); }
+.bar i { display: block; height: 100%; border-radius: inherit; background: var(--green-dark); }
+.breakdownButton > strong { font-size: calc(11px * var(--ui-scale, 1)); white-space: nowrap; }
+.rowChevron { color: var(--muted); font-size: 22px; line-height: 1; }
+.movementList { display: grid; min-width: 0; }
+.movementRow { display: grid; grid-template-columns: minmax(0, 1fr) max-content 14px; align-items: center; gap: 8px; width: 100%; min-height: 58px; padding: 8px 3px; border: 0; border-top: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; }
+.movementCopy { display: grid; gap: 3px; min-width: 0; }
+.movementCopy b { overflow: hidden; font-size: calc(11px * var(--ui-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+.movementCopy small { overflow: hidden; color: var(--muted); font-size: calc(9px * var(--ui-scale, 1)); text-overflow: ellipsis; white-space: nowrap; }
+.movementRow > strong { max-width: 35vw; font-size: calc(10px * var(--ui-scale, 1)); text-align: right; white-space: nowrap; }
+.income { color: #208650; }
+.expense { color: #c95d58; }
+.internal { color: var(--ink); }
+.historyFilter { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 5px; color: var(--muted); font-size: calc(10px * var(--ui-scale, 1)); }
+.historyFilter select { min-width: 0; height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: calc(10px * var(--ui-scale, 1)); }
+.compactEmpty, .sharedEmpty { margin: 0; padding: 10px 2px; color: var(--muted); font-size: calc(10px * var(--ui-scale, 1)); line-height: 1.45; }
+.sharedEmpty { padding: 8px 11px; border-radius: 9px; background: var(--blue); color: var(--ink); }
+.error { margin: 0; color: #c95d58; font-size: calc(11px * var(--ui-scale, 1)); }
+:global(.dark-mode) .reports .reportPanel, :global(.dark-mode) .reports .metric, :global(.dark-mode) .reports .filterField input, :global(.dark-mode) .reports .filterField select, :global(.dark-mode) .reports .periodControl button, :global(.dark-mode) .reports .historyFilter select { background: var(--paper); border-color: var(--line); color: var(--ink); }
+:global(.dark-mode) .reports .metricBalance, :global(.dark-mode) .reports .sharedEmpty { background: #202d39; }
+:global(.dark-mode) .reports .metricIncome > b { color: #75d29a; }
+:global(.dark-mode) .reports .metricExpense > b { color: #ef9290; }
+@media (max-width: 650px) {
+  .filterGrid { gap: 7px; }
+  .periodControl { grid-template-columns: 28px minmax(0, 1fr) 28px; gap: 3px; }
+  .periodControl button { height: 34px; }
+  .periodControl input { height: 40px; font-size: 10px; }
+  .panelHeading { min-height: 41px; padding: 8px 10px; }
+  .panelBody { padding: 0 8px 8px; }
+  .metricGrid { gap: 5px; }
+  .metric { min-height: 86px; padding: 8px 6px; }
+  .metric > span { font-size: calc(9px * var(--ui-scale, 1)); }
+  .metric > b { font-size: clamp(11px, 3.6vw, 15px); }
+  .metric > small { font-size: calc(7px * var(--ui-scale, 1)); }
+  .movementRow { gap: 5px; }
+  .movementRow > strong { max-width: 31vw; font-size: calc(9px * var(--ui-scale, 1)); }
+}
+@media (max-width: 360px) {
+  .filterGrid { grid-template-columns: 1fr; }
+  .metricGrid { grid-template-columns: 1fr; }
+  .metric { min-height: 72px; }
+}

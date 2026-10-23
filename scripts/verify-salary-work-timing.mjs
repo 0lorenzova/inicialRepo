@@ -23,7 +23,7 @@ assert.equal(view.tone,'paid');assert.equal(view.workState,'En curso');assert.eq
 const afterWork=postSalaryPayment(ledger,{...payment,date:'2026-10-17T08:00'},'2026-10-17');
 const second=salaryPeriodPresentation(afterWork,period,'2026-10-17');assert.equal(second.laborAdvances,0);assert.equal(second.early,100);
 const css=readFileSync(new URL('../components/salary-status.module.css',import.meta.url),'utf8');
-assert.match(css,/data-tone=partial\]\{--salary-bg:#ffdfbd/);assert.match(css,/data-tone=neutral\]\{--salary-bg:#e6eaf0/);
+assert.match(css,/data-tone=partial\]\{--salary-bg:#fff3df/);assert.match(css,/data-tone=neutral\]\{--salary-bg:#eef1f5/);
 const calendar=readFileSync(new URL('../components/salary-receive-dialog.module.css',import.meta.url),'utf8');assert.match(calendar,/statusDot.partial\{background:#f97316/);assert.match(calendar,/statusDot.neutral\{background:#94a3b8/);
 console.log('OK: work schedule snapshots, Friday/Saturday distinction, advance versus due date, full advance without earned work, legacy fallback, future neutral, shared palette and no consultation writes.');
 

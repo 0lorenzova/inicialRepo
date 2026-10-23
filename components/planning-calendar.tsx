@@ -6,12 +6,13 @@ import Tooltip from "@mui/material/Tooltip";
 import { calendarRelativeLabel, calendarIndicatorGroups, calendarOverdueEntries, calendarDotDescription, calendarDays, calendarEntryTone, calendarEntries, calendarRange, calendarScales, shiftCalendar, type CalendarEntry, type CalendarEnvelope, type CalendarScale } from "@/lib/planning-calendar";
 import { proximityTones, planningCoverage, plannedPaymentDelay } from "@/lib/envelope-planning";
 import { calendarProximityMeanings } from "@/lib/planning-calendar";
+import type { LedgerMovement } from "@/lib/finance-ledger";
 import { useTemporalDisplay, TemporalDot, TemporalBadge } from "./temporal-indicator";
 import { PlanningItemSummary } from "./envelope-planning";
 import styles from "./planning-calendar.module.css";
 
-export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,display,privateMode,embedded=false,selection}:{
-  envelopes:CalendarEnvelope[];today:string;date:string;scale:CalendarScale;onChange:(date:string,scale:CalendarScale)=>void;
+export function PlanningCalendar({envelopes,movements=[],includeHistory=false,today,date,scale,onChange,onSelect,display,privateMode,embedded=false,selection}:{
+  envelopes:CalendarEnvelope[];movements?:LedgerMovement[];includeHistory?:boolean;today:string;date:string;scale:CalendarScale;onChange:(date:string,scale:CalendarScale)=>void;
   selection?:{isSelected:(entry:CalendarEntry)=>boolean;onToggle:(entry:CalendarEntry)=>void};
   onSelect?:(entry:CalendarEntry)=>void;embedded?:boolean;display:(amount:number)=>string;privateMode:boolean;
 }) {
@@ -23,9 +24,9 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
   const projected=useMemo(()=>{
     const period=calendarRange(date,scale);
     const window=scale==="Semana"?{from:calendarRange(period.from,"Mes").from,to:calendarRange(period.to,"Mes").to}:period;
-    return calendarEntries(envelopes,today,window);
-  },[envelopes,today,date,scale]);
-  const entries=projected.filter(entry=>!selection||entry.item);
+    return calendarEntries(envelopes,today,window,movements,includeHistory);
+  },[envelopes,movements,includeHistory,today,date,scale]);
+  const entries=projected.filter(entry=>!selection||(entry.item&&!entry.status));
   const overdue=calendarOverdueEntries(entries,today).filter(entry=>!entry.item||plannedPaymentDelay(entry.item)===0),hasOverdue=overdue.length>0;
   useEffect(()=>{
     if(!hasOverdue)return;
@@ -40,8 +41,13 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
   const changeCalendar=(value:string,nextScale:CalendarScale)=>{onChange(value,nextScale);};
   const visible=entries.filter(entry=>entry.date>=range.from&&entry.date<=range.to);
   const months = scale === "Semana" ? [...new Set([range.from.slice(0,7),range.to.slice(0,7)])] : [date.slice(0,7)];
-  const tonesFor=(items:CalendarEntry[])=>proximityTones.filter(tone=>items.some(entry=>calendarEntryTone(entry,today)===tone));
+  const tonesFor=(items:CalendarEntry[])=>proximityTones.filter(tone=>items.some(entry=>!entry.status&&calendarEntryTone(entry,today)===tone));
   const coverage=(items:CalendarEntry[])=>items.length&&items.every(entry=>entry.item&&!entry.virtual)?planningCoverage(items.map(entry=>entry.item!)):undefined;
+  const entryCount=(items:CalendarEntry[])=>{
+    const pending=items.filter(entry=>!entry.status).length,completed=items.filter(entry=>entry.status==="completed").length,omitted=items.filter(entry=>entry.status==="omitted").length;
+    return [[pending,"pendiente","pendientes"],[completed,"realizado","realizados"],[omitted,"omitido","omitidos"]] as const;
+  };
+  const entryCountLabel=(items:CalendarEntry[])=>entryCount(items).filter(([count])=>count>0).map(([count,singular,plural])=>`${count} ${count===1?singular:plural}`).join(", ")||"sin compromisos";
   const dots=(items:CalendarEntry[], includesToday=false)=> {
     // A calendar cell has one representative per color, even when only one member is late.
     return showProximity?<span className={styles.dots}>{calendarIndicatorGroups(items,today,includesToday?overdue:[]).map(({tone,entries:group,lateLabel,late,echo})=>{
@@ -49,16 +55,16 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
       return <Tooltip key={tone} {...hintProps} title={hint}><span tabIndex={0} className={`${styles.dotHint} ${tone==="purple"&&!late?(echo?styles.echo:includesToday?"":styles.origin):""}`} aria-label={hint}><TemporalDot tone={tone} alert late={late} lateLabel={lateLabel} covered={coverage(group)}/></span></Tooltip>;
     })}</span>:null;
   };
-  const toneLabel=(items:CalendarEntry[])=>tonesFor(items).map(tone=>`${items.filter(entry=>calendarEntryTone(entry,today)===tone).length} ${calendarProximityMeanings[tone]}`).join(", ");
+  const toneLabel=(items:CalendarEntry[])=>tonesFor(items).map(tone=>`${items.filter(entry=>!entry.status&&calendarEntryTone(entry,today)===tone).length} ${calendarProximityMeanings[tone]}`).join(", ");
   const label=(value:string,options:Intl.DateTimeFormatOptions)=>new Intl.DateTimeFormat("es-CR",{timeZone:"America/Costa_Rica",...options}).format(new Date(`${value}T12:00:00Z`));
   function renderEntries(items:CalendarEntry[]) {
     return <div className={styles.entries}>{items.map(entry=>{
       const tone=calendarEntryTone(entry,today);
-      const content=<><span className={styles.entryContext}><small>{envelopeLabel(privateMode?"Sobre":entry.envelopeName)}</small><time dateTime={entry.date}>{label(entry.date,{day:"numeric",month:"short"})}</time></span>{entry.item?<PlanningItemSummary item={entry.item} today={today} display={display} privateMode={privateMode}/>:<><b>↻ Aporte recurrente</b><small>{calendarRelativeLabel(entry.date,today)}</small><TemporalBadge tone={tone} date={entry.date} today={today}/><span>{display(entry.amount)}</span><small>{entry.virtual?"Previsión · Recurrente":"Recurrente · Requiere confirmar el aporte"}</small></>}</>;
+      const content=<><span className={styles.entryContext}><small>{envelopeLabel(privateMode?"Sobre":entry.envelopeName)}</small><time dateTime={entry.date}>{label(entry.date,{day:"numeric",month:"short"})}</time></span>{entry.status==="completed"?<><b>{privateMode?"Movimiento realizado":entry.name}</b><span>{display(entry.amount)}</span><small>Realizado · Conservado en Movimientos</small></>:entry.status==="omitted"?<><b>{privateMode?"Compromiso omitido":entry.name}</b><span>{display(entry.amount)}</span><small>Omitido · Sin movimiento financiero</small></>:entry.item?<PlanningItemSummary item={entry.item} today={today} display={display} privateMode={privateMode}/>:<><b>↻ Aporte recurrente</b><small>{calendarRelativeLabel(entry.date,today)}</small><TemporalBadge tone={tone} date={entry.date} today={today}/><span>{display(entry.amount)}</span><small>{entry.virtual?"Previsión · Recurrente":"Recurrente · Requiere confirmar el aporte"}</small></>}</>;
       const className=styles.entry;
       if(entry.virtual)return <article key={entry.key} className={className}>{content}<small>Previsión de consulta. No es un pago ni una asignación registrada.</small></article>;
       if(selection)return <article key={entry.key} className={className}><label className="check-label"><input type="checkbox" checked={selection.isSelected(entry)} onChange={()=>selection.onToggle(entry)} aria-label={`Asignar para ${privateMode?"esta obligación":`${entry.name} · ${entry.envelopeName}`}`}/>Seleccionar para distribuir</label>{content}</article>;
-      return onSelect?<button key={entry.key} type="button" className={className} onClick={()=>onSelect(entry)}>{content}</button>:<article key={entry.key} className={className}>{content}</article>;
+      return onSelect?<button key={entry.key} type="button" className={className} data-status={entry.status} onClick={()=>onSelect(entry)}>{content}</button>:<article key={entry.key} className={className} data-status={entry.status}>{content}</article>;
     })}</div>;
   }
   return <section className={`${embedded?"":"section page-panel"} ${styles.calendar}`} data-today-phase={todayPhase}>
@@ -70,17 +76,17 @@ export function PlanningCalendar({envelopes,today,date,scale,onChange,onSelect,d
     <div className={styles.period}><button className="secondary" aria-label="Período anterior" onClick={()=>changeCalendar(shiftCalendar(date,scale,-1),scale)}>‹</button><h2>{scale==="Año"?date.slice(0,4):scale==="Semana"?`Semana ${isoWeek(date).week} · ${label(date,{month:"long",year:"numeric"})}`:label(date,scale==="Mes"?{month:"long",year:"numeric"}:{day:"numeric",month:"long",year:"numeric"})}</h2><button className="secondary" aria-label="Período siguiente" onClick={()=>changeCalendar(shiftCalendar(date,scale,1),scale)}>›</button></div>
     <p className={styles.relativePeriod}>{calendarRelativeLabel(date,today,scale)}</p>
     <details className={styles.guide}><summary>Cómo leer el calendario</summary>
-    <p className="flow-intro">Fechas pendientes guardadas en tus sobres. Las repeticiones incluyen previsiones futuras para el período consultado; ningún aporte ni pago se realiza automáticamente.</p>
+    <p className="flow-intro">Consulta compromisos pendientes, pagos y aportes realizados, y ocasiones omitidas. Las repeticiones incluyen previsiones futuras para el período consultado; ningún aporte ni pago se realiza automáticamente.</p>
     {showProximity&&<div className={styles.legend} aria-label="Significado de los indicadores de proximidad">{proximityTones.map(tone=><Tooltip key={tone} {...hintProps} title={calendarDotDescription(entries,tone,today,privateMode)}><span><TemporalDot tone={tone}/>{calendarProximityMeanings[tone]}</span></Tooltip>)}</div>}
     {showProximity&&!privateMode&&<p className="flow-intro">Sobre cerrado: obligaciones cubiertas. Abierto: falta dinero. La cobertura no significa que estén pagadas. Los aportes recurrentes y las leyendas muestran un icono de referencia.</p>}
     {showProximity&&hasOverdue&&<p className="flow-intro">El sobre púrpura alterna cada segundo entre su fecha original y hoy como aviso. Si además hay pago previsto con atraso, permanece en su fecha y alterna parpadeo y giro 3D. No cambia fechas ni registra pagos.</p>}
     </details>
-    {(scale==="Mes"||scale==="Semana")&&months.map(month=>{const grid=calendarDays(`${month}-01`);return <section key={month}>{scale==="Semana"&&<h3>{label(`${month}-01`,{month:"long",year:"numeric"})}</h3>}<div className={styles.month} aria-label="Calendario mensual">{["L","M","X","J","V","S","D"].map(day=><span className={styles.weekday} key={day} aria-hidden="true">{day}</span>)}{Array.from({length:grid.offset},(_,i)=><span key={`blank-${i}`}/>)}{grid.dates.map(day=>{const items=entries.filter(entry=>entry.date===day);return <button type="button" key={day} className={styles.day} data-today={day===today} data-events={items.length>0} data-selected={scale==="Semana"?day>=range.from&&day<=range.to:day===date} aria-current={day===today?"date":undefined} aria-pressed={scale==="Semana"?day>=range.from&&day<=range.to:day===date} aria-label={`${label(day,{dateStyle:"long"})}: ${items.length} ${items.length===1?"pendiente":"pendientes"}${showProximity&&items.length?`, ${toneLabel(items)}`:""}`} onClick={()=>changeCalendar(day,"Día")}><b className={styles.dayNumber}>{Number(day.slice(-2))}</b>{dots(items,day===today)}{showProximity&&items.length>0&&<small>{items.length}<span className={styles.srOnly}> pendientes</span></small>}</button>;})}</div></section>;})}
-    {scale==="Año"&&<div className={styles.year}>{Array.from({length:12},(_,i)=>`${date.slice(0,4)}-${String(i+1).padStart(2,"0")}-01`).map(day=>{const items=entries.filter(entry=>entry.date.slice(0,7)===day.slice(0,7));return <button type="button" className="secondary" key={day} aria-label={`${label(day,{month:"long"})}: ${items.length} ${items.length===1?"pendiente":"pendientes"}${showProximity&&items.length?`, ${toneLabel(items)}`:""}`} onClick={()=>changeCalendar(day,"Mes")}><b>{label(day,{month:"long"})}</b>{dots(items,day.slice(0,7)===today.slice(0,7))}{showProximity&&<small>{items.length} {items.length===1?"pendiente":"pendientes"}</small>}</button>;})}</div>}
-    <h3 className={styles.agendaTitle}>{visible.length} {visible.length===1?"pendiente":"pendientes"} en este período</h3>
+    {(scale==="Mes"||scale==="Semana")&&months.map(month=>{const grid=calendarDays(`${month}-01`);return <section key={month}>{scale==="Semana"&&<h3>{label(`${month}-01`,{month:"long",year:"numeric"})}</h3>}<div className={styles.month} aria-label="Calendario mensual">{["L","M","X","J","V","S","D"].map(day=><span className={styles.weekday} key={day} aria-hidden="true">{day}</span>)}{Array.from({length:grid.offset},(_,i)=><span key={`blank-${i}`}/>)}{grid.dates.map(day=>{const items=entries.filter(entry=>entry.date===day);return <button type="button" key={day} className={styles.day} data-today={day===today} data-events={items.length>0} data-selected={scale==="Semana"?day>=range.from&&day<=range.to:day===date} aria-current={day===today?"date":undefined} aria-pressed={scale==="Semana"?day>=range.from&&day<=range.to:day===date} aria-label={`${label(day,{dateStyle:"long"})}: ${entryCountLabel(items)}${showProximity&&items.length?`, ${toneLabel(items)}`:""}`} onClick={()=>changeCalendar(day,"Día")}><b className={styles.dayNumber}>{Number(day.slice(-2))}</b>{dots(items,day===today)}{showProximity&&items.length>0&&<small>{items.length}<span className={styles.srOnly}> compromisos</span></small>}</button>;})}</div></section>;})}
+    {scale==="Año"&&<div className={styles.year}>{Array.from({length:12},(_,i)=>`${date.slice(0,4)}-${String(i+1).padStart(2,"0")}-01`).map(day=>{const items=entries.filter(entry=>entry.date.slice(0,7)===day.slice(0,7));return <button type="button" className="secondary" key={day} aria-label={`${label(day,{month:"long"})}: ${entryCountLabel(items)}${showProximity&&items.length?`, ${toneLabel(items)}`:""}`} onClick={()=>changeCalendar(day,"Mes")}><b>{label(day,{month:"long"})}</b>{dots(items,day.slice(0,7)===today.slice(0,7))}{showProximity&&<small>{entryCountLabel(items)}</small>}</button>;})}</div>}
+    <h3 className={styles.agendaTitle}>{entryCountLabel(visible)} en este período</h3>
     {renderEntries(visible)}
     {earlier.length>0&&<section className={styles.overdue}><h3>{earlier.length} {earlier.length===1?"atrasado anterior":"atrasados anteriores"} al día consultado</h3><p className="flow-intro">Conservan su fecha original y siguen pendientes. No están incluidos en el total de este día.</p>{renderEntries(earlier)}</section>}
-    {!visible.length&&<p className="empty-state">No hay metas, importes ni aportes pendientes con fecha en este período.</p>}
-    <p className="flow-intro">Las metas sin fecha se consultan desde su sobre. Los pagos realizados permanecen en Movimientos.</p>
+    {!visible.length&&<p className="empty-state">No hay compromisos con fecha en este período.</p>}
+    <p className="flow-intro">Las metas sin fecha se consultan desde su sobre. Los pagos y aportes realizados también quedan en Movimientos.</p>
   </section>;
 }

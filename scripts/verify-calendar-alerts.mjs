@@ -3,7 +3,7 @@ import {calendarEntries,calendarOverdueEntries,calendarDotDescription} from "../
 const today="2026-10-08";
 const scheduled=(id,deadline,extra={})=>({id,name:`Pago ${id}`,amount:100,deadline,active:true,timingEnabled:true,...extra});
 const envelopes=[{id:"home",name:"Hogar privado",balance:500,scheduledAmounts:[scheduled("old","2026-09-30"),scheduled("yesterday","2026-10-07"),scheduled("today",today),scheduled("tomorrow","2026-10-09"),scheduled("paid","2026-10-01",{payment:{movementId:"payment",amount:100,date:today,accountId:"a"}})]},{id:"archived",name:"Archivado",balance:0,archived:true,scheduledAmounts:[scheduled("archived","2026-01-01")]}];
-const original=JSON.stringify(envelopes),entries=calendarEntries(envelopes,today);
+const original=JSON.stringify(envelopes),entries=calendarEntries(envelopes,today,undefined,[],true);
 const overdue=calendarOverdueEntries(entries,today);
 assert.deepEqual(overdue.map(e=>e.name),["Pago old","Pago yesterday"]);
 assert.equal(calendarOverdueEntries(entries,today,"2026-10-07").length,1);
@@ -14,7 +14,16 @@ assert.match(text,/conservan su fecha original/);assert.match(text,/Pago old/);a
 const hidden=calendarDotDescription(overdue,"purple",today,true,true);
 assert.doesNotMatch(hidden,/Pago old|Hogar privado|100/);assert.match(hidden,/Responsabilidad/);
 assert.match(calendarDotDescription(entries,"red",today,false),/Fecha límite de hoy o tiempo crítico/);
-assert.equal(entries.filter(e=>e.date===today).length,1,"Reminder does not change the actual day count");
+assert.equal(entries.filter(e=>e.date===today).length,2,"Completed payments appear on their real payment date without becoming overdue");
+assert.equal(entries.find(e=>e.name==="Pago: Pago paid").status,"completed");
+assert.equal(calendarOverdueEntries(entries,today).some(e=>e.name==="Pago paid"),false,"A completed payment is never classified as overdue");
 assert.equal(JSON.stringify(envelopes),original,"Calendar projections never mutate dates, money, or payment state");
 assert.deepEqual(calendarOverdueEntries([],today),[]);
-console.log("OK: overdue filtering, date boundaries, paid/archived exclusions, private tooltips and non-mutating reminders.");
+const omittedEnvelope={id:"omitted-home",name:"Casa",balance:0,scheduledAmounts:[scheduled("omitted","2026-10-07",{omittedAt:today})]};
+const omittedEntries=calendarEntries([omittedEnvelope],today,undefined,[],true);
+assert.equal(omittedEntries[0].status,"omitted","Omitted obligations stay visible in the calendar history");
+assert.equal(omittedEntries[0].date,today,"An omitted occurrence uses its actual decision date");
+const recurringAssignment={id:"recurrence:home:2026-10-01",type:"Asignación",name:"Aporte a Hogar",amount:50,date:`${today}T10:00`,reference:"Aporte recurrente · 2026-10-01",allocations:[{envelopeId:"home",name:"Hogar",amount:50}]};
+const withContributionHistory=calendarEntries(envelopes,today,undefined,[recurringAssignment],true);
+assert.ok(withContributionHistory.some(entry=>entry.movementId===recurringAssignment.id&&entry.status==="completed"),"Real recurring assignments appear in the calendar and link to their actual movement");
+console.log("OK: overdue filtering, date boundaries, realized payment and contribution history, omitted occurrences, private tooltips and non-mutating reminders.");

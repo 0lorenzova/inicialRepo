@@ -177,3 +177,51 @@
 .salaryPeriodHeader>button{grid-column:1;grid-row:auto;justify-self:center}
 @media(max-width:520px){.salaryPeriodHeader{padding:10px 9px}.salaryPeriodHeader>.periodTitleRow{grid-template-columns:38px minmax(0,1fr) 38px;gap:4px}}
 @media(max-width:520px){.fieldRow{grid-template-columns:minmax(0,1fr);gap:6px}.fieldLabel{min-height:24px}.fieldLabel svg{font-size:18px}}
+
+.dialogSubtitle{margin:4px 0 0;color:var(--muted);font-size:13px;font-weight:400;line-height:1.4;letter-spacing:0}
+.periodFacts{grid-template-columns:repeat(4,minmax(0,1fr))}
+.periodFact:nth-child(4n){border-right:0}
+.periodState{justify-self:center;padding:4px 10px;border-radius:999px;background:#edf2f5;color:#425466}
+.periodState[data-tone="partial"]{background:#fff0d1;color:#8c5b04}
+.periodState[data-tone="paid"]{background:#e2f4e9;color:#176642}
+.periodState[data-tone="overdue"]{background:#fde8e8;color:#a92631}
+.receivedProgress{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:0 12px 12px;color:var(--muted);font-size:11px}
+.progressTrack{height:8px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--line) 75%,var(--paper))}
+.progressTrack span{display:block;height:100%;border-radius:inherit;background:var(--green);transition:width .18s ease}
+.weekDetail{margin:0 10px 10px;border:1px solid color-mix(in srgb,var(--line) 85%,transparent);border-radius:12px;background:color-mix(in srgb,var(--blue) 44%,var(--paper));overflow:hidden}
+.weekDetail>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:8px 12px;cursor:pointer;list-style:none}
+.weekDetail>summary::-webkit-details-marker{display:none}
+.weekDetail>summary span{display:grid;gap:2px;min-width:0}
+.weekDetail>summary b{font-size:13px}
+.weekDetail>summary small{color:var(--muted);font-size:11px;line-height:1.35}
+.weekDetail>summary svg{flex:none;color:var(--muted);transition:transform .15s}
+.weekDetail[open]>summary svg{transform:rotate(180deg)}
+.weekDetailBody{display:grid;gap:0;padding:0 12px 8px}
+.weekDetailBody>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);font-size:11px;line-height:1.4}
+.weekDetailBody>div span{color:var(--muted)}
+.weekDetailBody>div b{text-align:right;overflow-wrap:anywhere}
+.receiptPreview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:11px;background:color-mix(in srgb,var(--blue) 47%,var(--paper))}
+.receiptPreview>div{display:grid;align-content:center;gap:4px;min-width:0;padding:9px 10px;border-right:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.receiptPreview>div:last-child{border-right:0}
+.receiptPreview span{color:var(--muted);font-size:10px;line-height:1.3}
+.receiptPreview b{font-size:13px;line-height:1.25;overflow-wrap:anywhere}
+.excess{color:#9a4c12;font-weight:600}
+.quickCommitLink{display:flex;align-items:center;gap:9px;min-height:42px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--green) 28%,var(--line));border-radius:10px;background:color-mix(in srgb,#e4f5eb 60%,var(--paper));color:var(--green-dark);text-align:left;font-size:12px;font-weight:700}
+.quickCommitLink:disabled{opacity:.65}
+.quickCommitLink>svg{flex:none;font-size:20px}
+.quickCommitLink>span{display:grid;gap:2px;min-width:0}
+.quickCommitLink small{color:var(--muted);font-size:10px;font-weight:500;overflow-wrap:anywhere}
+.receiverPair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0}
+.receiverPair .fieldRow{grid-template-columns:minmax(0,1fr);align-content:start;gap:6px}
+.receiverPair .fieldLabel{min-height:24px}
+.actionFooter{position:sticky;bottom:0;z-index:2;display:grid;gap:8px;margin:2px -2px -4px;padding:12px 2px 4px;background:linear-gradient(to bottom,transparent 0,var(--paper) 16px);}
+.actionFooter .submitButton{margin-top:0}
+:global(.dark-mode) .periodState{background:#25343c;color:#c7d5dc}
+:global(.dark-mode) .periodState[data-tone="partial"]{background:#4a3517;color:#ffd78a}
+:global(.dark-mode) .periodState[data-tone="paid"]{background:#183d2c;color:#a8e8c4}
+:global(.dark-mode) .periodState[data-tone="overdue"]{background:#4a2429;color:#ffb7bd}
+:global(.dark-mode) .quickCommitLink{background:#173a30;color:#a9e7c4}
+:global(.dark-mode) .excess{color:#ffc38e}
+@media(max-width:520px){.periodFacts{grid-template-columns:repeat(4,minmax(0,1fr))}.periodFact{padding:9px 5px}.periodFact>div{font-size:9px;line-height:1.2}.periodFact>div svg{font-size:16px}.periodFact>strong{font-size:11px}.periodFact>small{font-size:9px}.weekDetail{margin-inline:7px}.receiptPreview>div{padding:8px 6px}.receiptPreview span{font-size:9px}.receiptPreview b{font-size:11px}.receiverPair{grid-template-columns:minmax(0,1fr);gap:10px}.actionFooter{margin-inline:-3px}}
+@media(max-width:390px){.periodFacts{grid-template-columns:repeat(2,minmax(0,1fr))}.periodFact:nth-child(2n){border-right:0}.periodFact:nth-child(4n){border-right:0}.periodFact:nth-child(2n+1){border-right:1px solid var(--line)}.receivedProgress{grid-template-columns:minmax(0,1fr);gap:5px}.receivedProgress>span{justify-self:end}.receiptPreview{grid-template-columns:repeat(3,minmax(0,1fr))}}
+:global(.dark-mode) .progressTrack{background:#34444c}

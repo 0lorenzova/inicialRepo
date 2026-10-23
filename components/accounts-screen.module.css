@@ -1,0 +1,478 @@
+.page.page :global(.page-title) {
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 17px;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.page.page :global(.page-title::after) {
+  display: none;
+}
+
+.page.page :global(.page-title > div:first-child) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.page.page :global(.page-title .overline) {
+  display: none;
+}
+
+.page.page :global(.page-title h1) {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 34px);
+  letter-spacing: -0.8px;
+}
+
+.page.page :global(.page-title p) {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: calc(12px * var(--ui-scale, 1));
+  line-height: 1.4;
+}
+
+.page.page :global(.page-title) .addButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 46px;
+  height: 46px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.addButton > span:first-child {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.panel.panel {
+  display: grid;
+  gap: 18px;
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  min-height: 128px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--green) 12%, var(--line));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--blue) 82%, var(--paper));
+}
+
+.summaryIcon {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--green) 10%, var(--paper));
+  color: var(--green-dark);
+}
+
+.summaryIcon svg {
+  width: 37px;
+  height: 37px;
+}
+
+.summaryCopy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  color: var(--muted);
+  font-size: calc(14px * var(--ui-scale, 1));
+  line-height: 1.35;
+}
+
+.summaryCopy b {
+  color: var(--ink);
+  font: 750 clamp(25px, 3.3vw, 34px)/1.12 Manrope, sans-serif;
+  letter-spacing: -0.8px;
+  overflow-wrap: anywhere;
+}
+
+.listHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 1px;
+}
+
+.listHeading h2 {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font: 750 22px/1.25 Manrope, sans-serif;
+  letter-spacing: -0.45px;
+}
+
+.sortControl {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper);
+  color: var(--muted);
+}
+
+.sortControl svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--green-dark);
+}
+
+.sortControl select {
+  max-width: 180px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 16px 0 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: calc(11px * var(--ui-scale, 1));
+  font-weight: 600;
+}
+
+.sortControl select:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.accountCard {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--green) 10%, var(--line));
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--ink) 4%, transparent);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.accountCard:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--green) 25%, var(--line));
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.accountIcon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--blue) 80%, var(--paper));
+  color: var(--green-dark);
+}
+
+.accountIcon svg {
+  width: 35px;
+  height: 35px;
+}
+
+.accountCopy {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.accountCopy b {
+  color: var(--ink);
+  font: 700 16px/1.3 Manrope, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.accountCopy small {
+  color: var(--muted);
+  font-size: calc(11px * var(--ui-scale, 1));
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 7px;
+  min-height: 28px;
+  margin-top: 3px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #1c9b69 13%, var(--paper));
+  color: color-mix(in srgb, #087b50 88%, var(--ink));
+  font-size: calc(10px * var(--ui-scale, 1));
+  font-weight: 650;
+}
+
+.status::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #159463;
+  content: "";
+}
+
+.status[data-active="false"] {
+  background: color-mix(in srgb, var(--muted) 12%, var(--paper));
+  color: var(--muted);
+}
+
+.status[data-active="false"]::before {
+  background: var(--muted);
+}
+
+.balance {
+  min-width: 0;
+  color: var(--ink);
+  font: 750 clamp(17px, 2vw, 22px)/1.2 Manrope, sans-serif;
+  letter-spacing: -0.45px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.accountAction {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: calc(10px * var(--ui-scale, 1));
+  white-space: nowrap;
+}
+
+.accountAction:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+
+.page :global(.visually-hidden) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 650px) {
+  .page.page :global(.page-title) {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 0;
+  }
+
+  .page.page :global(.page-title h1) {
+    font-size: 25px;
+  }
+
+  .page.page :global(.page-title p) {
+    max-width: 230px;
+    font-size: calc(10px * var(--ui-scale, 1));
+  }
+
+  .page.page :global(.page-title) .addButton {
+    width: auto;
+    min-width: 132px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: calc(11px * var(--ui-scale, 1));
+  }
+
+  .panel.panel {
+    gap: 13px;
+  }
+
+  .summary {
+    grid-template-columns: 56px minmax(0, 1fr);
+    min-height: 104px;
+    gap: 12px;
+    padding: 13px;
+    border-radius: 15px;
+  }
+
+  .summaryIcon {
+    width: 54px;
+    height: 54px;
+  }
+
+  .summaryIcon svg {
+    width: 31px;
+    height: 31px;
+  }
+
+  .summaryCopy {
+    font-size: calc(11px * var(--ui-scale, 1));
+  }
+
+  .summaryCopy b {
+    font-size: clamp(23px, 6.2vw, 30px);
+  }
+
+  .listHeading h2 {
+    font-size: 20px;
+  }
+
+  .sortControl {
+    min-height: 42px;
+    gap: 4px;
+    padding-inline: 7px;
+  }
+
+  .sortControl select {
+    max-width: 145px;
+    min-height: 40px;
+    font-size: calc(10px * var(--ui-scale, 1));
+  }
+
+  .accountCard {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 8px;
+    min-height: 100px;
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .accountIcon {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 48px;
+    height: 48px;
+  }
+
+  .accountIcon svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .accountCopy {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .accountCopy b {
+    font-size: 14px;
+  }
+
+  .accountCopy small {
+    font-size: calc(10px * var(--ui-scale, 1));
+  }
+
+  .balance {
+    grid-column: 3;
+    grid-row: 1;
+    font-size: clamp(15px, 4.4vw, 19px);
+  }
+
+  .accountAction {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
+    min-height: 36px;
+    height: 36px;
+    padding-inline: 7px;
+  }
+}
+
+@media (max-width: 360px) {
+  .page.page :global(.page-title h1) {
+    font-size: 22px;
+  }
+
+  .page.page :global(.page-title) .addButton {
+    min-width: 120px;
+    padding-inline: 7px;
+  }
+
+  .summary {
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .summaryIcon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .summaryCopy b {
+    font-size: 22px;
+  }
+
+  .sortControl svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .sortControl select {
+    max-width: 125px;
+    padding-right: 11px;
+  }
+
+  .accountCard {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 9px;
+  }
+
+  .accountIcon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .accountCopy b {
+    font-size: 13px;
+  }
+
+  .balance {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accountCard {
+    transition: none;
+  }
+}

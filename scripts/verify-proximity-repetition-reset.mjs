@@ -40,7 +40,7 @@ const repeat={...base,id:'repeat',deadline:'2026-01-31',repetition:{frequency:'m
 const initial={bank:0,notifications:normalizeNotificationState(),accounts:[{id:'a',name:'Banco',type:'Banco',balance:0,active:true}],envelopes:[{id:'e',name:'Sobre',balance:0}],loans:[],movements:[],hidden:false};
 let ledger=postMovement({...initial,envelopes:[{...envelope,scheduledAmounts:[repeat],balanceHidden:true,goal:500,goalName:'Meta'}]},{id:'income',type:'Ingreso',amount:1000,accountId:'a',envelopeAllocations:[{id:'e',amount:1000}],date:'2026-01-01T09:00',name:'Ficticio'});
 const before=structuredClone(ledger);
-assert.throws(()=>payScheduledAmount(ledger,'e','repeat',2000,'a','2026-01-31T09:00'),/suficiente/);
+assert.throws(()=>payScheduledAmount(ledger,'e','repeat',2000,'a','2026-01-31T09:00'),/saldo pendiente/);
 assert.deepEqual(ledger,before);
 ledger=payScheduledAmount(ledger,'e','repeat',100,'a','2026-01-31T09:00');
 assert.equal(ledger.envelopes[0].scheduledAmounts.length,2);

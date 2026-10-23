@@ -17,9 +17,10 @@ type EnvelopeItem = { id: string; name: string; icon: string; color: string; bal
 type Drag = { id: string; ids: string[]; original: string[]; keyboard: boolean };
 type PendingPress = { x: number; y: number; pointerId: number; envelopeId: string; anchor: HTMLButtonElement; started: number; timer: ReturnType<typeof setTimeout> };
 
-export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, showProximity = true, viewAnchor }: {
+export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, showProximity = true, showCreateAction = true, viewAnchor }: {
   viewAnchor?: HTMLDivElement | null;
   showProximity?: boolean;
+  showCreateAction?: boolean;
   envelopes: EnvelopeItem[];
   view: EnvelopeView;
   menuId?: string;
@@ -212,6 +213,6 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
           </div>;
         })}
       </div> : <div className="empty-state"><b>No tienes sobres activos</b><small>Crea un sobre para organizar tu dinero.</small></div>}
-    <button type="button" className="add-envelope" onClick={onCreate}>＋ Crear un sobre</button>
+    {showCreateAction && <button type="button" className="add-envelope" onClick={onCreate}>＋ Crear un sobre</button>}
   </div>;
 }
