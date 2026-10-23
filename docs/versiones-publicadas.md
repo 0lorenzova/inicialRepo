@@ -12,7 +12,7 @@
 
 Se conserva la serie 0.1 y se utiliza el tercer componente como número secuencial de publicación de código en Production. Es una convención de entregas del proyecto; no es una clasificación retrospectiva de compatibilidad de APIs.
 
-1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. El código parte de 0.1.84; la siguiente entrega candidata es 0.1.85. La última entrega con Production confirmada registrada aquí es 0.1.83 (`9d286c3`); reconciliar el registro de 0.1.84 al confirmar su estado. Cada versión se declara publicada solo después de confirmar Production.
+1. Antes de publicar nuevos cambios, incrementar el tercer componente en `package.json` y en las dos versiones del paquete raíz de `package-lock.json`. El paquete publicado actual es 0.1.85; la siguiente entrega candidata es 0.1.86. Production confirmó `8e119e7` para 0.1.85. La publicación 0.1.84 no quedó documentada en este historial y se debe conciliar por separado. Cada versión se declara publicada solo después de confirmar Production.
 2. Un reintento fallido o una republicación del mismo código conserva su versión. Los commits locales y las vistas previas no cuentan como nuevas publicaciones.
 3. `next.config.ts` toma la versión del paquete; Vercel añade el SHA corto para identificar exactamente el código publicado.
 4. Confirmar Production success antes de declarar la versión publicada. No modificar manualmente la fecha de compilación.
@@ -167,11 +167,11 @@ Un abono parcial solo queda vencido si el período fue confirmado como devengado
 - Reutiliza el flujo y la confirmación actuales; no crea ingresos, montos o fechas automáticamente. `verify-salary-receipt.mjs`, TypeScript, lint completo, `git diff --check` y build de producción pasan. QA visual pendiente.
 - Vercel confirmó Production `success` para `166549c`: https://vercel.com/myself-e673/inicial-repo/13avtepP9AwvgYUKvy8Eb18ibbt6.
 
-## Entrega 0.1.85 · 23 octubre 2026 — pendiente de Production
+## Entrega 0.1.85 · 23 octubre 2026 — publicada
 - Rediseño visual de Inicio, Movimientos, Sobres, Cuentas, Reportes, Gestión salarial, Préstamos, Recordatorios y Configuración; incluye las actualizaciones de Notificaciones que el usuario autorizó para esta publicación.
 - Registrar salario conserva el flujo financiero existente, muestra el progreso confirmado y la proyección por separado, y abre el flujo habitual de distribución tras guardar el ingreso estándar.
 - Las 60 verificaciones `verify-*.mjs`, ESLint, compilación de producción y `git diff --check` pasaron. No se hicieron cambios de esquema de Supabase ni QA autenticado con datos reales.
-- Confirmar el resultado de Production y completar aquí el identificador y URL del despliegue antes de declarar publicada esta versión.
+- Vercel confirmó `success` / `Deployment has completed` para `8e119e7`: https://vercel.com/myself-e673/inicial-repo/CPW7VrEFNa5eLcEy57rx9uQ85v88. Dominio: https://inicial-repo.vercel.app.
 
 ## Entrega 0.1.72 · 19 octubre 2026 — publicada
 - Resumen de salarios confirmados por ciclo 1 de diciembre–30 de noviembre o rango personalizado. Agrupa devengado, abonos aplicados a esos períodos y saldo confirmado pendiente.
