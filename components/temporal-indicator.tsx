@@ -9,11 +9,11 @@ export function TemporalDisplayProvider({visible,privateMode,children}:{visible:
   return <TemporalDisplay.Provider value={{visible,privateMode}}>{children}</TemporalDisplay.Provider>;
 }
 
-export function TemporalDot({ tone, covered, alert = false, late = false, lateLabel }: { tone: GoalTemporalState["tone"] | "white"; covered?:boolean; late?:boolean; lateLabel?:string; alert?:boolean }) {
+export function TemporalDot({ tone, covered, alert = false, late = false, lateLabel, className, alwaysVisible = false }: { tone: GoalTemporalState["tone"] | "white"; covered?:boolean; late?:boolean; lateLabel?:string; alert?:boolean; className?:string; alwaysVisible?:boolean }) {
   const {visible,privateMode}=useTemporalDisplay();
-  if(!visible)return null;
+  if(!visible&&!alwaysVisible)return null;
   const state=privateMode||covered===undefined?"neutral":covered?"closed":"open";
-  return <span className={styles.dot} title={late?(lateLabel || "Pago programado después del vencimiento"):undefined} data-late={late} data-tone={tone} data-alert={tone==="purple"&&alert} data-coverage={state} role={late?"img":undefined} aria-label={late?(lateLabel || "Pago programado después del vencimiento"):undefined} aria-hidden={!late}><svg viewBox="0 0 24 24" focusable="false">{state==="open"?<><path d="M2 10 12 2 22 10v12H2Z" fill="currentColor"/><path d="m2 10 10 7 10-7 M2 22l7-7 m6 0 7 7" fill="none" stroke="var(--paper, #fff)" strokeWidth="1.8" strokeLinejoin="round"/></>:<><rect x="2" y="5" width="20" height="15" rx="2" fill="currentColor"/><path d="m3 6 9 7 9-7" fill="none" stroke="var(--paper, #fff)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>}</svg></span>;
+  return <span className={`${styles.dot}${className ? ` ${className}` : ""}`} title={late?(lateLabel || "Pago programado después del vencimiento"):undefined} data-late={late} data-tone={tone} data-alert={tone==="purple"&&alert} data-coverage={state} role={late?"img":undefined} aria-label={late?(lateLabel || "Pago programado después del vencimiento"):undefined} aria-hidden={!late}><svg viewBox="0 0 24 24" focusable="false">{state==="open"?<><path d="M2 10 12 2 22 10v12H2Z" fill="currentColor"/><path d="m2 10 10 7 10-7 M2 22l7-7 m6 0 7 7" fill="none" stroke="var(--paper, #fff)" strokeWidth="1.8" strokeLinejoin="round"/></>:<><rect x="2" y="5" width="20" height="15" rx="2" fill="currentColor"/><path d="m3 6 9 7 9-7" fill="none" stroke="var(--paper, #fff)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>}</svg></span>;
 }
 
 export function TemporalBadge({ tone, date, today, covered, late = false, lateLabel }: { tone: GoalTemporalState["tone"] | "white"; date?: string; today: string; covered?:boolean; late?:boolean; lateLabel?:string }) {

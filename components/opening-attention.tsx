@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
-import MailOutlineOutlined from "@mui/icons-material/MailOutlineOutlined";
 import { deriveFinanceNotifications, type NotificationEnvelope, type NotificationDestination } from "@/lib/finance-notifications";
 import type { Loan } from "@/lib/finance-ledger";
 import { FinanceDialog } from "./finance-dialog";
+import { TemporalDot } from "./temporal-indicator";
 import { isTemporalDescription, notificationCopy, notificationDateLabel, notificationTimeLabel, responsibilityAmount } from "./finance-notifications";
 import styles from "./finance-notifications.module.css";
 
@@ -27,17 +27,18 @@ export function OpeningAttention({envelopes,loans,today,ready,privateMode,showAm
         const showAmount=showAmounts&&!privateMode;
         return <li className={styles.item} key={event.id}>
           <div className={styles.itemMain}>
-            <span className={styles.noticeIcon} aria-hidden="true"><MailOutlineOutlined/></span>
+            <span className={styles.noticeIcon} aria-hidden="true"><TemporalDot className={styles.noticeEnvelope} alwaysVisible tone={event.tone ?? "white"} covered={privateMode ? undefined : event.covered} late={Boolean(event.plannedLate)} alert={event.date.slice(0, 10) < today}/></span>
             <button type="button" className={styles.open} onClick={()=>{setOpen(false);onNavigate(event.destination);}} aria-label={`Abrir ${copy.concept}, ${event.destination.page}`}>
               <span className={styles.primaryLine}>
-                <span className={styles.headingGroup}><span className={styles.priorityDot} data-tone={event.tone??"neutral"} aria-hidden="true"/><strong className={styles.concept}>{copy.concept}</strong></span>
+                <strong className={styles.concept}>{copy.concept}</strong>
                 <span className={styles.amountGroup}><span className={styles.timeBadge} data-tone={event.tone??"neutral"} title={event.title}>{notificationTimeLabel(event,today)}</span>{showAmount&&<b className={styles.amount}>{responsibilityAmount(event.amount)}</b>}</span>
                 <span className={styles.chevron} aria-hidden="true">›</span>
               </span>
               {copy.context&&<span className={styles.context}>{copy.context}</span>}
               {description&&<span className={styles.description}>{description}</span>}
               <span className={styles.metaLine}>
-                <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/><time dateTime={event.date}>{notificationDateLabel(event.date)}</time></span>
+                <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Vence <time dateTime={event.date}>{notificationDateLabel(event.date)}</time></span>
+                {event.plannedPaymentDate&&<span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Pago previsto <time dateTime={event.plannedPaymentDate}>{notificationDateLabel(event.plannedPaymentDate)}</time></span>}
                 <span className={styles.destination}><CalendarMonthOutlined aria-hidden="true"/>Abrir {event.destination.page.toLowerCase()}</span>
               </span>
             </button>

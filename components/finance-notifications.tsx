@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
-import MailOutlineOutlined from "@mui/icons-material/MailOutlineOutlined";
 import NotificationsOutlined from "@mui/icons-material/NotificationsOutlined";
 import { FinanceDialog } from "@/components/finance-dialog";
+import { TemporalDot } from "./temporal-indicator";
 import { temporalDistance } from "@/lib/envelope-goals";
 import {
   deriveFinanceNotifications, initializeNotifications, markNotifications, notificationDetail,
@@ -17,8 +17,8 @@ import type { LedgerMovement, Loan } from "@/lib/finance-ledger";
 import styles from "./finance-notifications.module.css";
 
 export const notificationDateLabel = (date: string) => {
-  const instant = new Date(/(?:Z|[+-]\d{2}:\d{2})$/.test(date) ? date : `${date}-06:00`);
-  return Number.isFinite(instant.getTime()) ? new Intl.DateTimeFormat("es-CR", { timeZone: "America/Costa_Rica", dateStyle: "medium", timeStyle: "short" }).format(instant) : date;
+  const instant = new Date(/(?:Z|[+-]\d{2}:\d{2})$/.test(date) ? date : date.includes("T") ? `${date}-06:00` : `${date}T12:00:00-06:00`);
+  return Number.isFinite(instant.getTime()) ? new Intl.DateTimeFormat("es-CR", { timeZone: "America/Costa_Rica", dateStyle: "medium" }).format(instant) : date;
 };
 
 export function notificationCopy(event: FinanceNotification, privateMode: boolean) {
@@ -201,13 +201,10 @@ export function FinanceNotifications({
               const description = isTemporalDescription(copy.description) ? "" : copy.description;
               return <li className={`${styles.item} ${!isRead ? styles.unread : ""}`} key={event.id}>
                 <div className={styles.itemMain}>
-                  <span className={styles.noticeIcon} aria-hidden="true"><MailOutlineOutlined/></span>
+                  <span className={styles.noticeIcon} aria-hidden="true"><TemporalDot className={styles.noticeEnvelope} alwaysVisible tone={event.tone ?? "white"} covered={privateMode ? undefined : event.covered} late={Boolean(event.plannedLate)} alert={event.date.slice(0, 10) < today}/></span>
                   <button type="button" className={styles.open} onClick={() => openEvent(event)} aria-label={`Abrir ${copy.concept}, ${event.destination.page}, ${isRead ? "leída" : "sin leer"}`}>
                     <span className={styles.primaryLine}>
-                      <span className={styles.headingGroup}>
-                        <span className={styles.priorityDot} data-tone={event.tone ?? "neutral"} aria-hidden="true"/>
-                        <strong className={styles.concept} data-unread={!isRead}>{copy.concept}</strong>
-                      </span>
+                      <strong className={styles.concept} data-unread={!isRead}>{copy.concept}</strong>
                       <span className={styles.amountGroup}>
                         <span className={styles.timeBadge} data-tone={event.tone ?? "neutral"} title={privateMode ? undefined : event.title}>{timeLabel}</span>
                         {showAmount && <b className={styles.amount}>{responsibilityAmount(event.amount)}</b>}
@@ -217,7 +214,8 @@ export function FinanceNotifications({
                     {copy.context && <span className={styles.context}>{copy.context}</span>}
                     {description && <span className={styles.description}>{description}</span>}
                     <span className={styles.metaLine}>
-                      <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/><time dateTime={event.date}>{notificationDateLabel(event.date)}</time></span>
+                      <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Vence <time dateTime={event.date}>{notificationDateLabel(event.date)}</time></span>
+                      {event.plannedPaymentDate && <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Pago previsto <time dateTime={event.plannedPaymentDate}>{notificationDateLabel(event.plannedPaymentDate)}</time></span>}
                       <span className={styles.destination}><CalendarMonthOutlined aria-hidden="true"/>Abrir {event.destination.page.toLowerCase()}</span>
                     </span>
                   </button>

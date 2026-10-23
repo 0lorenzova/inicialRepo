@@ -27,6 +27,7 @@ export type FinanceNotification = {
   kind: "movement" | "reminder" | "attention" | "loan";
   tone?: GoalTemporalState["tone"];
   covered?: boolean;
+  plannedPaymentDate?: string;
   plannedLate?: boolean;
   plannedLateLabel?: string;
   destination: NotificationDestination;
@@ -70,7 +71,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
     if (!item.temporal || !["red","purple","yellow"].includes(item.temporal.tone)) continue;
     const stage = item.deadline === today ? "today" : item.temporal.tone;
     const id = `attention:${encodeURIComponent(envelopeId)}:${item.kind}:${encodeURIComponent(item.id)}:${item.deadline}:${stage}`;
-    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.remainingAmount??item.amount,kind:"attention",plannedLate:plannedPaymentDelay(item)>0,plannedLateLabel:plannedPaymentDelayText(plannedPaymentDelay(item)),tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
+    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.remainingAmount??item.amount,kind:"attention",plannedPaymentDate:item.plannedPaymentDate,plannedLate:plannedPaymentDelay(item)>0,plannedLateLabel:plannedPaymentDelayText(plannedPaymentDelay(item)),tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
   }
   for (const envelope of envelopes) {
     if (!envelope.recurrence) continue;
