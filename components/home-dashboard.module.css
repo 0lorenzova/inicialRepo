@@ -60,6 +60,28 @@
   gap: 8px;
 }
 
+.homePage :global(.recent .recent-heading) {
+  justify-content: flex-start;
+}
+
+.homePage :global(.recent .recent-title) {
+  flex: 0 1 auto;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.homePage :global(.recent .recent-title > span:last-child) {
+  flex: none;
+  margin-left: 0;
+  color: var(--green);
+  font-size: calc(23px * var(--ui-scale, 1));
+}
+
+.homePage :global(.recent .pin-button) {
+  margin-left: auto;
+}
+
 .homePage :global(.summary-panel.accordion-section) {
   padding: 20px;
   border-radius: 22px;
@@ -331,8 +353,17 @@
   min-width: 0;
 }
 
-.homePage :global(.envelope-heading-top .accordion-toggle) {
+.homePage :global(.envelope-heading-top .envelope-heading-label) {
+  display: flex;
+  align-items: center;
+  gap: 3px;
   flex: 1 1 auto;
+  min-width: 0;
+}
+
+.homePage :global(.envelope-heading-label .accordion-toggle) {
+  flex: 0 1 auto;
+  justify-content: flex-start;
 }
 
 .homePage :global(.envelope-heading-tools) {
@@ -364,11 +395,6 @@
 
 .homePage :global(#envelopes-content) {
   margin-top: 9px;
-}
-
-.homePage :global(.recent .movement-row) {
-  min-height: 54px;
-  padding-block: 7px;
 }
 
 @media (max-width: 1100px) and (min-width: 901px) {
@@ -757,6 +783,10 @@
 
   .homePage :global(.envelope-heading-top) {
     gap: 4px;
+  }
+
+  .homePage :global(.envelope-heading-label) {
+    gap: 2px;
   }
 
   .homePage :global(.envelope-heading-tools) {

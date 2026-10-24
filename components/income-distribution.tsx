@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { fundingKey, fundingOptions, incomeDistribution, type FundingSelection } from "@/lib/income-distribution";
 import { planningTone, planningCoverage, proximityTones, proximityLabels, type ProximityFilter, type PlanningEnvelope } from "@/lib/envelope-planning";
 import { PlanningCalendar } from "./planning-calendar";
+import { uiCopyEs } from "@/lib/ui-copy";
 import type { CalendarScale, CalendarEntry } from "@/lib/planning-calendar";
 import { useTemporalDisplay, TemporalDot, TemporalBadge } from "./temporal-indicator";
 import styles from "./income-distribution.module.css";
@@ -52,7 +53,7 @@ export function IncomeDistribution({ envelopes, today, amount, manual, selection
     })}
     {!!plan.stale.length && <div className="form-error"><p>Selecciones por revisar:</p>{plan.stale.map(choice => <button type="button" className="secondary" key={fundingKey(choice)} onClick={()=>onSelections(selections.filter(item=>fundingKey(item)!==fundingKey(choice)))}>Quitar {choice.name}</button>)}</div>}
     {Object.keys(manual).filter(key => Number(manual[key]) > 0 && !envelopes.some(envelope => envelope.id === key && !envelope.archived)).map(key => <button type="button" className="secondary" key={key} onClick={()=>{const next={...manual};delete next[key];onManual(next);}}>Quitar asignación de sobre no disponible</button>)}
-    <div className={styles.summary} aria-live="polite"><span>Ingreso<b>{display(amount)}</b></span><span>Obligaciones seleccionadas<b>{display(plan.selected)}</b></span><span>Total a asignar<b>{display(plan.total)}</b></span><span>Restante sin asignar<b>{display(plan.remaining)}</b></span></div>
+    <div className={styles.summary} aria-live="polite"><span>Ingreso<b>{display(amount)}</b></span><span>Obligaciones seleccionadas<b>{display(plan.selected)}</b></span><span>Total a asignar<b>{display(plan.total)}</b></span><span>{uiCopyEs.money.availableToAssign}<b>{display(plan.remaining)}</b></span></div>
     {!!plan.errors.length && <p role="alert" className="form-error">{plan.errors.join(" ")}</p>}
     <small>La selección es provisional hasta confirmar. No marca obligaciones como pagadas.</small>
   </section>;

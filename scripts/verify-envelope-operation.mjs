@@ -23,7 +23,7 @@ assert.equal(ledger.loans[0].sourceId,"default");assert.equal(ledger.loans[0].ta
 const datedLoan=ledger.loans.find(item=>item.dueDate);assert.equal(datedLoan?.dueDate,"2026-10-20");
 const partiallyRepaid=repay(ledger,datedLoan.id,500,"2026-10-03T10:00","repay-dated");assert.equal(partiallyRepaid.loans.find(item=>item.id===datedLoan.id)?.dueDate,"2026-10-20","Partial repayment preserves the due date");
 assert.deepEqual(JSON.parse(JSON.stringify(partiallyRepaid.loans)),partiallyRepaid.loans,"The due date persists in the existing loan JSON");
-for(const [kind,amount,other,message] of [["Asignar dinero",999999,undefined,/sin asignar/],["Asignar dinero",0,undefined,/ingresar un monto/],["Prestar a otro sobre",999999,"default",/saldo disponible/],["Pedir prestado",1,"new",/diferente/],["Pedir prestado",1,"",/dónde pedir/]]){
+for(const [kind,amount,other,message] of [["Asignar dinero",999999,undefined,/disponible para asignar/],["Asignar dinero",0,undefined,/ingresar un monto/],["Prestar a otro sobre",999999,"default",/saldo disponible/],["Pedir prestado",1,"new",/diferente/],["Pedir prestado",1,"",/dónde pedir/]]){
   const before=JSON.stringify(ledger);
   assert.throws(()=>applyEnvelopeOperation(ledger,{kind,envelopeId:"new",counterpartyId:other,amount,date:"2026-10-02T10:00",id:"invalid"}),message);
   assert.equal(JSON.stringify(ledger),before);

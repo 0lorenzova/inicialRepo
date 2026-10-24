@@ -8,6 +8,7 @@ import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import PaidOutlined from "@mui/icons-material/PaidOutlined";
 import DirectionsBikeOutlined from "@mui/icons-material/DirectionsBikeOutlined";
+import { uiCopyEs } from "@/lib/ui-copy";
 import {
   salaryAdjustments,
   salaryCatalogAt,
@@ -52,12 +53,12 @@ export function SalaryAdjustments({ ledger, period, today, display, onSave, appe
     <section className={styles.extraPanel} data-appearance={appearance}>
       {appearance === "receipt" ? <button type="button" className={`${styles.extraToggle} ${styles.receiptExtraToggle}`} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>
         <ChecklistOutlined aria-hidden="true"/>
-        <span><b>Conceptos extra</b><small>{selectedCount ? `${selectedCount} seleccionados` : "Ninguno seleccionado"}</small></span>
+        <span><b>{uiCopyEs.salaryAdjustments.title}</b><small>{selectedCount ? uiCopyEs.salaryAdjustments.selectedCount(selectedCount) : uiCopyEs.salaryAdjustments.noneSelected}</small></span>
         <InfoOutlined className={styles.receiptInfo} titleAccess="Adicionales y beneficios estimados para esta semana."/>
         <ExpandMoreRounded className={`${styles.receiptChevron} ${expanded ? styles.receiptChevronOpen : ""}`}/>
       </button> : <label className={styles.extraToggle}>
         <input type="checkbox" checked={expanded} onChange={event => setExpanded(event.target.checked)} />
-        <span>{`Conceptos extra${selectedCount ? ` · ${selectedCount} seleccionados · ${display(adjustment)}` : ""}`}</span>
+        <span>{selectedCount ? uiCopyEs.salaryAdjustments.selectionSummary(selectedCount, display(adjustment)) : uiCopyEs.salaryAdjustments.title}</span>
       </label>}
       {expanded && config && (
         <AdjustmentChecklist
@@ -293,16 +294,16 @@ function AdjustmentChecklist({
       ))}
 
       <div className={`${styles.extraSummary} ${appearance === "receipt" ? styles.receiptSummary : ""}`}>
-        <span>{appearance === "receipt" ? "Total semana (esperado)" : `Conceptos extra: ${display(delta)}`}</span>
-        {appearance === "receipt"?<b>{expectedKnown?display(base + delta):"Sin proyección"}</b>:expectedKnown&&<b>Esperado: {display(base + delta)}</b>}
-        {appearance === "receipt"&&<small>Salario base {display(base)} + Conceptos extra {display(delta)}</small>}
+        <span>{appearance === "receipt" ? uiCopyEs.salaryAdjustments.expectedWeekTotal : uiCopyEs.salaryAdjustments.summaryAmount(display(delta))}</span>
+        {appearance === "receipt"?<b>{expectedKnown?display(base + delta):"Sin proyección"}</b>:expectedKnown&&<b>{uiCopyEs.salaryAdjustments.expectedAmount(display(base + delta))}</b>}
+        {appearance === "receipt"&&<small>{uiCopyEs.salaryAdjustments.receiptDetails(display(base), display(delta))}</small>}
       </div>
       {appearance !== "receipt"&&<small>Se guardan como estimación. No registran ingresos ni confirman una deuda.</small>}
       {measurementInvalid && <p role="alert">Completa las unidades y verifica que su costo produzca un importe entero en colones.</p>}
       {error && <p role="alert">{error}</p>}
       {dirty && onSave && (
         <button type="button" className="primary" disabled={measurementInvalid} onClick={save}>
-          Guardar conceptos
+          {uiCopyEs.salaryAdjustments.save}
         </button>
       )}
     </div>

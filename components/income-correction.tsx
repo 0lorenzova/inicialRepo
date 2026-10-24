@@ -3,6 +3,7 @@ import { envelopeLabel } from "@/lib/envelope-label";
 import { useState } from "react";
 import { correctionSnapshot, type IncomeCorrection } from "@/lib/income-correction";
 import type { Ledger } from "@/lib/finance-ledger";
+import { uiCopyEs } from "@/lib/ui-copy";
 
 export function IncomeCorrectionEditor({ledger,incomeId,display,onSave,onCancel}:{ledger:Ledger;incomeId:string;display:(amount:number)=>string;onSave:(input:Omit<IncomeCorrection,"date">)=>void;onCancel:()=>void}) {
   const [snapshot]=useState(()=>correctionSnapshot(ledger,incomeId));
@@ -29,7 +30,7 @@ export function IncomeCorrectionEditor({ledger,incomeId,display,onSave,onCancel}
       {envelopes.map(envelope=><label key={envelope.id} className="correction-row"><span>{envelopeLabel(envelope.name)}{envelope.archived?" (archivado)":""}<small>Distribuido: {display(snapshot.amounts[envelope.id]||0)} · Saldo actual: {display(envelope.balance)}</small></span><input aria-label={`Nueva distribución en ${envelope.name}`} type="number" inputMode="numeric" min="0" step="1" disabled={envelope.archived} value={amounts[envelope.id]??""} placeholder="0" onChange={event=>setAmounts({...amounts,[envelope.id]:event.target.value})}/></label>)}
       <label htmlFor="correction-reason">Motivo de la corrección</label><textarea id="correction-reason" maxLength={300} value={reason} onChange={event=>setReason(event.target.value)}/>
     </>:<><h4>Revisar cambios</h4>{changes.map(envelope=><div className="trace-row" key={envelope.id}><span>{envelopeLabel(envelope.name)}</span><b>{display(snapshot.amounts[envelope.id]||0)} → {display(Number(amounts[envelope.id]||0))}</b></div>)}<p>{reason}</p></>}
-    <div className="review-box"><span>Total distribuido: {display(Number.isFinite(total)?total:0)}</span><span>Quedará sin asignar de este ingreso: {display(Number.isFinite(total)?snapshot.available-total:0)}</span></div>
+    <div className="review-box"><span>Total distribuido: {display(Number.isFinite(total)?total:0)}</span><span>{uiCopyEs.unassignedIncomes.remainingFromIncome}: {display(Number.isFinite(total)?snapshot.available-total:0)}</span></div>
     <small>El dinero usado fuera de esta distribución no está disponible para corregir. Tampoco se puede retirar más del saldo actual de un sobre.</small>
     {error&&<p className="form-error" role="alert">{error}</p>}
     <button className="primary wide" onClick={submit}>{review?"Confirmar corrección":"Revisar corrección"}</button>

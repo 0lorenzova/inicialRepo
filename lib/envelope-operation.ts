@@ -11,7 +11,7 @@ export function applyEnvelopeOperation(ledger: Ledger, input: { kind: EnvelopeAc
   if (!amount) throw new Error("Debes ingresar un monto.");
   if (!Number.isSafeInteger(amount) || amount < 0) throw new Error("Ingresa un monto entero mayor que cero.");
   if (kind === "Asignar dinero") {
-    if (amount > totals(ledger).unassigned) throw new Error("Intentas asignar más dinero del disponible sin asignar.");
+    if (amount > totals(ledger).unassigned) throw new Error("No hay suficiente dinero disponible para asignar.");
     return { ledger: assign(ledger, envelope.id, amount, date, id), message: `${money(amount)} asignados correctamente a ${envelopeLabel(envelope.name)}.` };
   }
   if (kind === "Desasignar") {

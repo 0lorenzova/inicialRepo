@@ -4,6 +4,7 @@ import { envelopeLabel } from "@/lib/envelope-label";
 import { createPortal } from "react-dom";
 import ViewListOutlined from "@mui/icons-material/ViewListOutlined";
 import GridViewOutlined from "@mui/icons-material/GridViewOutlined";
+import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import { useThemeMode } from "@/components/theme-provider";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { canShowThreeColumns, envelopeGridColumns, isAdaptiveEnvelopeGrid, type EnvelopeView } from "@/lib/envelope-view";
@@ -17,8 +18,12 @@ type EnvelopeItem = { id: string; name: string; icon: string; color: string; bal
 type Drag = { id: string; ids: string[]; original: string[]; keyboard: boolean };
 type PendingPress = { x: number; y: number; pointerId: number; envelopeId: string; anchor: HTMLButtonElement; started: number; timer: ReturnType<typeof setTimeout> };
 
-export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, showProximity = true, showCreateAction = true, viewAnchor }: {
+export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, showProximity = true, showCreateAction = true, viewAnchor, infoAnchor, infoPanelSide = "end", infoBlinkShown, onInfoBlinkStart }: {
   viewAnchor?: HTMLDivElement | null;
+  infoAnchor?: HTMLElement | null;
+  infoPanelSide?: "start" | "end";
+  infoBlinkShown: boolean;
+  onInfoBlinkStart: () => void;
   showProximity?: boolean;
   showCreateAction?: boolean;
   envelopes: EnvelopeItem[];
@@ -46,6 +51,8 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
   const [width, setWidth] = useState<number | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [reorderError, setReorderError] = useState("");
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [blinkInfoOnMount] = useState(() => !infoBlinkShown);
   const grid = view.envelopesViewMode === "grid";
   const nextColumns = grid && view.envelopesGridColumns === 2 ? 3 : 2;
   const adaptive = isAdaptiveEnvelopeGrid(width);
@@ -170,19 +177,31 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
 
   const nextIsList=grid&&(view.envelopesGridColumns===3||blockedNext);
   const nextViewLabel=nextIsList?"Lista":`Cuadrícula de ${nextVisibleColumns} columnas${adaptive?` · ${nextDensity}`:""}`;
-  const viewSelector = <div className="view-switch" role="group" aria-label="Vista de sobres">
-    <button type="button" onClick={nextIsList?onList:onGrid} aria-label={`Cambiar a ${nextViewLabel}`} title={`Cambiar a ${nextViewLabel}`}>
-      {nextIsList?<ViewListOutlined aria-hidden="true"/>:<GridViewOutlined aria-hidden="true"/>}
-      <span className="view-label">{nextIsList?"Lista":"Cuadrícula"}</span>
-      {!nextIsList&&<span className="grid-column-count" aria-hidden="true">{nextVisibleColumns}</span>}
+  const viewSelector = <div className={styles.viewControls}>
+    <div className="view-switch" role="group" aria-label="Vista de sobres">
+      <button type="button" onClick={nextIsList?onList:onGrid} aria-label={`Cambiar a ${nextViewLabel}`} title={`Cambiar a ${nextViewLabel}`}>
+        {nextIsList?<ViewListOutlined aria-hidden="true"/>:<GridViewOutlined aria-hidden="true"/>}
+        <span className="view-label">{nextIsList?"Lista":"Cuadrícula"}</span>
+        {!nextIsList&&<span className="grid-column-count" aria-hidden="true">{nextVisibleColumns}</span>}
+      </button>
+    </div>
+  </div>;
+  const infoControl = <div className={styles.infoWrap}>
+    <button type="button" className={`${styles.infoButton} ${blinkInfoOnMount?styles.infoBlink:""}`} aria-label="Información sobre la vista y el orden de los sobres" aria-expanded={infoOpen} aria-controls={`${id}-view-help`} onClick={()=>setInfoOpen(value=>!value)} onAnimationStart={onInfoBlinkStart}>
+      <InfoOutlined aria-hidden="true"/>
     </button>
+    <div id={`${id}-view-help`} className={`${styles.infoPanel} ${infoPanelSide === "end" ? styles.infoPanelEnd : ""}`} role="note" hidden={!infoOpen}>
+      {grid&&!unavailableGrid&&<p>{columns} sobres por fila{adaptive?` · Vista ${density}, adaptada al ancho disponible.`:""}</p>}
+      <p>Para ordenar, mantén pulsado el icono del sobre y arrastra.</p>
+      <p className={styles.infoKeyboard}>Con teclado: Enter para empezar, flechas para mover, Enter para guardar y Escape para cancelar.</p>
+    </div>
   </div>;
 
   return <div ref={container} className={styles.wrapper} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => {lastTap.current=null;finish(false);}} onLostPointerCapture={event => { if (event.target === event.currentTarget && pending.current) finish(false); }}>
     {viewAnchor ? createPortal(viewSelector, viewAnchor) : viewSelector}
-    {grid && !unavailableGrid && <p className="view-hint">{columns} sobres por fila{adaptive?` · Vista ${density}, adaptada al ancho disponible.`:""} · Siguiente vista: {nextViewLabel}.</p>}
+    {infoAnchor ? createPortal(infoControl, infoAnchor) : infoAnchor === undefined ? infoControl : null}
     {blockedNext && <p id={`${id}-width-hint`} className="view-hint">Para ver tres columnas, gira el teléfono o utiliza una pantalla más ancha.</p>}
-    <p id={`${id}-sort-hint`} className={styles.sortHint}>Para ordenar, mantén pulsado el icono y arrastra.<span className={styles.srOnly}> Con teclado: Enter para empezar, flechas para mover, Enter para guardar y Escape para cancelar.</span></p>
+    <span id={`${id}-sort-hint`} className={styles.srOnly}>Para ordenar, mantén pulsado el icono del sobre y arrastra. Con teclado: Enter para empezar, flechas para mover, Enter para guardar y Escape para cancelar.</span>
     <span className={styles.srOnly} role="status" aria-live="polite">{announcement}</span>
     {reorderError && <p className="form-error" role="alert">{reorderError}</p>}
     {unavailableGrid ? <div className={styles.widthNotice} role="status"><b>{width === null ? "Ajustando la vista…" : "La vista de tres columnas necesita más espacio."}</b><p>Gira el teléfono o elige Lista o Cuadrícula de dos columnas. Tu preferencia de tres columnas se conserva.</p><button className="secondary" type="button" onClick={onGrid}>Ver dos columnas</button></div>

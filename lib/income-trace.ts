@@ -48,7 +48,7 @@ export function selectedIncomeSource(ledger: Ledger, incomeId: string, amount: n
   const income = ledger.movements.find(movement => movement.id === incomeId && movement.type === "Ingreso");
   const available = unassignedIncomeLots(ledger).filter(lot => lot.incomeId === incomeId && movementInstant(lot.date) <= movementInstant(date)).reduce((sum, lot) => sum + lot.amount, 0);
   if (!income || !Number.isSafeInteger(amount) || amount <= 0 || amount > available) {
-    throw new Error("Este ingreso ya no tiene suficiente dinero sin asignar para ese monto. Revisa su saldo disponible.");
+    throw new Error("El monto supera el saldo disponible para asignar de este ingreso. Revisa los datos.");
   }
   return [{ incomeId, amount }];
 }

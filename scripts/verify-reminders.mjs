@@ -108,6 +108,6 @@ const skippedAfterSnooze=skipRecurringContribution(snoozedOccurrence,"home","202
 const snoozedOmission=deriveReminderRecords(skippedAfterSnooze.envelopes,[],today);
 assert.equal(snoozedOmission.filter(item=>item.status==="completed"&&item.kind==="contribution").length,0,"Omitir una ocurrencia pospuesta no la presenta como realizada");
 assert.equal(snoozedOmission.find(item=>item.status==="omitted"&&item.kind==="contribution").date,"2026-10-28","El historial conserva la fecha efectiva pospuesta");
-assert.throws(()=>recordRecurringContribution({...contributionLedger,accounts:[{...contributionLedger.accounts[0],balance:10}]},"home","2026-10-25",11,"2026-10-22T09:00"),/sin asignar suficiente/);
+assert.throws(()=>recordRecurringContribution({...contributionLedger,accounts:[{...contributionLedger.accounts[0],balance:10}]},"home","2026-10-25",11,"2026-10-22T09:00"),/disponible para asignar/);
 
 console.log("OK: resumen real, vencimientos, progreso de metas, pagos parciales completos, idempotencia, posponer/omitir ocurrencias y cadencia de recurrencias sin movimientos automáticos.");

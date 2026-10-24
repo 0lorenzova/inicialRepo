@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { deriveFinanceNotifications, type FinanceNotification, type NotificationEnvelope, type NotificationDestination } from "@/lib/finance-notifications";
 import type { LedgerMovement, Loan } from "@/lib/finance-ledger";
 import { FinanceDialog } from "./finance-dialog";
+import { uiCopyEs } from "@/lib/ui-copy";
 import { NotificationCard } from "./finance-notifications";
 import styles from "./finance-notifications.module.css";
 
@@ -19,7 +20,7 @@ export function OpeningAttention({envelopes,movements,loans,today,ready,privateM
     <header><div className={styles.dialogHeaderCopy}><h2>Notificaciones</h2><p className={styles.dialogSubtitle}>Tus recordatorios y alertas importantes</p></div><button type="button" aria-label="Cerrar notificaciones" onClick={()=>setOpen(false)}>×</button></header>
     <div className={styles.body}>
       <ul className={styles.list}>{events.slice(0,5).map(event=><NotificationCard key={event.id} event={event} today={today} privateMode={privateMode} showAmount={showAmounts} expanded={expandedId===event.id} onToggleExpanded={()=>setExpandedId(current=>current===event.id?null:event.id)} onNavigate={destination=>{setOpen(false);onNavigate(destination);}} renderPayment={renderPayment}/>)}</ul>
-      <button className={styles.allNotices} type="button" onClick={()=>{setOpen(false);onNavigate({page:"Cronograma"});}}><span><b>Ver todos los avisos</b><small>Abrir cronograma de aportes y metas</small></span><span aria-hidden="true">›</span></button>
+      <button className={styles.allNotices} type="button" onClick={()=>{setOpen(false);onNavigate({page:"Cronograma"});}}><span><b>Ver todos los avisos</b><small>{uiCopyEs.calendarActions.openNamed}</small></span><span aria-hidden="true">›</span></button>
     </div>
   </section></FinanceDialog>;
 }

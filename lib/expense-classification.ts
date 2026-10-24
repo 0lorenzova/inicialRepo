@@ -6,7 +6,7 @@ export type ExpenseClassification = { envelopeId?: string; categoryId?: string; 
 export function classifyExpense(amount:number, allocations:{id:string;amount:number}[], drafts:CategoryDrafts, categories:ExpenseCategory[]):ExpenseClassification[] {
   if(!Number.isSafeInteger(amount)||amount<=0)throw new Error("Escribe un monto entero mayor que cero.");
   if(!allocations.length)return [{name:"Sin categoría",amount}];
-  if(allocations.reduce((sum,item)=>sum+item.amount,0)!==amount)throw new Error("Reparte exactamente el total del gasto entre los sobres seleccionados, o utiliza dinero sin asignar.");
+  if(allocations.reduce((sum,item)=>sum+item.amount,0)!==amount)throw new Error("Reparte exactamente el total del gasto entre los sobres seleccionados o usa dinero disponible para asignar.");
   const result:ExpenseClassification[]=[];
   for(const allocation of allocations) {
     const selected=Object.entries(drafts[allocation.id]??{});

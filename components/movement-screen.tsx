@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { LedgerMovement } from "@/lib/finance-ledger";
+import { uiCopyEs } from "@/lib/ui-copy";
 import { envelopeLabel } from "@/lib/envelope-label";
 import ArrowDownwardOutlined from "@mui/icons-material/ArrowDownwardOutlined";
 import ArrowUpwardOutlined from "@mui/icons-material/ArrowUpwardOutlined";
@@ -79,7 +80,7 @@ export function MovementScreen({
 
   return <section className={`section page-panel ${styles.screen}`} aria-label="Historial de movimientos">
     {returnToIncome && <button className={`secondary ${styles.returnButton}`} onClick={onReturn}>‹ Volver a la ruta del ingreso</button>}
-    {movementId && <div className={styles.contextFilter}><span>Movimiento seleccionado</span><button onClick={onClearMovement}>Ver historial completo</button></div>}
+    {movementId && <div className={styles.contextFilter}><span>Movimiento seleccionado</span><button onClick={onClearMovement}>{uiCopyEs.movementActions.clearSelectedMovement}</button></div>}
     {movementEnvelope && <div className={styles.contextFilter}><span>Movimientos de <b>{envelopeLabel(envelopes.find(envelope => envelope.id === movementEnvelope)?.name || "Sobre archivado")}</b></span><button aria-label="Ver todos los movimientos" onClick={onRemoveEnvelope}>Quitar filtro ×</button></div>}
 
     <div className={styles.quickFilters} role="group" aria-label="Filtros rápidos por tipo de movimiento">

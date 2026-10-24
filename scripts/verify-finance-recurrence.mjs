@@ -76,7 +76,7 @@ rejectWithoutMutation(reopened, (ledger) => confirmRecurringContribution(ledger,
 
 // Insufficient money, archived/missing envelopes, and invalid settings cannot
 // partially advance the reminder or alter any financial data.
-rejectWithoutMutation(seed({}, 24_999), (ledger) => confirmRecurringContribution(ledger, "savings", "2026-10-01", "2026-10-01T10:00"), /sin asignar suficiente/);
+rejectWithoutMutation(seed({}, 24_999), (ledger) => confirmRecurringContribution(ledger, "savings", "2026-10-01", "2026-10-01T10:00"), /disponible para asignar/);
 const archived = seed(); archived.envelopes[0].archived = true;
 assert.equal(isRecurrenceDue(archived.envelopes[0], "2026-10-01"), false);
 rejectWithoutMutation(archived, (ledger) => confirmRecurringContribution(ledger, "savings", "2026-10-01", "2026-10-01T10:00"), /archivado/);

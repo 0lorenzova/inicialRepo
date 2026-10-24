@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Loan, LedgerMovement } from "@/lib/finance-ledger";
 import { envelopeLabel } from "@/lib/envelope-label";
 import styles from "./loans-screen.module.css";
@@ -13,6 +13,7 @@ type Props = {
   envelopes: LoanEnvelope[];
   today: string;
   display: (amount: number) => string;
+  focusLoanId?: string;
   onRepay: (loan: Loan) => void;
   onMovement: (movementId: string) => void;
 };
@@ -40,9 +41,16 @@ function loanState(loan: Loan) {
   return "Pendiente";
 }
 
-export function LoansScreen({ loans, movements, envelopes, today, display, onRepay, onMovement }: Props) {
-  const [filter, setFilter] = useState<LoanFilter>("active");
+export function LoansScreen({ loans, movements, envelopes, today, display, focusLoanId, onRepay, onMovement }: Props) {
+  const [filter, setFilter] = useState<LoanFilter>(() => focusLoanId ? "all" : "active");
   const [order, setOrder] = useState<"newest" | "oldest">("newest");
+  const [expandedLoanId, setExpandedLoanId] = useState<string|null>(() => focusLoanId ?? null);
+  const focusedLoanRef = useRef<HTMLElement|null>(null);
+  useEffect(() => {
+    if (!focusLoanId) return;
+    const frame = window.requestAnimationFrame(() => focusedLoanRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusLoanId]);
   const pendingTotal = loans.reduce((sum, loan) => sum + Math.max(0, loan.outstanding), 0);
   const recoveredTotal = movements.reduce((sum, movement) => sum + (movement.type === "Devolución" && movement.loanId ? movement.amount : 0), 0);
   const activeCount = loans.filter(loan => loan.outstanding > 0).length;
@@ -105,7 +113,7 @@ export function LoansScreen({ loans, movements, envelopes, today, display, onRep
         const isOverdue = isActive && Boolean(loan.dueDate && loan.dueDate < today);
         const targetBalance = envelopes.find(envelope => envelope.id === loan.targetId)?.balance ?? 0;
         const history = movements.filter(movement => movement.loanId === loan.id && (movement.type === "Préstamo" || movement.type === "Devolución")).sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
-        return <article className={styles.card} key={loan.id}>
+        return <article className={styles.card} key={loan.id} ref={loan.id === focusLoanId ? focusedLoanRef : undefined}>
           <div className={styles.cardHeading}>
             <div className={styles.relation}>
               <strong>{envelopeLabel(loan.sourceName)}</strong><span aria-label="prestó a">→</span><strong>{envelopeLabel(loan.targetName)}</strong>
@@ -130,7 +138,7 @@ export function LoansScreen({ loans, movements, envelopes, today, display, onRep
           </div>
 
           <div className={styles.cardFooter}>
-            <details className={styles.historyDetails}>
+            <details className={styles.historyDetails} open={expandedLoanId === loan.id} onToggle={event => setExpandedLoanId(current => event.currentTarget.open ? loan.id : current === loan.id ? null : current)}>
               <summary><span>Ver detalles e historial</span><small>{history.length} {history.length === 1 ? "movimiento" : "movimientos"}</small></summary>
               <div className={styles.detailSummary}>
                 <span>Estado actual <strong>{loanState(loan)}</strong></span>

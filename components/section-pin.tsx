@@ -5,8 +5,8 @@ import LockOpenOutlined from "@mui/icons-material/LockOpenOutlined";
 
 export function SectionPin({ pinned, section, onToggle }: { pinned: boolean; section: string; onToggle: () => void }) {
   const description = pinned
-    ? `Desfijar ${section}: se abrirá plegado la próxima vez`
-    : `Fijar ${section}: mantener desplegado al volver a abrir la app`;
+    ? `Desfijar ${section}`
+    : `Fijar ${section}`;
 
   return (
     <button

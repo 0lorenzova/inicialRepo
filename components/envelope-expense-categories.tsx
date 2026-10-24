@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ExpenseCategoryManager } from "./expense-categories";
 import { categoriesForEnvelope, type ExpenseCategory } from "@/lib/expense-categories";
 import { classifyExpense, type CategoryDrafts } from "@/lib/expense-classification";
+import { uiCopyEs } from "@/lib/ui-copy";
 import styles from "./expense-categories.module.css";
 
 export type EnvelopeCategoryActions = {
@@ -63,8 +64,8 @@ export function ExpenseClassificationEditor({envelopes,amount,allocations,drafts
       </section>;
     })}
     <div className="allocation-total">En sobres <b>{display(total)} / {display(amount)}</b></div>
-    <button type="button" className="secondary wide" onClick={()=>{onAllocations({});onDrafts({});}}>Usar dinero sin asignar</button>
-    {!selected.length&&<p className="flow-intro">Se descontarán {display(amount)} de la cuenta y del dinero sin asignar.</p>}
+    <button type="button" className="secondary wide" onClick={()=>{onAllocations({});onDrafts({});}}>{uiCopyEs.availableFunds.useForExpense}</button>
+    {!selected.length&&<p className="flow-intro">{uiCopyEs.availableFunds.expenseSource(display(amount))}</p>}
     {error&&<p className="form-error" role="status">{error}</p>}
     <button type="button" className="primary wide" disabled={Boolean(error)} onClick={onNext}>Siguiente →</button>
   </div>;

@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { envelopeActionLabels } from "@/lib/envelope-action-labels";
 import { EnvelopeActionIcon } from "./envelope-action-icon";
 import { FinanceDialog } from "@/components/finance-dialog";
+import { uiCopyEs } from "@/lib/ui-copy";
 import type { EnvelopeAction } from "@/lib/envelope-operation";
 
 type Envelope = { id: string; name: string; icon: string; balance: number; balanceHidden?:boolean };
@@ -23,7 +24,7 @@ export function EnvelopeActionDialog({ kind, envelope, others, available, displa
   return <FinanceDialog label={envelopeActionLabels[kind]} onClose={onClose}><form className="flow-modal" noValidate onSubmit={submit}>
     <header><button type="button" aria-label="Cancelar" onClick={onClose}>‹</button><div><small>MIS SOBRES</small><h2><EnvelopeActionIcon action={kind}/> {envelopeActionLabels[kind]}</h2></div><button type="button" aria-label="Cerrar diálogo" onClick={onClose}>×</button></header>
     <div className="flow-body"><label>{kind==="Asignar dinero"?"Cargar en":kind==="Desasignar"?"Descargar de":borrowing?"Recibe":"Desde"}</label>
-      <div className="envelope-context"><b>{envelope.icon} {envelopeLabel(envelope.name)}</b><small>{kind==="Asignar dinero"?`Sin asignar: ${display(available)}`:`Saldo: ${envelope.balanceHidden?"••••••":display(envelope.balance)}`}</small></div>
+      <div className="envelope-context"><b>{envelope.icon} {envelopeLabel(envelope.name)}</b><small>{kind==="Asignar dinero"?`${uiCopyEs.money.availableToAssign}: ${display(available)}`:`Saldo: ${envelope.balanceHidden?"••••••":display(envelope.balance)}`}</small></div>
       {needsOther&&<><label htmlFor="envelope-counterparty">{borrowing?"Pedir a":"Hacia"}</label><select id="envelope-counterparty" value={counterparty} onChange={e=>setCounterparty(e.target.value)}><option value="">{borrowing?"Selecciona de dónde pedir dinero":"Selecciona el destino"}</option>{others.filter(e=>e.id!==envelope.id).map(e=><option key={e.id} value={e.id}>{envelopeLabel(e.name)} · {e.balanceHidden?"••••••":display(e.balance)}</option>)}</select>{!others.some(e=>e.id!==envelope.id)&&<p className="flow-intro">Crea otro sobre para realizar esta operación.</p>}</>}
       <label htmlFor="envelope-action-amount">Monto</label><div className="currency-input"><span>₡</span><input id="envelope-action-amount" type="number" inputMode="numeric" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0"/></div>
       {borrowing&&counterparty&&<p className="flow-intro">Disponible en {envelopeLabel(others.find(e=>e.id===counterparty)?.name)}: {display(others.find(e=>e.id===counterparty)?.balance??0)}.</p>}

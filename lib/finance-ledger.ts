@@ -110,7 +110,7 @@ export function commit(ledger: Ledger, movement: LedgerMovement, accounts = ledg
 
 export function assign(ledger: Ledger, envelopeId: string, amount: number, date: string, id = crypto.randomUUID(), incomeId?: string): Ledger {
   const envelope = ledger.envelopes.find((item) => item.id === envelopeId && !item.archived);
-  if (!envelope || !validAmount(amount) || amount > totals(ledger).unassigned) throw new Error("No hay dinero sin asignar suficiente o el monto no es válido.");
+  if (!envelope || !validAmount(amount) || amount > totals(ledger).unassigned) throw new Error("No hay suficiente dinero disponible para asignar o el monto no es válido.");
   if (!validMovementDate(date)) throw new Error("Selecciona una fecha y hora válidas para la asignación.");
   const incomeSources = incomeId === undefined ? traceAssignmentSources(ledger, amount, date) : selectedIncomeSource(ledger, incomeId, amount, date);
   return commit(ledger, { id, type: "Asignación", name: `Asignación a ${envelope.name}`, amount, date, incomeSources, allocations: [{ envelopeId: envelope.id, name: envelope.name, amount }] }, ledger.accounts, ledger.envelopes.map((item) => item.id === envelopeId ? { ...item, balance: item.balance + amount } : item));
@@ -161,7 +161,7 @@ export function postMovement(ledger: Ledger, input: { id?: string; type: "Ingres
     if (account.balance < input.amount) throw new Error("La cuenta no tiene saldo suficiente para este gasto.");
     const assignedSpend = input.envelopeAllocations.reduce((sum, allocation) => sum + allocation.amount, 0);
     const unassignedSpend = input.amount - assignedSpend;
-    if (unassignedSpend < 0 || unassignedSpend > totals(ledger).unassigned) throw new Error("Los sobres y el dinero sin asignar no cubren el gasto.");
+    if (unassignedSpend < 0 || unassignedSpend > totals(ledger).unassigned) throw new Error("Los sobres y el dinero disponible para asignar no cubren el gasto.");
     for (const allocation of input.envelopeAllocations) if ((ledger.envelopes.find((item) => item.id === allocation.id)?.balance || 0) < allocation.amount) throw new Error("Un sobre no tiene saldo suficiente.");
   } else if (allocated > input.amount || allocated < 0) throw new Error("La distribución no puede superar el ingreso.");
   const envChanges = new Map(input.envelopeAllocations.map((item) => [item.id, item.amount]));

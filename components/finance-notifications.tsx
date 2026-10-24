@@ -6,6 +6,7 @@ import ExpandMoreOutlined from "@mui/icons-material/ExpandMoreOutlined";
 import MoreVertOutlined from "@mui/icons-material/MoreVertOutlined";
 import NotificationsOutlined from "@mui/icons-material/NotificationsOutlined";
 import { FinanceDialog } from "@/components/finance-dialog";
+import { appViewActionLabel, uiCopyEs } from "@/lib/ui-copy";
 import { TemporalDot } from "./temporal-indicator";
 import { temporalDistance } from "@/lib/envelope-goals";
 import {
@@ -133,7 +134,7 @@ export function NotificationCard({ event, today, privateMode, showAmount, read =
         <details className={styles.moreActions}>
           <summary aria-label="Más opciones" title="Más opciones"><MoreVertOutlined aria-hidden="true"/></summary>
           <div className={styles.moreMenu}>
-            <button type="button" onClick={() => onNavigate(event.destination)}>Abrir {event.destination.page.toLowerCase()}</button>
+            <button type="button" onClick={() => onNavigate(event.destination)}>{appViewActionLabel(event.destination.page)}</button>
             {onToggleRead && <button type="button" onClick={() => onToggleRead(event)}>{read ? "Marcar como no leída" : "Marcar como leída"}</button>}
             {onDismiss && !dismissed && <button type="button" onClick={() => onDismiss(event)}>Descartar aviso</button>}
           </div>
@@ -277,7 +278,7 @@ export function FinanceNotifications({
               const isRead = read.has(event.id), isDismissed = dismissed.has(event.id);
               return <NotificationCard key={event.id} event={event} today={today} privateMode={privateMode} showAmount={state.showResponsibilityAmount === true} read={isRead} dismissed={isDismissed} expanded={expandAll || expandedId === event.id} onToggleExpanded={() => { if (expandAll) { setExpandAll(false); setExpandedId(null); } else setExpandedId(current => current === event.id ? null : event.id); }} onNavigate={destination => { closeDialog(); onNavigate(destination); }} onToggleRead={item => updateState(current => read.has(item.id) ? { ...current, readIds: current.readIds.filter(id => id !== item.id) } : markNotifications(current, "readIds", [item.id]))} onDismiss={item => updateState(current => markNotifications(current, "dismissedIds", [item.id]))} renderPayment={renderPayment}/>;
             })}</ul>
-            <button className={styles.allNotices} type="button" onClick={() => { closeDialog(); onNavigate({ page: "Cronograma" }); }}><span><b>Ver todos los avisos</b><small>Abrir cronograma de aportes y metas</small></span><span aria-hidden="true">›</span></button>
+            <button className={styles.allNotices} type="button" onClick={() => { closeDialog(); onNavigate({ page: "Cronograma" }); }}><span><b>Ver todos los avisos</b><small>{uiCopyEs.calendarActions.openNamed}</small></span><span aria-hidden="true">›</span></button>
           </>}
           {deliveryMessage && <p role="status">{deliveryMessage}</p>}
         </div>

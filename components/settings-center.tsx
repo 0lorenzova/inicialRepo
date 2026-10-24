@@ -10,6 +10,7 @@ import LayersOutlined from "@mui/icons-material/LayersOutlined";
 import TrackChangesOutlined from "@mui/icons-material/TrackChangesOutlined";
 import NotificationsOutlined from "@mui/icons-material/NotificationsOutlined";
 import SecurityOutlined from "@mui/icons-material/SecurityOutlined";
+import { uiCopyEs } from "@/lib/ui-copy";
 import CloudSyncOutlined from "@mui/icons-material/CloudSyncOutlined";
 import TuneOutlined from "@mui/icons-material/TuneOutlined";
 import styles from "./settings-center.module.css";
@@ -45,7 +46,7 @@ const searchItems: SearchItem[] = [
   { category: "envelopes", target: "setting-distribution-templates", name: "Plantillas de distribución", description: "Gestiona plantillas desde un borrador de ingreso real.", keywords: "distribución reparto asignar automático manual plantilla" },
   { category: "goals", target: "setting-goals", name: "Metas y puntos", description: "Abre los sobres para editar metas y seguimiento.", keywords: "meta objetivo progreso puntos sobre" },
   { category: "goals", target: "setting-contributions", name: "Aportes recurrentes", description: "Configura importes y frecuencias por sobre.", keywords: "aporte recurrente semanal quincenal mensual anual personalizado" },
-  { category: "goals", target: "setting-calendar", name: "Cronograma", description: "Consulta metas, aportes y pagos por fecha.", keywords: "calendario programados fecha vencimiento" },
+  { category: "goals", target: "setting-calendar", name: uiCopyEs.navigation.contributionsAndGoalsCalendar, description: "Consulta metas, aportes y pagos por fecha.", keywords: "calendario programados fecha vencimiento" },
   { category: "goals", target: "setting-reminders", name: "Recordatorios", description: "Gestiona compromisos próximos y vencidos.", keywords: "recordatorio próximo vencido realizado posponer" },
   { category: "notifications", target: "setting-notifications", name: "Avisos internos y del dispositivo", description: "Conserva los permisos y opciones disponibles en el navegador.", keywords: "notificación alerta sistema dispositivo navegador" },
   { category: "notifications", target: "setting-notifications", name: "Importes y sonidos", description: "Visibilidad, tono y prueba de audio.", keywords: "monto saldo privacidad sonido tono campana" },
