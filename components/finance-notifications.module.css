@@ -108,7 +108,11 @@
 .filterActive { border-color:var(--green-dark); background:var(--green-dark); color:#fff; }
 .filterCount { display:inline-grid; min-width:21px; height:21px; place-items:center; padding:0 5px; border-radius:999px; background:color-mix(in srgb,var(--muted) 14%,var(--paper)); color:var(--ink); font-size:calc(10px * var(--ui-scale,1)); font-variant-numeric:tabular-nums; font-weight:750; }
 .filterActive .filterCount { background:color-mix(in srgb,#fff 18%,var(--green-dark)); color:#fff; }
-.markAllRead { justify-self:end; min-height:34px; padding:3px 5px; border:0; background:transparent; color:var(--muted); font-size:calc(11px * var(--ui-scale,1)); text-decoration:underline; text-underline-offset:3px; }
+.noticeControls { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; }
+.expandAll { display:flex; flex:0 0 auto; align-items:center; gap:7px; min-height:36px; color:var(--muted); font-size:calc(11px * var(--ui-scale,1)); cursor:pointer; }
+.expandAll input { flex:none; width:18px; height:18px; margin:0; accent-color:var(--green-dark); cursor:pointer; }
+.expandAll span { white-space:nowrap; }
+.markAllRead { flex:0 1 auto; min-height:34px; margin-left:auto; padding:3px 5px; border:0; background:transparent; color:var(--muted); font-size:calc(11px * var(--ui-scale,1)); text-align:right; text-decoration:underline; text-underline-offset:3px; }
 .list { display:grid; gap:7px; list-style:none; min-width:0; margin:0; padding:0; }
 .item { display:grid; gap:0; min-width:0; padding:9px 10px; border:1px solid color-mix(in srgb,var(--ink) 13%,var(--paper)); border-radius:14px; background:var(--paper); transition:border-color 140ms ease,background-color 140ms ease; }
 .item[data-status="overdue"] { border-color:color-mix(in srgb,#cf3340 28%,var(--line)); }

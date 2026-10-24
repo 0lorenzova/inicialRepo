@@ -175,6 +175,7 @@ export function FinanceNotifications({
   const [deliveryMessage, setDeliveryMessage] = useState("");
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>("pending");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandAll, setExpandAll] = useState(false);
   const attempted = useRef(new Set<string>());
   const activeNotices = useRef(new Set<Notification>());
   const events = useMemo(() => deriveFinanceNotifications(movements, envelopes, today, loans), [movements, envelopes, today, loans]);
@@ -247,7 +248,7 @@ export function FinanceNotifications({
     const error = saveNotificationUpdate(onChange, update);
     if (error) setDeliveryMessage(error);
   }
-  function closeDialog() { setExpandedId(null); onClose(); }
+  function closeDialog() { setExpandedId(null); setExpandAll(false); onClose(); }
 
   return <>
     <button type="button" className={`header-control ${styles.bell}`} onClick={onOpen} title="Notificaciones" aria-label={`Notificaciones${pendingCount ? `: ${pendingCount} pendientes` : ": ninguna pendiente"}`}>
@@ -260,15 +261,21 @@ export function FinanceNotifications({
         <div className={styles.body}>
           {!state.internal ? <p>Las notificaciones internas están desactivadas. Puedes activarlas en Configuración.</p> : <>
             <div className={styles.filters} role="group" aria-label="Filtrar notificaciones">
-              {filters.map(filter => <button key={filter.id} type="button" className={activeFilter === filter.id ? styles.filterActive : styles.filter} aria-pressed={activeFilter === filter.id} onClick={() => { setActiveFilter(filter.id); setExpandedId(null); }}>
+              {filters.map(filter => <button key={filter.id} type="button" className={activeFilter === filter.id ? styles.filterActive : styles.filter} aria-pressed={activeFilter === filter.id} onClick={() => { setActiveFilter(filter.id); setExpandedId(null); setExpandAll(false); }}>
                 {filter.label}<span className={styles.filterCount}>{filterCounts[filter.id]}</span>
               </button>)}
             </div>
-            {unreadEvents.length > 0 && <button className={styles.markAllRead} type="button" onClick={() => updateState(current => markNotifications(current, "readIds", unreadEvents.map(event => event.id)))}>Marcar avisos como leídos</button>}
+            {!!filtered.length && <div className={styles.noticeControls}>
+              <label className={styles.expandAll}>
+                <input type="checkbox" checked={expandAll} onChange={event => { setExpandAll(event.target.checked); setExpandedId(null); }}/>
+                <span>Desplegar todos</span>
+              </label>
+              {unreadEvents.length > 0 && <button className={styles.markAllRead} type="button" onClick={() => updateState(current => markNotifications(current, "readIds", unreadEvents.map(event => event.id)))}>Marcar avisos como leídos</button>}
+            </div>}
             {!filtered.length && <p>{activeFilter === "pending" ? "No tienes compromisos pendientes." : activeFilter === "upcoming" ? "No tienes compromisos próximos." : "No hay avisos disponibles."}</p>}
             <ul className={styles.list}>{filtered.slice(0, 5).map(event => {
               const isRead = read.has(event.id), isDismissed = dismissed.has(event.id);
-              return <NotificationCard key={event.id} event={event} today={today} privateMode={privateMode} showAmount={state.showResponsibilityAmount === true} read={isRead} dismissed={isDismissed} expanded={expandedId === event.id} onToggleExpanded={() => setExpandedId(current => current === event.id ? null : event.id)} onNavigate={destination => { closeDialog(); onNavigate(destination); }} onToggleRead={item => updateState(current => read.has(item.id) ? { ...current, readIds: current.readIds.filter(id => id !== item.id) } : markNotifications(current, "readIds", [item.id]))} onDismiss={item => updateState(current => markNotifications(current, "dismissedIds", [item.id]))} renderPayment={renderPayment}/>;
+              return <NotificationCard key={event.id} event={event} today={today} privateMode={privateMode} showAmount={state.showResponsibilityAmount === true} read={isRead} dismissed={isDismissed} expanded={expandAll || expandedId === event.id} onToggleExpanded={() => { if (expandAll) { setExpandAll(false); setExpandedId(null); } else setExpandedId(current => current === event.id ? null : event.id); }} onNavigate={destination => { closeDialog(); onNavigate(destination); }} onToggleRead={item => updateState(current => read.has(item.id) ? { ...current, readIds: current.readIds.filter(id => id !== item.id) } : markNotifications(current, "readIds", [item.id]))} onDismiss={item => updateState(current => markNotifications(current, "dismissedIds", [item.id]))} renderPayment={renderPayment}/>;
             })}</ul>
             <button className={styles.allNotices} type="button" onClick={() => { closeDialog(); onNavigate({ page: "Cronograma" }); }}><span><b>Ver todos los avisos</b><small>Abrir cronograma de aportes y metas</small></span><span aria-hidden="true">›</span></button>
           </>}
