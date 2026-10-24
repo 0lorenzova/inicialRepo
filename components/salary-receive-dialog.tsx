@@ -2,14 +2,13 @@
 import AccountBalanceWalletOutlined from "@mui/icons-material/AccountBalanceWalletOutlined";
 import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
-import EventAvailableOutlined from "@mui/icons-material/EventAvailableOutlined";
 import EditOutlined from "@mui/icons-material/EditOutlined";
 import PaidOutlined from "@mui/icons-material/PaidOutlined";
 import SwapHorizRounded from "@mui/icons-material/SwapHorizRounded";
-import WorkOutlineOutlined from "@mui/icons-material/WorkOutlineOutlined";
 import {SalaryPeriodActivation} from "./salary-period-activation";
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
@@ -135,6 +134,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   let lastPending:SalaryPeriod|null=null;
   try {if(config)lastPending=latestSalaryPeriodPending(ledger,config.id,viewerDay);}catch{/* Date boundary; ordinary navigation remains available. */}
   const receivedAmount=presentation?.received??0;
+  const weekTone=presentation?.fullyPaid?"paid":presentation?.estimateKnown&&presentation.remaining>0?"overdue":"neutral";
   const selectedAccount = ledger.accounts.find(account => account.id === accountId && account.active);
   const isSavedPeriod = Boolean(period && state.periods.some(item => item.id === period!.id));
   const accountValid = Boolean(historicalAccuracy||linkedMovement||selectedAccount);
@@ -362,8 +362,8 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
       <label className={styles.configLabel}>Configuración salarial<select value={configId} disabled={Boolean(initialReceiptPlan)} onChange={event => changeConfig(event.target.value)}>{state.configs.map(item => <option key={item.id} value={item.id}>{item.employer} · {item.name}{item.active ? "" : " (inactiva)"}</option>)}</select></label>
       {historicalAccuracy&&<p className={styles.balance}>{historicalAccuracy==="unknown"?"Este depósito se guardará sin fecha conocida.":`Este depósito se guardará con fecha aproximada: ${dayLabel(historyDate)}.`} No creará un movimiento ni modificará los saldos de tus cuentas.</p>}
       {config && <>
-        <section className={styles.periodCard} aria-label="Período salarial">
-          <div className={`${styles.salaryPeriodHeader} ${statusStyles.surface}`} data-tone={presentation?.tone??"neutral"} onPointerDown={startPeriodGesture} onPointerUp={endPeriodGesture} onPointerCancel={cancelPeriodGesture}>
+        <section className={`${styles.periodCard} ${statusStyles.surface} ${statusStyles.weekSurface}`} data-tone={weekTone} aria-label="Período salarial">
+          <div className={styles.salaryPeriodHeader} onPointerDown={startPeriodGesture} onPointerUp={endPeriodGesture} onPointerCancel={cancelPeriodGesture}>
             <div className={styles.periodTitleRow}>
               <button type="button" className={styles.periodArrow} aria-label="Período anterior" onClick={() => movePeriod(-1)} disabled={!period || period.start <= "0001-01-01"}><ChevronLeftRounded/></button>
               <div className={styles.periodTitle}>
@@ -374,53 +374,51 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
               <button type="button" className={styles.periodArrow} aria-label="Período siguiente" onClick={() => movePeriod(1)} disabled={!period || period.end >= "9999-12-31"}><ChevronRightRounded/></button>
             </div>
             {period&&(presentation?.historicalEmpty||reviewingPeriod)&&<label className={styles.inlineActivation}><input type="checkbox" checked={Boolean(presentation?.confirmed||reviewingPeriod)} disabled={saving||Boolean(presentation?.confirmed&&!reviewingPeriod)} aria-expanded={Boolean(reviewingPeriod)} aria-controls={`salary-activation-review-${period.id}`} onChange={event=>updateActivationReview(event.target.checked?period:null)}/><span>Sin registros → Registrar</span></label>}
-            {period&&!(presentation?.historicalEmpty||reviewingPeriod)&&<small className={styles.periodState} data-tone={presentation?.tone??"neutral"}>{presentation?.state}{presentation?.overdueLabel?` · ${presentation.overdueLabel}`:""}</small>}
-            <button type="button" className={styles.calendarButton} aria-expanded={calendarOpen} onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}><CalendarMonthOutlined/>{calendarOpen?"Cerrar calendario":"Elegir en calendario"}</button>
+            {period&&!(presentation?.historicalEmpty||reviewingPeriod)&&<small className={styles.periodState} data-tone={weekTone}>{presentation?.state}{presentation?.overdueLabel?` · ${presentation.overdueLabel}`:""}</small>}
           </div>
 
           {period&&<div className={styles.periodFacts}>
-            <div className={styles.periodFact}><div><WorkOutlineOutlined/><span>Trabajo previsto</span></div><strong>{scheduledWorkLabel||"Sin horario configurado"}</strong>{scheduledWorkCount>0&&<small>({scheduledWorkCount} días)</small>}</div>
+            <div className={styles.periodFact}><div><AccountBalanceWalletOutlined/><span>Recibido</span></div><strong>{display(receivedAmount)}</strong></div>
             <div className={styles.periodFact}><div><PaidOutlined/><span>Salario esperado</span></div><strong>{presentation?.estimateKnown?display(expectedAmount):"Sin proyección"}</strong></div>
-            <div className={styles.periodFact}><div><EventAvailableOutlined/><span>Pago previsto</span></div><strong>{dayLabel(calculationPeriod?.payDate ?? period.payDate)}</strong></div>
-              <div className={styles.periodFact}><div><AccountBalanceWalletOutlined/><span>Recibido anteriormente</span></div><strong>{display(receivedAmount)}</strong></div>
           </div>}
 
-          {period&&presentation&&<>
-            {presentation.estimateKnown&&expectedAmount>0&&<div className={styles.receivedProgress} aria-label={`Recibido ${receivedProgress}% del salario esperado`}>
-              <div className={styles.progressTrack} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={receivedProgress} aria-label="Porcentaje del salario esperado ya recibido"><span style={{width:`${receivedProgress}%`}}/></div>
-              <span>{receivedProgress}% recibido confirmado</span>
-            </div>}
-            {calculationPeriod&&<details key={calculationPeriod.id} className={styles.weekDetail}>
-              <summary><span><b>Ver detalle de la semana</b><small>Días laborales, feriados, vacaciones y pagos registrados</small></span><ExpandMoreRounded aria-hidden="true"/></summary>
+          {period&&presentation&&<div className={styles.periodProgress}>
+            {presentation.estimateKnown&&expectedAmount>0&&<div className={styles.progressTrack} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={receivedProgress} aria-label={`Recibido ${receivedProgress}% del salario esperado`}><span style={{width:`${receivedProgress}%`}}/></div>}
+            <div className={styles.periodProgressFooter}>
+              <span>{presentation.estimateKnown&&expectedAmount>0?`${receivedProgress}% recibido`:"Progreso no disponible"}</span>
+              {calculationPeriod&&<details key={calculationPeriod.id} className={styles.weekDetail}>
+              <summary><span><b>Ver detalles de la semana</b></span><ExpandMoreRounded aria-hidden="true"/></summary>
               <div className={styles.weekDetailBody}>
                 <div><span>Trabajo previsto</span><b>{scheduledWorkLabel||"Sin horario configurado"}{scheduledWorkCount>0?` · ${scheduledWorkCount} días`:""}</b></div>
+                <div><span>Pago previsto</span><b>{dayLabel(calculationPeriod.payDate ?? period.payDate)}</b></div>
                 {calculationPeriod.concepts.map(concept=><div key={concept.id}><span>{concept.name}</span><b>{display(concept.amount)}</b></div>)}
                 {salaryAdjustments(calculationLedger,calculationPeriod).map(item=><div key={item.id}><span>{item.name} · {item.status==="confirmed"?"Confirmado":"Estimado"}</span><b>{item.sign==="subtract"?"−":"+"}{display(item.amount)}</b></div>)}
                 <div><span>Pagos registrados</span><b>{presentation.paymentCount?salaryPeriodPaymentLabel(calculationLedger,calculationPeriod):"Sin pagos"} · {display(receivedAmount)}</b></div>
                 {period.notes&&<div><span>Notas</span><b>{period.notes}</b></div>}
+                <div className={styles.weekDetailActions}>
+                  <button type="button" className={styles.calendarButton} aria-expanded={calendarOpen} onClick={() => { setCalendarMonth((period?.start ?? today).slice(0, 7)); setCalendarOpen(value => !value); }}><CalendarMonthOutlined/>{calendarOpen?"Cerrar calendario":"Elegir en calendario"}</button>
+                  <button type="button" className={styles.infoButton} aria-label={keyboardHelpOpen?"Ocultar información de navegación":"Información de navegación"} aria-expanded={keyboardHelpOpen} onClick={()=>setKeyboardHelpOpen(value=>!value)}>ⓘ</button>
+                </div>
+                {keyboardHelpOpen&&<div className={styles.helpMessage} role="note"><span>Arrastra: ←/→ cambia de semana y ↑/↓ cambia de mes. Teclado: ←/→ cambia de semana · ↓ muestra el formulario · ↑ lo oculta.</span><button type="button" className="text-btn" onClick={()=>setKeyboardHelpOpen(false)}>Ocultar esta información</button></div>}
+                {calendarOpen&&<SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
               </div>
-            </details>}
-          </>}
+              </details>}
+            </div>
+          </div>}
 
           {presentation?.historicalEmpty&&!reviewingPeriod&&<button type="button" className={styles.editPeriodButton} onClick={()=>updateActivationReview(period!)}><EditOutlined/> Ajustar semana</button>}
-          <div className={styles.periodTools}>
-            <button type="button" className={styles.infoButton} aria-label={keyboardHelpOpen?"Ocultar información de navegación":"Información de navegación"} aria-expanded={keyboardHelpOpen} onClick={()=>setKeyboardHelpOpen(value=>!value)}>ⓘ</button>
-            {keyboardHelpOpen&&<div className={styles.helpMessage} role="note"><span>Arrastra: ←/→ cambia de semana y ↑/↓ cambia de mes. Teclado: ←/→ cambia de semana · ↓ muestra el formulario · ↑ lo oculta.</span><button type="button" className="text-btn" onClick={()=>setKeyboardHelpOpen(false)}>Ocultar esta información</button></div>}
-          </div>
-          {calendarOpen && <SalaryPeriodCalendar ledger={ledger} config={config} selected={period} today={today} month={calendarMonth} onMonth={setCalendarMonth} onSelect={selectPeriodDate}/>}
           {periodError && <p className="form-error" role="alert">{periodError}</p>}
           {period&&(viewerDay<period.start||viewerDay>period.end)&&<button type="button" className="secondary wide" onClick={()=>selectPeriodDate(viewerDay)}>Volver a la semana en curso</button>}
           {period && numericAmount>0 && timing&&<div className={styles.timingBanner} role="status"><CalendarMonthOutlined/><span>Si registras este pago: <b>{timing.label.replace("Pagado ","")}</b>{presentation?` · ${presentation.workState}`:""}</span></div>}
           {period&&(presentation?.historicalEmpty||!quickStandardWeekAvailable)&&<SalaryPeriodActivation key={`activate:${period.id}`} ledger={ledger} period={period} today={today} display={display} onSave={onSave} receiptMode hideTrigger={Boolean(presentation?.historicalEmpty||reviewingPeriod)} openReview={activationReviewPeriod?.id===period.id} onReviewChange={updateActivationReview}/>}
         </section>
 
-        {period&&<SalaryAdjustments key={`adjust:${period.id}`} ledger={ledger} period={period} today={today} display={display} appearance="receipt" onSave={operation=>{if(!onSave(operation))throw new Error("No se pudieron guardar los ajustes.");}}/>}
         {!formExpanded&&<button type="button" className={styles.openFormButton} onClick={()=>setFormExpanded(true)}>Registro del pago <ChevronRightRounded/></button>}
 
         {formExpanded&&<fieldset className={styles.receiptFields} disabled={saving} aria-label="Datos del salario recibido">
-          <div className={styles.fieldRow}>
+          <div className={`${styles.fieldRow} ${styles.amountRow}`}>
             <label className={styles.fieldLabel} htmlFor="salary-received-amount"><PaidOutlined/>Importe recibido</label>
-            <div className={styles.fieldControl}><div className={`currency-input ${styles.amountInput}`}><span>₡</span><input id="salary-received-amount" inputMode="numeric" type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); setDirty(true); if (reviewingPeriod) setActivationAmountEdited(true); setLocalError(""); }}/></div>
+            <div className={styles.fieldControl}><div className={`currency-input ${styles.amountInput}`}><span>₡</span><input id="salary-received-amount" inputMode="numeric" type="number" min="1" step="1" required value={amount} onChange={event => { setAmount(event.target.value); setDirty(true); if (reviewingPeriod) setActivationAmountEdited(true); setLocalError(""); }}/><button type="button" aria-label="Limpiar importe recibido" disabled={!amount||saving} onClick={()=>{setAmount("");setDirty(true);setLocalError("");if(reviewingPeriod)setActivationAmountEdited(true);}}><CloseRounded/></button></div>
               <div className={styles.receiptPreview} aria-label="Resumen del pago si se confirma">
                 <div><span>Recibido anteriormente</span><b>{display(receivedAmount)}</b></div>
                 <div><span>Total si confirmas</span><b>{projectedTotal===null?"—":display(projectedTotal)}</b></div>
@@ -430,6 +428,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
               {quickStandardWeekAvailable&&standardDetails&&<button type="button" className={styles.quickCommitLink} disabled={saving} onClick={registerStandardSalary}><CheckCircleOutlineRounded aria-hidden="true"/><span>Registrar salario completo · {display(standardDetails.amount)}<small>{ledger.accounts.find(item=>item.id===(accountId||standardDetails.accountId))?.name??"Cuenta receptora"} · {method||standardDetails.method}</small></span></button>}
             </div>
           </div>
+          {period&&<SalaryAdjustments key={`adjust:${period.id}`} ledger={ledger} period={period} today={today} display={display} appearance="receipt" onSave={operation=>{if(!onSave(operation))throw new Error("No se pudieron guardar los ajustes.");}}/>}
           {!historicalAccuracy&&<>
             {linkedMovement?<div className={styles.fieldRow}><span className={styles.fieldLabel}><AccountBalanceWalletOutlined/>Cuenta del ingreso existente</span><div className={`${styles.fieldControl} ${styles.accountValue}`}><b>{ledger.accounts.find(account=>account.id===linkedMovement.accountId)?.name??"Cuenta histórica"}</b></div></div>:<div className={styles.receiverPair}>
               <div className={styles.fieldRow}><span className={styles.fieldLabel}><AccountBalanceWalletOutlined/>Cuenta receptora</span><div className={styles.fieldControl}><AccountSelector className={styles.inlineAccount} label="" ariaLabel="Cuenta receptora" accounts={ledger.accounts} value={accountId} onChange={value=>{setAccountId(value);setDirty(true);}} onCreate={onCreateAccount} display={display}/><small>El saldo mostrado es actual; el ingreso se suma al confirmar.</small></div></div>

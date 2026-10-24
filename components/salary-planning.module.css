@@ -68,3 +68,8 @@
 .extraPanel[data-appearance="receipt"] .extraOptions>small{font-size:11px}
 .extraPanel[data-appearance="receipt"] .extraOptions>button{justify-self:start;min-height:38px;padding-inline:12px}
 @media(max-width:440px){.extraPanel[data-appearance="receipt"]{padding-inline:7px}.receiptExtraToggle{gap:7px;font-size:14px}.receiptMeasured{grid-template-columns:minmax(0,56px) minmax(0,1fr) minmax(0,62px);gap:5px;padding-left:0}.receiptMeasured>label{font-size:10px}.receiptMeasured input{font-size:12px}.receiptTotal{padding:5px}.receiptTotal>b{font-size:12px}}
+.receiptExtraToggle{width:100%;padding:0;border:0;background:transparent;text-align:left;font-family:inherit;cursor:pointer}
+.receiptExtraToggle>span{display:grid;gap:2px;min-width:0}
+.receiptExtraToggle>span>b{font-size:14px;line-height:1.25}
+.receiptExtraToggle>span>small{color:var(--muted);font-size:11px;font-weight:400;line-height:1.3}
+:global(.dark-mode) .receiptExtraToggle{color:var(--ink)}

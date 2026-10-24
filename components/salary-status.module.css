@@ -3,6 +3,8 @@
 .surface[data-tone=partial]{--salary-bg:#fff3df;--salary-ink:#79501d;--salary-edge:#efdbbd}
 .surface[data-tone=paid]{--salary-bg:#e5f4eb;--salary-ink:#236342;--salary-edge:#cfe7d8}
 .surface[data-tone=overdue]{--salary-bg:#fbe9eb;--salary-ink:#983b46;--salary-edge:#efd4d8}
+.weekSurface[data-tone=overdue]::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:#e24652;opacity:0;animation:salary-week-pending-blink 1.8s steps(1,end) infinite}
+@keyframes salary-week-pending-blink{0%,49%,100%{opacity:0}50%,99%{opacity:.18}}
 :global(.dark-mode) .surface[data-tone=neutral]{--salary-bg:#293340;--salary-ink:#e8edf5;--salary-edge:#536276}
 :global(.dark-mode) .surface[data-tone=partial]{--salary-bg:#47351f;--salary-ink:#f1d6ad;--salary-edge:#725533}
 :global(.dark-mode) .surface[data-tone=paid]{--salary-bg:#1c3a2b;--salary-ink:#cce6d6;--salary-edge:#3d694f}

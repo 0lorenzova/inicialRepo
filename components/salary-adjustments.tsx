@@ -50,13 +50,15 @@ export function SalaryAdjustments({ ledger, period, today, display, onSave, appe
 
   return (
     <section className={styles.extraPanel} data-appearance={appearance}>
-      <label className={`${styles.extraToggle} ${appearance === "receipt" ? styles.receiptExtraToggle : ""}`}>
+      {appearance === "receipt" ? <button type="button" className={`${styles.extraToggle} ${styles.receiptExtraToggle}`} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>
+        <ChecklistOutlined aria-hidden="true"/>
+        <span><b>Conceptos extra</b><small>{selectedCount ? `${selectedCount} seleccionados` : "Ninguno seleccionado"}</small></span>
+        <InfoOutlined className={styles.receiptInfo} titleAccess="Adicionales y beneficios estimados para esta semana."/>
+        <ExpandMoreRounded className={`${styles.receiptChevron} ${expanded ? styles.receiptChevronOpen : ""}`}/>
+      </button> : <label className={styles.extraToggle}>
         <input type="checkbox" checked={expanded} onChange={event => setExpanded(event.target.checked)} />
-        {appearance === "receipt" && <ChecklistOutlined aria-hidden="true"/>}
-        <span>{appearance === "receipt" ? `Conceptos extra${selectedCount ? ` · ${selectedCount} seleccionados` : ""}` : `Conceptos extra${selectedCount ? ` · ${selectedCount} seleccionados · ${display(adjustment)}` : ""}`}</span>
-        {appearance === "receipt" && <InfoOutlined className={styles.receiptInfo} titleAccess="Adicionales y beneficios estimados para esta semana."/>}
-        {appearance === "receipt" && <ExpandMoreRounded className={`${styles.receiptChevron} ${expanded ? styles.receiptChevronOpen : ""}`}/>}
-      </label>
+        <span>{`Conceptos extra${selectedCount ? ` · ${selectedCount} seleccionados · ${display(adjustment)}` : ""}`}</span>
+      </label>}
       {expanded && config && (
         <AdjustmentChecklist
           key={period.id}
