@@ -12,7 +12,6 @@ import { uiCopyEs } from "@/lib/ui-copy";
 import {
   salaryAdjustments,
   salaryCatalogAt,
-  salaryExpected,
   salaryMeasuredAmount,
   salaryPeriodPresentation,
   salaryState,
@@ -45,7 +44,6 @@ type Props = {
 export function SalaryAdjustments({ ledger, period, today, display, onSave, appearance }: Props) {
   const original = salaryAdjustments(ledger, period);
   const [expanded, setExpanded] = useState(false);
-  const adjustment = salaryExpected(ledger, period) - period.concepts.reduce((total, concept) => total + concept.amount, 0);
   const config = salaryState(ledger).configs.find(item => item.id === period.configId);
   const selectedCount = original.length;
 
@@ -58,7 +56,7 @@ export function SalaryAdjustments({ ledger, period, today, display, onSave, appe
         <ExpandMoreRounded className={`${styles.receiptChevron} ${expanded ? styles.receiptChevronOpen : ""}`}/>
       </button> : <label className={styles.extraToggle}>
         <input type="checkbox" checked={expanded} onChange={event => setExpanded(event.target.checked)} />
-        <span>{selectedCount ? uiCopyEs.salaryAdjustments.selectionSummary(selectedCount, display(adjustment)) : uiCopyEs.salaryAdjustments.title}</span>
+        <span><b>Ajustes salariales</b><small>{selectedCount ? `${selectedCount} concepto${selectedCount===1?"":"s"}` : "Sin ajustes"}</small></span>
       </label>}
       {expanded && config && (
         <AdjustmentChecklist

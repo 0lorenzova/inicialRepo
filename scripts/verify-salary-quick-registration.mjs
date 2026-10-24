@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {activateSalaryPeriod,hasUnlinkedSalaryIncome,postHistoricalSalaryPayment,postSalaryPayment,recordStandardSalaryPayment,salaryAdjustments,salaryBatchCandidates,salaryExpected,salaryPeriodApplications,salaryPeriodForDate,salaryPeriodPresentation,salaryReceiptDefaults,salaryState,saveSalaryAdjustments,saveSalaryConfig,saveSalaryPeriod,standardSalaryAmount,standardSalaryReceipt} from '../lib/salary-tracking.ts';
+import {activateSalaryPeriod,hasUnlinkedSalaryIncome,postHistoricalSalaryPayment,postSalaryPayment,recordStandardSalaryPayment,salaryAdjustments,salaryBatchCandidates,salaryExpected,salaryPeriodApplications,salaryPeriodForDate,salaryPeriodPresentation,salaryPeriodWeekStatus,salaryReceiptDefaults,salaryState,saveSalaryAdjustments,saveSalaryConfig,saveSalaryPeriod,standardSalaryAmount,standardSalaryReceipt} from '../lib/salary-tracking.ts';
 import {distributeSavedIncome} from '../lib/distribute-saved-income.ts';
 import {postDistributedIncome} from '../lib/income-distribution.ts';
 import {totals} from '../lib/finance-ledger.ts';
@@ -20,6 +20,7 @@ assert.equal(standardSalaryAmount(configured,past,today),null);
 const confirmedPastLedger=saveSalaryPeriod(configured,{...past,earned:true},null,today,'Importe histórico real confirmado');
 const confirmedPast=salaryState(confirmedPastLedger).periods[0];
 assert.equal(standardSalaryReceipt(confirmedPastLedger,confirmedPast,today)?.amount,100000,'A saved historical obligation keeps its confirmed amount');
+assert.deepEqual(salaryPeriodWeekStatus(salaryPeriodPresentation(confirmedPastLedger,confirmedPast,today)),{tone:'overdue',label:'Pendiente',fullyPaid:false,pending:true},'An unpaid confirmed week is red');
 let pastPaid=register(confirmedPastLedger,confirmedPast,'past-exact','2026-10-09T09:15');
 assert.equal(pastPaid.movements[0].date,'2026-10-09T09:15');
 assert.equal(pastPaid.salary.payments[0].applications[0].periodId,past.id);
@@ -44,9 +45,11 @@ assert.equal(salaryState(currentPaid).periods.find(item=>item.id===current.id).e
 
 // 3: a future week is an advance received today; a future effective date is rejected.
 const future=periodFor(configured,'2026-10-29');
+assert.deepEqual(salaryPeriodWeekStatus(salaryPeriodPresentation(configured,future,today)),{tone:'neutral',label:'Proyectado',fullyPaid:false,pending:false},'A future projection stays neutral');
 const advance=register(configured,future,'future-advance','2026-10-19T11:05');
 assert.equal(advance.movements[0].date,'2026-10-19T11:05');
 assert.equal(salaryPeriodPresentation(advance,future,today).fullyPaid,true);
+assert.deepEqual(salaryPeriodWeekStatus(salaryPeriodPresentation(advance,future,today)),{tone:'neutral',label:'Adelanto',fullyPaid:false,pending:false},'An advance does not make a future obligation green');
 assert.throws(()=>register(configured,future,'future-date','2026-10-29T12:00'),'A future week cannot create a future-dated receipt');
 
 // 4, 5: honor the saved/default account; when ambiguous, expose the known amount and ask for an account.
@@ -80,8 +83,18 @@ assert.equal(standardSalaryAmount(confirmedExtraLedger,confirmedExtra,today),115
 const extraPaid=register(confirmedExtraLedger,confirmedExtra,'with-extra','2026-10-09T09:15');
 assert.equal(extraPaid.movements[0].amount,115000);
 assert.equal(extraPaid.salary.payments[0].applications.reduce((sum,item)=>sum+item.amount,0),115000);
+assert.deepEqual(salaryPeriodWeekStatus(salaryPeriodPresentation(extraPaid,confirmedExtra,today)),{tone:'paid',label:'Completado',fullyPaid:true,pending:false},'Confirmed salary and additional concepts must all be paid before green');
+const extraPartiallyPaid=postSalaryPayment(confirmedExtraLedger,{id:'ordinary-paid-extra-pending',configId:'employer',date:'2026-10-09T09:15',amount:100000,accountId:'a',method:'Transferencia',reference:'',notes:'',applications:[{periodId:confirmedExtra.id,conceptId:confirmedExtra.concepts[0].id,amount:100000}]},today);
+const extraPendingView=salaryPeriodPresentation(extraPartiallyPaid,confirmedExtra,today);
+assert.equal(extraPendingView.received,100000);
+assert.equal(extraPendingView.pending,15000);
+assert.deepEqual(salaryPeriodWeekStatus(extraPendingView),{tone:'overdue',label:'Pendiente',fullyPaid:false,pending:true},'A confirmed extra keeps a paid ordinary wage week red');
 const estimated=saveSalaryAdjustments(configured,extraPeriod,[{id:'estimated',name:'Extra pendiente',amount:15000,sign:'add',status:'estimated'}],salaryAdjustments(configured,extraPeriod));
 assert.equal(standardSalaryAmount(estimated,extraPeriod,today),null);
+const earnedWithEstimate=saveSalaryPeriod(estimated,{...extraPeriod,earned:true},null,today,'Semana salarial confirmada; adicional sigue estimado');
+const earnedEstimatePeriod=salaryState(earnedWithEstimate).periods[0];
+const estimatedExtraPaid=postSalaryPayment(earnedWithEstimate,{id:'base-paid-unconfirmed-extra',configId:'employer',date:'2026-10-09T09:15',amount:100000,accountId:'a',method:'Transferencia',reference:'',notes:'',applications:[{periodId:earnedEstimatePeriod.id,conceptId:earnedEstimatePeriod.concepts[0].id,amount:100000}]},today);
+assert.deepEqual(salaryPeriodWeekStatus(salaryPeriodPresentation(estimatedExtraPaid,earnedEstimatePeriod,today)),{tone:'paid',label:'Completado',fullyPaid:true,pending:false},'Unconfirmed estimated extras do not create a weekly debt');
 const deduction=saveSalaryAdjustments(configured,extraPeriod,[{id:'deduction',name:'Deducción',amount:10000,sign:'subtract',status:'confirmed'}],salaryAdjustments(configured,extraPeriod));
 assert.equal(standardSalaryAmount(deduction,extraPeriod,today),null);
 
@@ -126,9 +139,9 @@ const component=readFileSync(new URL('../components/salary-tracking.tsx',import.
 const receiptDialog=readFileSync(new URL('../components/salary-receipt-dialog.tsx',import.meta.url),'utf8');
 const receiveDialog=readFileSync(new URL('../components/salary-receive-dialog.tsx',import.meta.url),'utf8');
 const css=readFileSync(new URL('../components/salary-tracking.module.css',import.meta.url),'utf8');
-assert.match(component,/Salario completo recibido/);
-assert.match(component,/✓ Pagada/);
-assert.match(component,/Ver pago/);
+assert.match(component,/Confirmar pago completo recibido/);
+assert.match(component,/Ver pagos del período/);
+assert.match(component,/Confirmar y registrar salario/);
 assert.match(component,/Registro detallado/);
 assert.match(component,/onSave=\{onSaveConfirmed\} onConfirmSave=\{onConfirmSave\}/);
 assert.match(component,/Fecha aproximada/);assert.match(component,/Fecha desconocida/);
@@ -136,8 +149,9 @@ assert.match(component,/AccountSelector label="Cuenta donde recibiste el salario
 assert.match(component,/<SalaryAdjustments ledger=\{ledger\} period=\{p\}/,'The rendered week continues to use its extra-concept editor');
 assert.match(receiptDialog,/¿Deseas distribuir el ingreso entre sobres\?/);
 assert.match(receiptDialog,/Continuar sin asignar/);
+assert.match(component,/salaryPeriodWeekStatus\(sum\)/,'Week color and label derive from confirmed salary obligations');
 assert.match(css,/@media\(max-width:600px\)/);
-assert.match(css,/\.quickReceipt input\{[^}]*width:22px/);
+assert.match(css,/\.salaryCard:not\(\[open\]\)>summary \.periodAmounts\{display:grid\}/,'Financial summary remains visible when a week is collapsed');
 assert.match(component,/date:""/,'Historical grouped payments start without an invented date');
 assert.match(receiveDialog,/presentation\?\.historicalEmpty\|\|reviewingPeriod/,'The historical checkbox stays visible while its review form is open');
 assert.match(receiveDialog,/checked=\{Boolean\(presentation\?\.confirmed\|\|reviewingPeriod\)\}/,'The inline checkbox reflects the open historical review');

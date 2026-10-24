@@ -103,3 +103,55 @@ button.latestPayment{cursor:pointer}
 }
 .salaryCard>summary{position:relative;list-style:none}
 .salaryCard[open]>summary .weekChevron{transform:rotate(225deg)}
+.salaryCard .ribbon{position:relative;min-height:42px;justify-content:flex-start;gap:8px;margin:-12px -12px 9px;padding:8px 38px 8px 10px;border-radius:12px 12px 0 0;line-height:1.3}
+.salaryCard .ribbon::after{content:none}
+.salaryCard .ribbon>b{min-width:0;overflow-wrap:anywhere;font-size:15px}
+.weekCalendar{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:8px;background:color-mix(in srgb,var(--paper) 72%,transparent);font-size:17px}
+.salaryCard .ribbon .stateBadge{flex:none;margin-left:auto;white-space:nowrap;background:color-mix(in srgb,var(--paper) 72%,transparent);color:inherit}
+.salaryCard>summary .weekChevron{top:50%;right:14px;transform:translateY(-70%) rotate(45deg)}
+.salaryCard[open]>summary .weekChevron{transform:translateY(-20%) rotate(225deg)}
+.weekMeta{gap:5px 10px;align-items:center}
+.weekDue{color:var(--muted);font-size:12px}
+.overdueLabel{color:#bf3440;font-weight:700}
+.workState{flex:none;margin:0;padding:4px 8px;border-radius:999px;background:var(--canvas);font-size:11px}
+.workActive{color:#176b4a}.workUpcoming{color:#58659c}.workFinished{color:var(--muted)}
+.periodAmounts{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.salaryCard:not([open])>summary .periodAmounts{display:grid}
+.salaryCard>summary .periodAmounts>.weekMetric{display:grid;align-content:center;gap:5px;min-width:0;min-height:68px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--canvas) 72%,var(--paper));text-align:left}
+.salaryCard>summary .periodAmounts>.weekMetric>small{display:flex;align-items:center;gap:5px;min-width:0;color:var(--muted);font-size:10px;line-height:1.2}
+.weekMetric i{display:inline-grid;place-items:center;flex:none;width:17px;height:17px;border-radius:50%;font-size:13px;font-style:normal;font-weight:800}
+.metricExpected{color:#386cc4;background:#eaf0ff}.metricReceived{color:#17855e;background:#e4f5ed}.metricPending{color:#ad7818;background:#fff2d3}
+.salaryCard>summary .periodAmounts>.weekMetric>strong{display:block;margin:0;overflow-wrap:anywhere;text-align:left;font-size:clamp(13px,1.6vw,18px);line-height:1.2}
+.salaryCard>summary .periodAmounts>.weekMetric>strong.pending{color:#bf3440!important}
+.salaryCard>summary .periodAmounts>.weekMetric>strong.noPending{color:var(--ink)!important}
+.weekContent{display:grid;gap:9px;min-width:0;padding-top:2px}
+.conceptList{display:grid;gap:0;padding:0 4px}
+.conceptList .concept{align-items:center;padding:7px 0}
+.quickReceiptButton{display:grid;justify-items:start;gap:3px;width:100%;height:auto!important;min-height:44px;padding:9px 12px;text-align:left;font-weight:700}
+.quickReceiptButton small{color:var(--muted);font-size:11px;font-weight:500}
+.adjustmentsSection{display:grid;gap:0;min-width:0;border-top:1px solid var(--line);padding-top:7px}
+.adjustmentsSection>h3{margin:0;font-size:14px}
+.adjustmentsSection .extraPanel{margin:0}
+.weekSection{min-width:0;border-top:1px solid var(--line);padding-top:7px}
+.weekSection>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px;list-style:none;font-weight:650}
+.weekSection>summary::-webkit-details-marker{display:none}
+.weekSection>summary::after{content:"›";margin-left:auto;color:var(--muted);font-size:22px}
+.weekSection[open]>summary::after{content:"⌄"}
+.weekSection>summary span{display:block;margin:0!important;color:var(--muted);font-size:12px;font-weight:500}
+.weekSection>p{margin:7px 0!important}
+.paymentCard{min-width:0;margin:6px 0;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--canvas)}
+.paymentCard p{margin:0 0 8px!important}
+.quickConfirmDialog{background:var(--paper);color:var(--ink)}
+.quickConfirmDialog h2,.quickConfirmDialog p{margin:0}
+.confirmAmounts{display:grid;gap:6px;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--canvas)}
+.confirmAmounts span{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:13px}
+.confirmAmounts strong{color:var(--ink);text-align:right}
+:global(.theme-dark) .metricExpected,:global(.dark-mode) .metricExpected,:global(.theme-personality.dark-mode) .metricExpected{color:#9db8ff;background:#28334a}
+:global(.theme-dark) .metricReceived,:global(.dark-mode) .metricReceived,:global(.theme-personality.dark-mode) .metricReceived{color:#70d6ad;background:#1e3d31}
+:global(.theme-dark) .metricPending,:global(.dark-mode) .metricPending,:global(.theme-personality.dark-mode) .metricPending{color:#f2c66e;background:#453719}
+:global(.theme-dark) .salaryCard>summary .periodAmounts>.weekMetric>strong.pending,:global(.dark-mode) .salaryCard>summary .periodAmounts>.weekMetric>strong.pending,:global(.theme-personality.dark-mode) .salaryCard>summary .periodAmounts>.weekMetric>strong.pending{color:#ff858b!important}
+:global(.theme-dark) .workActive,:global(.dark-mode) .workActive,:global(.theme-personality.dark-mode) .workActive{color:#7ad7ae}
+:global(.theme-dark) .workUpcoming,:global(.dark-mode) .workUpcoming,:global(.theme-personality.dark-mode) .workUpcoming{color:#b1baff}
+:global(.theme-dark) .overdueLabel,:global(.dark-mode) .overdueLabel,:global(.theme-personality.dark-mode) .overdueLabel{color:#ff858b}
+@media(max-width:700px){.periodAmounts{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.salaryCard>summary .periodAmounts>.weekMetric{min-height:70px;padding:6px}.salaryCard>summary .periodAmounts>.weekMetric>small{align-items:flex-start;font-size:9px}.weekCalendar{width:25px;height:25px}.salaryCard .ribbon{gap:6px}.salaryCard .ribbon>b{font-size:14px}}
+@media(max-width:380px){.periodAmounts{gap:4px}.salaryCard>summary .periodAmounts>.weekMetric{padding:5px}.salaryCard>summary .periodAmounts>.weekMetric>strong{font-size:12px}.salaryCard>summary .periodAmounts>.weekMetric>small{font-size:8px}.weekMeta{gap:5px 7px}.weekDue,.workState{font-size:10px}}

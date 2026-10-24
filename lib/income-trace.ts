@@ -68,3 +68,44 @@ export function incomeDistribution(ledger: Ledger, incomeId: string) {
   const assigned=distributions.reduce((s,a)=>s+a.amount,0);
   return {income,distributions,assigned,unassigned,otherUses:Math.max(0,income.amount-assigned-unassigned)};
 }
+
+// The full movement history can contain many salary payments. Build their
+// trace summaries together so the presentation does not rescan the complete
+// ledger once for every visible income.
+export function incomeDistributions(ledger: Ledger, incomeIds: Iterable<string>) {
+  const requested = new Set(incomeIds);
+  const incomes = new Map(ledger.movements.filter(movement => movement.type === "Ingreso" && requested.has(movement.id)).map(income => [income.id, income]));
+  if (!incomes.size) return new Map();
+  const distributions = new Map([...incomes.keys()].map(id => [id, (incomes.get(id)?.allocations ?? []).map(allocation => ({ ...allocation, movementId: id, date: incomes.get(id)!.date }))]));
+
+  for (const movement of ledger.movements) {
+    if (movement.type === "Asignación" && movement.allocations.length === 1) {
+      const amounts = new Map<string, number>();
+      for (const source of movement.incomeSources ?? []) {
+        if (requested.has(source.incomeId)) amounts.set(source.incomeId, (amounts.get(source.incomeId) ?? 0) + source.amount);
+      }
+      for (const [incomeId, amount] of amounts) {
+        if (amount > 0) distributions.get(incomeId)?.push({ ...movement.allocations[0], amount, movementId: movement.id, date: movement.date });
+      }
+    }
+    if (movement.type === "Desasignación" && movement.distributionCorrection && requested.has(movement.distributionCorrection.incomeId)) {
+      for (const allocation of movement.allocations) {
+        distributions.get(movement.distributionCorrection.incomeId)?.push({ ...allocation, amount: -allocation.amount, movementId: movement.id, date: movement.date });
+      }
+    }
+  }
+
+  const unassignedByIncome = new Map<string, number>();
+  for (const lot of unassignedIncomeLots(ledger)) {
+    if (lot.incomeId && requested.has(lot.incomeId)) unassignedByIncome.set(lot.incomeId, (unassignedByIncome.get(lot.incomeId) ?? 0) + lot.amount);
+  }
+
+  const result = new Map<string, NonNullable<ReturnType<typeof incomeDistribution>>>();
+  for (const [incomeId, income] of incomes) {
+    const incomeAllocations = distributions.get(incomeId) ?? [];
+    const assigned = incomeAllocations.reduce((sum, allocation) => sum + allocation.amount, 0);
+    const unassigned = unassignedByIncome.get(incomeId) ?? 0;
+    result.set(incomeId, { income, distributions: incomeAllocations, assigned, unassigned, otherUses: Math.max(0, income.amount - assigned - unassigned) });
+  }
+  return result;
+}

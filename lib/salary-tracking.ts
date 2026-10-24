@@ -511,6 +511,14 @@ export function salaryPeriodPresentation(ledger:SalaryLedger,period:SalaryPeriod
   const tone=fullyPaid?"paid":amounts.received>0?"partial":confirmed&&overdue?"overdue":"neutral";
   return {...amounts,projected:!confirmed&&estimateKnown?expected:0,expected,remaining,confirmed,fullyPaid,noRecords,historicalEmpty,estimateKnown,early,late,advances:early,laborAdvances,hasAdvance:early>0||laborAdvances>0,workEnd,overdue,overdueDays,overdueLabel,workState,state,tone,paymentCount:payments.length};
 }
+/** Week-card status uses only confirmed, earned obligations; projections remain neutral. */
+export function salaryPeriodWeekStatus(view:ReturnType<typeof salaryPeriodPresentation>) {
+  const fullyPaid=view.confirmed&&view.earned>0&&view.pending===0;
+  const pending=view.confirmed&&view.pending>0;
+  const tone=pending?"overdue":fullyPaid?"paid":"neutral";
+  const label=pending?"Pendiente":fullyPaid?"Completado":view.confirmed&&view.earned===0?"Sin obligación":view.received>0?"Adelanto":view.historicalEmpty?"Sin registros":view.workState==="En curso"?"En curso":"Proyectado";
+  return {tone,label,fullyPaid,pending};
+}
 export type StandardSalaryReceipt={amount:number;accountId:string;method:string};
 /** Returns a safe full-week amount only when every saved addition is confirmed. */
 export function standardSalaryAmount(ledger:SalaryLedger,period:SalaryPeriod,today:string):number|null {

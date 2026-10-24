@@ -1,11 +1,31 @@
 "use client";
 import { useState } from "react";
-import type { LedgerMovement } from "@/lib/finance-ledger";
+import type { Ledger, LedgerMovement, Loan } from "@/lib/finance-ledger";
+import type { SalaryLedger } from "@/lib/salary-tracking";
 import { envelopeHistorySections, movementDay } from "@/lib/finance-history";
 import { MovementList } from "./movement-list";
+import { RecentActivityList } from "./recent-activity-list";
 
-export function EnvelopeHistory({items,envelopeId,hidden,onTrace,onDetail,variant="default"}:{items:LedgerMovement[];envelopeId?:string;hidden:boolean;onTrace:(id:string)=>void;onDetail?:(id:string)=>void;variant?:"default"|"screen"}) {
+export function EnvelopeHistory({items,envelopeId,hidden,onTrace,onDetail,variant="default",ledger,salaryLedger,loans,display,onLoan}:{items:LedgerMovement[];envelopeId?:string;hidden:boolean;onTrace:(id:string)=>void;onDetail?:(id:string)=>void;variant?:"default"|"screen";ledger?:Ledger;salaryLedger?:SalaryLedger;loans?:Loan[];display?:(amount:number)=>string;onLoan?:(id:string)=>void}) {
   const [mode,setMode]=useState<"chronology"|"separate">("chronology");
+  const recentActivity=(sectionItems:LedgerMovement[],sectionEnvelopeId?:string)=><RecentActivityList items={sectionItems} ledger={ledger!} salaryLedger={salaryLedger!} loans={loans!} hidden={hidden} display={display!} onDetail={onDetail!} onTrace={onTrace} onLoan={onLoan!} showExpandAll={false} showHistoryLink={false} envelopeId={sectionEnvelopeId}/>;
+  if (variant==="screen"&&ledger&&salaryLedger&&loans&&display&&onDetail&&onLoan) {
+    if (!envelopeId) return recentActivity(items);
+    const days=new Map<string,LedgerMovement[]>();
+    for(const item of items){const day=movementDay(item.date);days.set(day,[...(days.get(day)||[]),item]);}
+    const sections=mode==="separate"?envelopeHistorySections(items):[...days].map(([day,rows])=>({title:day?new Intl.DateTimeFormat("es-CR",{timeZone:"UTC",dateStyle:"long"}).format(new Date(`${day}T12:00:00Z`)):"Fecha no disponible",items:rows}));
+    return <div className="envelope-history">
+      <div className="history-view-switch" role="group" aria-label="Vista del historial del sobre">
+        <button className="secondary" aria-pressed={mode==="separate"} onClick={()=>setMode("separate")}>Ingresos y gastos</button>
+        <button className="secondary" aria-pressed={mode==="chronology"} onClick={()=>setMode("chronology")}>Cronología</button>
+      </div>
+      <p className="flow-intro">Los importes corresponden a este sobre. Las transferencias y los préstamos conservan su tipo de operación.</p>
+      {!items.length?<div className="empty-state"><b>No hay movimientos para estos filtros</b><small>Prueba otro período, tipo o búsqueda.</small></div>:sections.filter(section=>section.items.length).map(section=><section key={section.title} aria-label={section.title}>
+        <h3 className="subhead">{section.title}</h3>
+        {recentActivity(section.items,envelopeId)}
+      </section>)}
+    </div>;
+  }
   if (!envelopeId) return <MovementList items={items} hidden={hidden} onTrace={onTrace} onDetail={onDetail} variant={variant}/>;
   const days=new Map<string,LedgerMovement[]>();
   for(const item of items){const day=movementDay(item.date);days.set(day,[...(days.get(day)||[]),item]);}

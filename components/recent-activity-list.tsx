@@ -13,8 +13,8 @@ import ScheduleOutlined from "@mui/icons-material/ScheduleOutlined";
 import WalletOutlined from "@mui/icons-material/WalletOutlined";
 import type { Ledger, LedgerMovement, Loan } from "@/lib/finance-ledger";
 import { salaryPaymentValid, salaryReceived, salaryState, type SalaryLedger } from "@/lib/salary-tracking";
-import { movementInstant } from "@/lib/finance-history";
-import { incomeDistribution } from "@/lib/income-trace";
+import { envelopeMovementEffect, movementInstant } from "@/lib/finance-history";
+import { incomeDistribution, incomeDistributions } from "@/lib/income-trace";
 import { movementMoney } from "@/lib/movement-presentation";
 import { uiCopyEs } from "@/lib/ui-copy";
 import styles from "./recent-activity-list.module.css";
@@ -29,7 +29,10 @@ type Props = {
   onDetail: (id: string) => void;
   onTrace: (id: string) => void;
   onLoan: (id: string) => void;
-  onHistory: () => void;
+  onHistory?: () => void;
+  showExpandAll?: boolean;
+  showHistoryLink?: boolean;
+  envelopeId?: string;
 };
 
 type SummaryCard = { key: string; label: string; value: string; icon: ReactNode; tone?: "purple" | "green" | "amber" | "blue"; hint?: string; sourceField?: string };
@@ -128,7 +131,7 @@ function secondaryDetailsExist(movement: LedgerMovement, loan?: Loan, hidden = f
     Boolean(movement.categoryAllocations?.length || movement.products?.length || movement.fundingTargets?.length || movement.distributionCorrection);
 }
 
-export function RecentActivityList({ items, ledger, salaryLedger, loans, hidden, display, onDetail, onTrace, onLoan, onHistory }: Props) {
+export function RecentActivityList({ items, ledger, salaryLedger, loans, hidden, display, onDetail, onTrace, onLoan, onHistory, showExpandAll = true, showHistoryLink = true, envelopeId }: Props) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const checkboxRef = useRef<HTMLInputElement>(null);
   const listId = useId();
@@ -139,13 +142,9 @@ export function RecentActivityList({ items, ledger, salaryLedger, loans, hidden,
   const expandableIds = items.filter(item => secondaryDetailsExist(item, item.loanId ? loansById.get(item.loanId) : undefined, hidden)).map(item => item.id);
   const allExpanded = expandableIds.length > 0 && expandableIds.every(id => expandedIds.has(id));
   const someExpanded = expandableIds.some(id => expandedIds.has(id));
-  const incomeTraces = useMemo(() => {
-    const traces = new Map<string, ReturnType<typeof incomeDistribution>>();
-    if (hidden) return traces;
-    for (const item of items) {
-      if (item.type === "Ingreso") traces.set(item.id, incomeDistribution(ledger, item.id));
-    }
-    return traces;
+  const incomeTraces = useMemo((): Map<string, NonNullable<ReturnType<typeof incomeDistribution>>> => {
+    if (hidden) return new Map();
+    return incomeDistributions(ledger, items.filter(item => item.type === "Ingreso").map(item => item.id));
   }, [hidden, items, ledger]);
 
   useEffect(() => {
@@ -165,10 +164,10 @@ export function RecentActivityList({ items, ledger, salaryLedger, loans, hidden,
   });
 
   return <div className={styles.root}>
-    <label className={styles.expandAll}>
+    {showExpandAll && <label className={styles.expandAll}>
       <input ref={checkboxRef} type="checkbox" checked={allExpanded} disabled={!expandableIds.length} aria-checked={someExpanded && !allExpanded ? "mixed" : allExpanded} onChange={toggleAll} />
       <span>Desplegar todo</span>
-    </label>
+    </label>}
 
     {items.length ? <div className={styles.list}>
       {items.map(movement => {
@@ -177,7 +176,10 @@ export function RecentActivityList({ items, ledger, salaryLedger, loans, hidden,
         const canExpand = secondaryDetailsExist(movement, loan, hidden);
         const expanded = canExpand && expandedIds.has(movement.id);
         const detailsId = `recent-${listId}-${movement.id}`;
-        const sign = movement.type === "Ingreso" ? "+" : movement.type === "Gasto" ? "−" : "";
+        const envelopeEffect = envelopeId ? envelopeMovementEffect(movement, envelopeId) : null;
+        const direction = envelopeEffect === null ? (movement.type === "Ingreso" ? 1 : movement.type === "Gasto" ? -1 : 0) : Math.sign(envelopeEffect);
+        const amount = envelopeEffect === null ? movement.amount : Math.abs(envelopeEffect);
+        const sign = direction > 0 ? "+" : direction < 0 ? "−" : "";
         const trace = incomeTraces.get(movement.id);
         const allocations = movement.allocations;
         const sourceMovements = (movement.incomeSources ?? []).map(source => ({ source, income: ledger.movements.find(item => item.id === source.incomeId) })).filter(item => Boolean(item.income));
@@ -231,19 +233,19 @@ export function RecentActivityList({ items, ledger, salaryLedger, loans, hidden,
         }
         const summaryFieldLabels = new Set(summaryCards.map(card => card.sourceField).filter((label): label is string => Boolean(label)));
         const secondaryFields = fields.filter(([label]) => !summaryFieldLabels.has(label));
-        const amountClass = [styles.amount, movement.type === "Ingreso" ? styles.positive : movement.type === "Gasto" ? styles.negative : ""].filter(Boolean).join(" ");
+        const amountClass = [styles.amount, styles.amountText, direction > 0 ? styles.positive : direction < 0 ? styles.negative : ""].filter(Boolean).join(" ");
 
         return <article key={movement.id} className={styles.item}>
           <div className={styles.row}>
-            <span className={`${styles.icon} ${iconClass(movement.type)}`} aria-hidden="true">{iconFor(movement.type)}</span>
+            <span className={`${styles.icon} ${styles.iconText} ${iconClass(movement.type)}`} aria-hidden="true">{iconFor(movement.type)}</span>
             <div className={styles.heading}>
-              <button type="button" className={styles.title} aria-label={`Abrir detalle de ${title}`} onClick={() => onDetail(movement.id)}>{title}</button>
+              <button type="button" className={`${styles.title} ${styles.titleText}`} aria-label={`Abrir detalle de ${title}`} onClick={() => onDetail(movement.id)}>{title}</button>
               <div className={styles.amountStack}>
                 {isLoanMovement && loan && !hidden && <span className={styles.loanStatus} data-state={loan.outstanding <= 0 ? "returned" : loan.outstanding < loan.amount ? "partial" : "pending"}>{loanStatus(loan)}</span>}
-                <strong className={amountClass}>{sign}{hidden ? "••••••" : movementMoney(movement)}</strong>
+                <strong className={amountClass}>{sign}{hidden ? "••••••" : movementMoney(movement, amount)}</strong>
               </div>
             </div>
-            <time className={styles.date} dateTime={movement.date}>{activityDate(movement.date)}</time>
+            <time className={`${styles.date} ${styles.dateText}`} dateTime={movement.date}>{activityDate(movement.date)}</time>
             {canExpand && <button type="button" className={styles.expandButton} aria-label={(expanded ? "Contraer" : "Expandir") + " detalles de " + title} aria-expanded={expanded} aria-controls={detailsId} onClick={() => toggleOne(movement.id)}>
               <ExpandMoreOutlined aria-hidden="true" />
             </button>}
@@ -284,10 +286,10 @@ export function RecentActivityList({ items, ledger, salaryLedger, loans, hidden,
       })}
     </div> : <div className={styles.empty}>Aún no hay movimientos registrados.</div>}
 
-    <button type="button" className={styles.historyLink} onClick={onHistory}>
+    {showHistoryLink && onHistory && <button type="button" className={styles.historyLink} onClick={onHistory}>
       <FormatListBulletedOutlined aria-hidden="true" />
       <span>{uiCopyEs.movementActions.viewAllMovements}</span>
       <ChevronRightOutlined aria-hidden="true" />
-    </button>
+    </button>}
   </div>;
 }

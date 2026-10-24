@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { LedgerMovement } from "@/lib/finance-ledger";
+import { useState } from "react";
+import type { Ledger, LedgerMovement, Loan } from "@/lib/finance-ledger";
+import type { SalaryLedger } from "@/lib/salary-tracking";
 import { uiCopyEs } from "@/lib/ui-copy";
 import { envelopeLabel } from "@/lib/envelope-label";
 import ArrowDownwardOutlined from "@mui/icons-material/ArrowDownwardOutlined";
@@ -21,6 +23,10 @@ type QuickFilter = "Todos" | "Ingreso" | "Gasto" | "Transferencia";
 
 export function MovementScreen({
   items,
+  ledger,
+  salaryLedger,
+  loans,
+  display,
   counts,
   filter,
   onFilter,
@@ -43,9 +49,14 @@ export function MovementScreen({
   onClearFilters,
   onDetail,
   onTrace,
+  onLoan,
   unclearEnvelopeMovements,
 }: {
   items: LedgerMovement[];
+  ledger: Ledger;
+  salaryLedger: SalaryLedger;
+  loans: Loan[];
+  display: (amount: number) => string;
   counts: { all: number; income: number; expenses: number; transfers: number };
   filter: string;
   onFilter: (filter: string) => void;
@@ -68,6 +79,7 @@ export function MovementScreen({
   onClearFilters: () => void;
   onDetail: (id: string) => void;
   onTrace: (id: string) => void;
+  onLoan: (id: string) => void;
   unclearEnvelopeMovements: boolean;
 }) {
   const quickFilters: { value: QuickFilter; label: string; count: number; icon: ReactNode }[] = [
@@ -77,6 +89,8 @@ export function MovementScreen({
     { value: "Transferencia", label: "Transferencias", count: counts.transfers, icon: <SwapHorizOutlined aria-hidden="true" /> },
   ];
   const movementTypes: MovementKind[] = ["Ingreso", "Gasto", "Asignación", "Desasignación", "Transferencia", "Préstamo", "Devolución"];
+  const advancedFiltersActive = Boolean(movementEnvelope || from || to || (filter !== "Todos" && !quickFilters.some(option => option.value === filter)));
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(advancedFiltersActive);
 
   return <section className={`section page-panel ${styles.screen}`} aria-label="Historial de movimientos">
     {returnToIncome && <button className={`secondary ${styles.returnButton}`} onClick={onReturn}>‹ Volver a la ruta del ingreso</button>}
@@ -94,8 +108,8 @@ export function MovementScreen({
       <input type="search" aria-label="Buscar movimientos" placeholder="Buscar por nombre, sobre, categoría o nota…" value={search} onChange={event => onSearch(event.target.value)} />
     </label>
 
-    <details className={styles.advancedFilters} open>
-      <summary><span><TuneOutlined aria-hidden="true" />Filtros avanzados</span></summary>
+    <details className={styles.advancedFilters} open={advancedFiltersOpen} onToggle={event => setAdvancedFiltersOpen(event.currentTarget.open)}>
+      <summary><span className={styles.advancedTitle}><TuneOutlined aria-hidden="true" />Filtros avanzados</span>{advancedFiltersActive && <small className={styles.activeFilterBadge}>Activos</small>}</summary>
       <div className={styles.filterGrid}>
         <label>Sobre
           <select value={movementEnvelope || ""} onChange={event => onEnvelopeChange(event.target.value || null)}>
@@ -124,7 +138,7 @@ export function MovementScreen({
       </label>
     </div>
 
-    <EnvelopeHistory key={movementEnvelope || "all"} items={items} envelopeId={movementEnvelope || undefined} hidden={hidden} onDetail={onDetail} onTrace={onTrace} variant="screen" />
+    <EnvelopeHistory key={movementEnvelope || "all"} items={items} envelopeId={movementEnvelope || undefined} hidden={hidden} onDetail={onDetail} onTrace={onTrace} variant="screen" ledger={ledger} salaryLedger={salaryLedger} loans={loans} display={display} onLoan={onLoan} />
     {movementEnvelope && unclearEnvelopeMovements && <p className={styles.legacyNote}>Algunos movimientos antiguos no identifican su sobre con certeza. Se conservan en el historial completo.</p>}
   </section>;
 }

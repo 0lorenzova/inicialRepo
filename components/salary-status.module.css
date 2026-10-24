@@ -9,5 +9,9 @@
 :global(.dark-mode) .surface[data-tone=partial]{--salary-bg:#47351f;--salary-ink:#f1d6ad;--salary-edge:#725533}
 :global(.dark-mode) .surface[data-tone=paid]{--salary-bg:#1c3a2b;--salary-ink:#cce6d6;--salary-edge:#3d694f}
 :global(.dark-mode) .surface[data-tone=overdue]{--salary-bg:#45282d;--salary-ink:#f0cbd0;--salary-edge:#74434b}
+:global(.theme-dark) .surface[data-tone=neutral]{--salary-bg:#293340;--salary-ink:#e8edf5;--salary-edge:#536276}
+:global(.theme-dark) .surface[data-tone=partial]{--salary-bg:#47351f;--salary-ink:#f1d6ad;--salary-edge:#725533}
+:global(.theme-dark) .surface[data-tone=paid]{--salary-bg:#1c3a2b;--salary-ink:#cce6d6;--salary-edge:#3d694f}
+:global(.theme-dark) .surface[data-tone=overdue]{--salary-bg:#45282d;--salary-ink:#f0cbd0;--salary-edge:#74434b}
 .surface>*{position:relative;z-index:1}
 @media(prefers-reduced-motion:reduce){.surface{animation:none!important}.surface::before{animation:none!important;display:none}}
