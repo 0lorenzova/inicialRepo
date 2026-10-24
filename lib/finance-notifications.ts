@@ -22,6 +22,10 @@ export type FinanceNotification = {
   id: string;
   title: string;
   detail: string;
+  concept?: string;
+  context?: string;
+  description?: string;
+  actionKind?: "payment" | "contribution" | "goal" | "loan" | "information";
   date: string;
   amount: number;
   kind: "movement" | "reminder" | "attention" | "loan";
@@ -71,7 +75,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
     if (!item.temporal || !["red","purple","yellow"].includes(item.temporal.tone)) continue;
     const stage = item.deadline === today ? "today" : item.temporal.tone;
     const id = `attention:${encodeURIComponent(envelopeId)}:${item.kind}:${encodeURIComponent(item.id)}:${item.deadline}:${stage}`;
-    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,date:`${item.deadline}T00:00`,amount:item.remainingAmount??item.amount,kind:"attention",plannedPaymentDate:item.plannedPaymentDate,plannedLate:plannedPaymentDelay(item)>0,plannedLateLabel:plannedPaymentDelayText(plannedPaymentDelay(item)),tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
+    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,concept:item.name,context:envelopeLabel(envelopeName),description:item.temporal.explanation,actionKind:item.kind==="scheduled"?"payment":"goal",date:`${item.deadline}T00:00`,amount:item.remainingAmount??item.amount,kind:"attention",plannedPaymentDate:item.plannedPaymentDate,plannedLate:plannedPaymentDelay(item)>0,plannedLateLabel:plannedPaymentDelayText(plannedPaymentDelay(item)),tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
   }
   for (const envelope of envelopes) {
     if (!envelope.recurrence) continue;
@@ -94,7 +98,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
       ? `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:${temporal.tone}`
       : `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:upcoming`;
     result.set(id, {
-      id, title: due ? "Aporte pendiente" : "Aporte próximo", detail: `${envelopeLabel(envelope.name)}. ${temporal.explanation}`, tone: temporal.tone,
+      id, title: due ? "Aporte pendiente" : "Aporte próximo", detail: `${envelopeLabel(envelope.name)}. ${temporal.explanation}`, concept: due ? "Aporte pendiente" : "Aporte próximo", context: envelopeLabel(envelope.name), description: temporal.explanation, actionKind: "contribution", tone: temporal.tone,
       amount: pendingAmount, date: `${dueDate}T00:00`, kind: "reminder",
       destination: { page: "Recordatorios", envelopeId: envelope.id },
     });
@@ -119,7 +123,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
       ? `${loan.targetName} debe devolver a ${loan.sourceName}. La fecha límite pasó hace ${Math.abs(daysRemaining)} ${Math.abs(daysRemaining) === 1 ? "día" : "días"}.`
       : `${loan.targetName} debe devolver a ${loan.sourceName}. La fecha límite es hoy.`;
     result.set(id, {
-      id, title, detail, date: `${loan.dueDate}T00:00`, amount: loan.outstanding, kind: "loan", tone: temporal.tone,
+      id, title, detail, concept: "Devolución de préstamo", context: `${loan.targetName} → ${loan.sourceName}`, actionKind: "loan", date: `${loan.dueDate}T00:00`, amount: loan.outstanding, kind: "loan", tone: temporal.tone,
       destination: { page: "Préstamos" },
     });
   }

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
+import ExpandMoreOutlined from "@mui/icons-material/ExpandMoreOutlined";
+import MoreVertOutlined from "@mui/icons-material/MoreVertOutlined";
 import NotificationsOutlined from "@mui/icons-material/NotificationsOutlined";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { TemporalDot } from "./temporal-indicator";
@@ -23,6 +25,7 @@ export const notificationDateLabel = (date: string) => {
 
 export function notificationCopy(event: FinanceNotification, privateMode: boolean) {
   if (privateMode) return { concept: event.kind === "reminder" ? "Recordatorio pendiente" : "Obligación pendiente", context: "", description: "" };
+  if (event.concept) return { concept: event.concept, context: event.context ?? "", description: event.description ?? "" };
 
   const detail = notificationDetail(event, false, false);
   const sentenceBreak = detail.indexOf(". ");
@@ -56,7 +59,7 @@ export function notificationCopy(event: FinanceNotification, privateMode: boolea
 export function notificationTimeLabel(event: FinanceNotification, today: string) {
   try {
     const days = temporalDistance(event.date.slice(0, 10), today);
-    if (days < 0) return "Vencida";
+    if (days < 0) return `Vencido hace ${Math.abs(days)} ${Math.abs(days) === 1 ? "día" : "días"}`;
     if (days === 0) return "Vence hoy";
     return `En ${days} ${days === 1 ? "día" : "días"}`;
   } catch {
@@ -68,11 +71,77 @@ export function isTemporalDescription(description: string) {
   return /^(?:Faltan?\s+\d+\s+d[ií]as? para la fecha l[ií]mite|La fecha l[ií]mite es hoy)\.?$/i.test(description.trim());
 }
 
-type NotificationFilter = "all" | "unread" | "overdue" | "upcoming";
+type NotificationFilter = "pending" | "upcoming" | "all";
+
+function notificationStatus(event: FinanceNotification, today: string, dismissed: boolean) {
+  if (dismissed) return { key: "dismissed", label: "Aviso descartado" };
+  const date = event.date.slice(0, 10);
+  if (date < today) return { key: "overdue", label: notificationTimeLabel(event, today) };
+  if (date === today) return { key: "today", label: "Vence hoy" };
+  return { key: "upcoming", label: notificationTimeLabel(event, today) };
+}
 
 export const responsibilityAmount = (amount: number) => new Intl.NumberFormat("es-CR", {
   style: "currency", currency: "CRC", maximumFractionDigits: 0,
 }).format(amount);
+
+export function NotificationCard({ event, today, privateMode, showAmount, read = false, dismissed = false, expanded, onToggleExpanded, onNavigate, onToggleRead, onDismiss, renderPayment }: {
+  event: FinanceNotification;
+  today: string;
+  privateMode: boolean;
+  showAmount: boolean;
+  read?: boolean;
+  dismissed?: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  onNavigate: (destination: NotificationDestination) => void;
+  onToggleRead?: (event: FinanceNotification) => void;
+  onDismiss?: (event: FinanceNotification) => void;
+  renderPayment?: (event: FinanceNotification) => ReactNode;
+}) {
+  const copy = notificationCopy(event, privateMode);
+  const status = notificationStatus(event, today, dismissed);
+  const amountVisible = showAmount && !privateMode && event.amount > 0;
+  const paymentAction = event.actionKind === "payment" ? renderPayment?.(event) : null;
+  const actionLabel = event.actionKind === "contribution" ? "Registrar aporte"
+    : event.actionKind === "goal" ? "Ver meta"
+      : event.actionKind === "loan" ? "Ver préstamo" : "Ver detalle";
+  const primaryAction = paymentAction ?? <button type="button" className="secondary" onClick={() => onNavigate(event.destination)}>{actionLabel}</button>;
+  const hasDifferentPaymentDate = Boolean(event.plannedPaymentDate && event.plannedPaymentDate.slice(0, 10) !== event.date.slice(0, 10));
+
+  return <li className={styles.item} data-status={status.key} data-unread={!read} data-dismissed={dismissed}>
+    <div className={styles.itemMain}>
+      <span className={styles.noticeIcon} aria-hidden="true"><TemporalDot className={styles.noticeEnvelope} alwaysVisible tone={event.tone ?? "white"} covered={privateMode ? undefined : event.covered} late={Boolean(event.plannedLate)} alert={event.date.slice(0, 10) < today}/></span>
+      <button type="button" className={styles.open} aria-expanded={expanded} onClick={onToggleExpanded} aria-label={`${expanded ? "Contraer" : "Expandir"} ${copy.concept}`}>
+        <span className={styles.primaryLine}>
+          <strong className={styles.concept}>{copy.concept}</strong>
+          {amountVisible && <b className={styles.amount}>{responsibilityAmount(event.amount)}</b>}
+          <span className={styles.context}>{copy.context || "Aviso financiero"}</span>
+          <span className={styles.timeBadge} data-status={status.key}>{status.label}</span>
+        </span>
+        <ExpandMoreOutlined className={`${styles.chevron} ${expanded ? styles.chevronExpanded : ""}`} aria-hidden="true"/>
+      </button>
+    </div>
+    {expanded && <div className={styles.expanded}>
+      {copy.description && <p className={styles.description}>{copy.description}</p>}
+      <div className={styles.dates}>
+        <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Vence <time dateTime={event.date}>{notificationDateLabel(event.date)}</time></span>
+        {hasDifferentPaymentDate && <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Pago previsto <time dateTime={event.plannedPaymentDate}>{notificationDateLabel(event.plannedPaymentDate!)}</time></span>}
+      </div>
+      <div className={styles.expandedActions}>
+        <div className={styles.primaryAction}>{primaryAction}</div>
+        <details className={styles.moreActions}>
+          <summary aria-label="Más opciones" title="Más opciones"><MoreVertOutlined aria-hidden="true"/></summary>
+          <div className={styles.moreMenu}>
+            <button type="button" onClick={() => onNavigate(event.destination)}>Abrir {event.destination.page.toLowerCase()}</button>
+            {onToggleRead && <button type="button" onClick={() => onToggleRead(event)}>{read ? "Marcar como no leída" : "Marcar como leída"}</button>}
+            {onDismiss && !dismissed && <button type="button" onClick={() => onDismiss(event)}>Descartar aviso</button>}
+          </div>
+        </details>
+      </div>
+    </div>}
+  </li>;
+}
 
 function browserCapabilities() {
   const system = !("Notification" in window) ? "unsupported" : !window.isSecureContext ? "insecure" : Notification.permission;
@@ -89,7 +158,7 @@ export function FinanceNotifications({
   state, onChange, movements, envelopes, loans, today, ready = true, privateMode = false,
   onNavigate, open, onOpen, onClose, renderPayment,
 }: {
-  renderPayment: (destination: NotificationDestination) => ReactNode;
+  renderPayment: (event: FinanceNotification) => ReactNode;
   state: NotificationState;
   onChange: NotificationUpdate;
   movements: LedgerMovement[];
@@ -104,23 +173,30 @@ export function FinanceNotifications({
   onClose: () => void;
 }) {
   const [deliveryMessage, setDeliveryMessage] = useState("");
-  const [pageSize, setPageSize] = useState(20);
-  const [activeFilter, setActiveFilter] = useState<NotificationFilter>("all");
+  const [activeFilter, setActiveFilter] = useState<NotificationFilter>("pending");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const attempted = useRef(new Set<string>());
   const activeNotices = useRef(new Set<Notification>());
   const events = useMemo(() => deriveFinanceNotifications(movements, envelopes, today, loans), [movements, envelopes, today, loans]);
   const visible = useMemo(() => visibleNotifications(state, events), [state, events]);
   const read = useMemo(() => new Set(initializeNotifications(state, events).readIds), [state, events]);
-  const unread = state.internal ? visible.filter(event => !read.has(event.id)).length : 0;
-  const overdue = visible.filter(event => event.date.slice(0, 10) < today);
-  const upcoming = visible.filter(event => event.date.slice(0, 10) >= today);
-  const filterCounts: Record<NotificationFilter, number> = { all: visible.length, unread, overdue: overdue.length, upcoming: upcoming.length };
-  const filtered = activeFilter === "all" ? visible
-    : activeFilter === "unread" ? visible.filter(event => !read.has(event.id))
-      : activeFilter === "overdue" ? overdue : upcoming;
+  const dismissed = useMemo(() => new Set(state.dismissedIds), [state.dismissedIds]);
+  const pending = visible;
+  const unreadEvents = visible.filter(event => !read.has(event.id));
+  const upcoming = visible.filter(event => event.date.slice(0, 10) > today);
+  const allEvents = useMemo(() => [...events].sort((a, b) => {
+    const aDismissed = dismissed.has(a.id), bDismissed = dismissed.has(b.id);
+    if (aDismissed !== bDismissed) return aDismissed ? 1 : -1;
+    const aDate = a.date.slice(0, 10), bDate = b.date.slice(0, 10);
+    const aRank = aDate < today ? 0 : aDate === today ? 1 : 2, bRank = bDate < today ? 0 : bDate === today ? 1 : 2;
+    const readDelta = Number(read.has(a.id)) - Number(read.has(b.id));
+    return aRank - bRank || aDate.localeCompare(bDate) || readDelta || a.id.localeCompare(b.id);
+  }), [events, read, dismissed, today]);
+  const pendingCount = state.internal ? pending.length : 0;
+  const filterCounts: Record<NotificationFilter, number> = { pending: pending.length, upcoming: upcoming.length, all: events.length };
+  const filtered = activeFilter === "pending" ? pending : activeFilter === "upcoming" ? upcoming : allEvents;
   const filters: { id: NotificationFilter; label: string }[] = [
-    { id: "all", label: "Todas" }, { id: "unread", label: "Sin leer" },
-    { id: "overdue", label: "Vencidas" }, { id: "upcoming", label: "Próximas" },
+    { id: "pending", label: "Pendientes" }, { id: "upcoming", label: "Próximos" }, { id: "all", label: "Todos" },
   ];
 
   useEffect(() => {
@@ -167,70 +243,34 @@ export function FinanceNotifications({
     }
   }, [events, state, ready, onChange, onNavigate]);
 
-  function openEvent(event: FinanceNotification) {
-    updateState(current => markNotifications(current, "readIds", [event.id]));
-    onNavigate(event.destination);
-  }
   function updateState(update: (current: NotificationState) => NotificationState) {
     const error = saveNotificationUpdate(onChange, update);
     if (error) setDeliveryMessage(error);
   }
+  function closeDialog() { setExpandedId(null); onClose(); }
 
   return <>
-    <button type="button" className={`header-control ${styles.bell}`} onClick={onOpen} title="Notificaciones" aria-label={`Notificaciones${unread ? `: ${unread} sin leer` : ": ninguna sin leer"}`}>
+    <button type="button" className={`header-control ${styles.bell}`} onClick={onOpen} title="Notificaciones" aria-label={`Notificaciones${pendingCount ? `: ${pendingCount} pendientes` : ": ninguna pendiente"}`}>
       <NotificationsOutlined aria-hidden="true" />
-      {unread > 0 && <span className={styles.badge} aria-hidden="true">{unread > 99 ? "99+" : unread}</span>}
+      {pendingCount > 0 && <span className={styles.badge} aria-hidden="true">{pendingCount > 99 ? "99+" : pendingCount}</span>}
     </button>
-    {open && <FinanceDialog label="Notificaciones" onClose={onClose} maxWidth={680}>
+    {open && <FinanceDialog label="Notificaciones" onClose={closeDialog} maxWidth={560}>
       <section className={`flow-modal ${styles.dialog}`}>
-        <header><h2>Notificaciones</h2><button type="button" aria-label="Cerrar notificaciones" onClick={onClose}>×</button></header>
+        <header><div className={styles.dialogHeaderCopy}><h2>Notificaciones</h2><p className={styles.dialogSubtitle}>Tus recordatorios y alertas importantes</p></div><button type="button" aria-label="Cerrar notificaciones" onClick={closeDialog}>×</button></header>
         <div className={styles.body}>
           {!state.internal ? <p>Las notificaciones internas están desactivadas. Puedes activarlas en Configuración.</p> : <>
-            <div className={styles.actions}><button type="button" className="secondary" disabled={!unread} onClick={() => updateState(current => markNotifications(current, "readIds", visible.map(event => event.id)))}>Marcar todas como leídas</button></div>
             <div className={styles.filters} role="group" aria-label="Filtrar notificaciones">
-              {filters.map(filter => <button key={filter.id} type="button" className={activeFilter === filter.id ? styles.filterActive : styles.filter} aria-pressed={activeFilter === filter.id} onClick={() => setActiveFilter(filter.id)}>
+              {filters.map(filter => <button key={filter.id} type="button" className={activeFilter === filter.id ? styles.filterActive : styles.filter} aria-pressed={activeFilter === filter.id} onClick={() => { setActiveFilter(filter.id); setExpandedId(null); }}>
                 {filter.label}<span className={styles.filterCount}>{filterCounts[filter.id]}</span>
               </button>)}
             </div>
-            {!filtered.length && <p>{visible.length === 0 ? "No tienes avisos que requieran atención. Aquí aparecerán vencimientos, obligaciones críticas y aportes pendientes." : `No tienes notificaciones ${activeFilter === "unread" ? "sin leer" : activeFilter === "overdue" ? "vencidas" : "próximas"}.`}</p>}
-            <ul className={styles.list}>{filtered.slice(0, pageSize).map(event => {
-              const isRead = read.has(event.id);
-              const copy = notificationCopy(event, privateMode);
-              const showAmount = state.showResponsibilityAmount === true && !privateMode;
-              const timeLabel = notificationTimeLabel(event, today);
-              const description = isTemporalDescription(copy.description) ? "" : copy.description;
-              return <li className={`${styles.item} ${!isRead ? styles.unread : ""}`} key={event.id}>
-                <div className={styles.itemMain}>
-                  <span className={styles.noticeIcon} aria-hidden="true"><TemporalDot className={styles.noticeEnvelope} alwaysVisible tone={event.tone ?? "white"} covered={privateMode ? undefined : event.covered} late={Boolean(event.plannedLate)} alert={event.date.slice(0, 10) < today}/></span>
-                  <button type="button" className={styles.open} onClick={() => openEvent(event)} aria-label={`Abrir ${copy.concept}, ${event.destination.page}, ${isRead ? "leída" : "sin leer"}`}>
-                    <span className={styles.primaryLine}>
-                      <strong className={styles.concept} data-unread={!isRead}>{copy.concept}</strong>
-                      <span className={styles.amountGroup}>
-                        <span className={styles.timeBadge} data-tone={event.tone ?? "neutral"} title={privateMode ? undefined : event.title}>{timeLabel}</span>
-                        {showAmount && <b className={styles.amount}>{responsibilityAmount(event.amount)}</b>}
-                      </span>
-                      <span className={styles.chevron} aria-hidden="true">›</span>
-                    </span>
-                    {copy.context && <span className={styles.context}>{copy.context}</span>}
-                    {description && <span className={styles.description}>{description}</span>}
-                    <span className={styles.metaLine}>
-                      <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Vence <time dateTime={event.date}>{notificationDateLabel(event.date)}</time></span>
-                      {event.plannedPaymentDate && <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Pago previsto <time dateTime={event.plannedPaymentDate}>{notificationDateLabel(event.plannedPaymentDate)}</time></span>}
-                      <span className={styles.destination}><CalendarMonthOutlined aria-hidden="true"/>Abrir {event.destination.page.toLowerCase()}</span>
-                    </span>
-                  </button>
-                </div>
-                <details className={styles.moreActions}>
-                  <summary>Más opciones</summary>
-                  <div className={styles.itemActions}>
-                    {renderPayment(event.destination)}
-                    <button type="button" onClick={() => updateState(current => isRead ? { ...current, readIds: current.readIds.filter(id => id !== event.id) } : markNotifications(current, "readIds", [event.id]))}>{isRead ? "Marcar sin leer" : "Marcar leída"}</button>
-                    <button type="button" onClick={() => updateState(current => markNotifications(current, "dismissedIds", [event.id]))}>Descartar</button>
-                  </div>
-                </details>
-              </li>;
+            {unreadEvents.length > 0 && <button className={styles.markAllRead} type="button" onClick={() => updateState(current => markNotifications(current, "readIds", unreadEvents.map(event => event.id)))}>Marcar avisos como leídos</button>}
+            {!filtered.length && <p>{activeFilter === "pending" ? "No tienes compromisos pendientes." : activeFilter === "upcoming" ? "No tienes compromisos próximos." : "No hay avisos disponibles."}</p>}
+            <ul className={styles.list}>{filtered.slice(0, 5).map(event => {
+              const isRead = read.has(event.id), isDismissed = dismissed.has(event.id);
+              return <NotificationCard key={event.id} event={event} today={today} privateMode={privateMode} showAmount={state.showResponsibilityAmount === true} read={isRead} dismissed={isDismissed} expanded={expandedId === event.id} onToggleExpanded={() => setExpandedId(current => current === event.id ? null : event.id)} onNavigate={destination => { closeDialog(); onNavigate(destination); }} onToggleRead={item => updateState(current => read.has(item.id) ? { ...current, readIds: current.readIds.filter(id => id !== item.id) } : markNotifications(current, "readIds", [item.id]))} onDismiss={item => updateState(current => markNotifications(current, "dismissedIds", [item.id]))} renderPayment={renderPayment}/>;
             })}</ul>
-            {filtered.length > pageSize && <button className="secondary" type="button" onClick={() => setPageSize(value => value + 20)}>Mostrar más notificaciones</button>}
+            <button className={styles.allNotices} type="button" onClick={() => { closeDialog(); onNavigate({ page: "Cronograma" }); }}><span><b>Ver todos los avisos</b><small>Abrir cronograma de aportes y metas</small></span><span aria-hidden="true">›</span></button>
           </>}
           {deliveryMessage && <p role="status">{deliveryMessage}</p>}
         </div>
