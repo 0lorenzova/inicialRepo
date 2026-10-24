@@ -772,3 +772,5 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
   .finance-app .summary-panel .summary-card.summary-shape-wallet::before { right: 43px; }
   .finance-app .summary-panel .summary-card.summary-shape-wallet::after { right: 46px; }
 }
+
+.page-content:has(.salary-tracking-root) > .page-title { display: none; }

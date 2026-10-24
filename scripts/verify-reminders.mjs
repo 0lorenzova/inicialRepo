@@ -30,6 +30,7 @@ assert.deepEqual(summary.overdue, { count: 1, amount: 650 });
 assert.deepEqual(summary.completed, { count: 2, amount: 1000 });
 
 const envelope = { ...baseEnvelope, scheduledAmounts: [scheduled("rent", "2026-10-25", { amount: 1000, occurrenceDate: "2026-10-25", repetition: { frequency: "monthly", anchorDay: 25, seriesId: "rent" } })] };
+assert.equal(deriveReminderRecords([envelope], [], today).find(item => item.itemId === "rent").detail, "Pago programado · mensual", "La frecuencia interna se muestra en español en Recordatorios");
 const postponed = postponeScheduledOccurrence([envelope], "home", "rent", "2026-10-28")[0].scheduledAmounts[0];
 assert.equal(postponed.deadline, "2026-10-28");
 assert.equal(postponed.occurrenceDate, "2026-10-25", "Posponer no altera la fecha ancla recurrente");

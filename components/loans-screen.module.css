@@ -242,11 +242,11 @@
   .metricIcon { flex-basis: 31px; width: 31px; height: 31px; font-size: 18px; }
   .metric > div > span { font-size: calc(9px * var(--ui-scale, 1)); }
   .metric small { font-size: calc(8px * var(--ui-scale, 1)); }
-  .controls { align-items: stretch; }
-  .tabs { flex: 1 1 auto; }
-  .tabs button { flex: 1 1 0; min-width: 0; padding: 6px 5px; font-size: calc(10px * var(--ui-scale, 1)); }
-  .sortControl { flex: 0 1 auto; gap: 3px; padding: 0 6px; }
-  .sortControl select { max-width: 105px; font-size: calc(9px * var(--ui-scale, 1)); }
+  .controls { flex-direction: column; align-items: stretch; }
+  .tabs { flex: 0 0 auto; width: 100%; box-sizing: border-box; }
+  .tabs button { flex: 1 1 0; min-width: 0; padding: 6px 5px; gap: 4px; font-size: calc(10px * var(--ui-scale, 1)); white-space: nowrap; }
+  .sortControl { flex: 0 0 auto; align-self: flex-end; gap: 3px; max-width: 100%; box-sizing: border-box; padding: 0 6px; }
+  .sortControl select { max-width: 100%; font-size: calc(9px * var(--ui-scale, 1)); }
   .card { gap: 9px; padding: 12px; border-radius: 14px; }
   .relation { gap: 5px; }
   .relation strong { font-size: calc(12px * var(--ui-scale, 1)); }

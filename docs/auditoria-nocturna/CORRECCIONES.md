@@ -1,14 +1,28 @@
 # Correcciones realizadas
 
-## AF-01 — Acciones deterministas al doble clic/tacto en un sobre
+## AF-02 — Controles móviles de préstamos
+- Archivo: components/loans-screen.module.css
+- Los filtros utilizan el ancho disponible y conservan sus etiquetas; el ordenamiento pasa a una fila legible en pantallas estrechas.
 
-- `components/envelope-collection.tsx`: el doble clic de escritorio y el doble toque táctil abren explícitamente el modo de acciones rápidas. El botón ⋮ abre el modo completo.
-- `app/page.tsx`: el estado del menú incluye su modo y usa una actualización funcional; el modo rápido siempre abre para el sobre pulsado. Sus dos acciones reutilizan las rutas actuales de asignación y gasto, sin implementar lógica financiera nueva. El modo completo mantiene las acciones anteriores.
-- No se modificaron fórmulas, saldos, movimientos, preferencias ni datos persistidos.
+## AF-03 — Filtros de Reportes
+- Archivo: components/finance-history.module.css
+- En pantallas de hasta 430 px, los filtros pasan a una columna para evitar el recorte del período.
 
-## Trabajo visual solicitado anteriormente que estaba pendiente localmente
+## AF-04 — Frecuencia de Recordatorios
+- Archivos: lib/finance-reminders.ts y scripts/verify-reminders.mjs
+- Se localizan las etiquetas visibles al español y se añade una comprobación. La frecuencia persistida no cambia.
 
-- `app/page.tsx`, `app/globals.css` y `lib/ui-copy.ts`: presentación de Resumen financiero con siluetas integradas de billetera, sobre y monedas; conserva los valores y controles existentes.
-- Se incluye al publicar porque es trabajo solicitado previamente que seguía pendiente en el árbol local.
+## AF-05 — CSS de Gestión salarial
+- Archivos: components/salary-tracking.module.css y app/globals.css
+- La regla dirigida a una estructura global salió del CSS Module y se movió a la hoja global, manteniendo la condición visual existente.
 
-No se incluyeron los adjuntos locales, capturas ni archivos diagnósticos ajenos a estos cambios.
+## Ajuste móvil de Sobres
+- Archivo: components/envelope-collection.module.css
+- Ajuste leve de tipografía para nombres en cuadrícula de tres columnas en móviles.
+
+## AF-06 — Filtros rápidos de Movimientos
+- Archivo: components/movements-screen.module.css
+- En anchos de hasta 480 px, los cuatro botones se distribuyen en dos columnas para que «Transferencias» no se parta dentro de la palabra.
+
+## Alcance financiero
+No se cambiaron cálculos, saldos, movimientos, registros, base de datos, autenticación ni preferencias financieras.

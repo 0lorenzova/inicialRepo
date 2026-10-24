@@ -74,6 +74,9 @@
   .movementRow { gap: 5px; }
   .movementRow > strong { max-width: 31vw; font-size: calc(9px * var(--ui-scale, 1)); }
 }
+@media (max-width: 430px) {
+  .filterGrid { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 360px) {
   .filterGrid { grid-template-columns: 1fr; }
   .metricGrid { grid-template-columns: 1fr; }

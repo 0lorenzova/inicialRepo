@@ -1,7 +1,7 @@
 import { getEnvelopeGoal, temporalDistance } from "./envelope-goals";
 import { recurrenceDueDate, type Recurrence, type RecurringContributionHistoryEntry } from "./finance-recurrence";
 import type { LedgerMovement } from "./finance-ledger";
-import { scheduledPaidAmount, scheduledPayments, type PlanningEnvelope, type ScheduledAmount } from "./envelope-planning";
+import { scheduledPaidAmount, scheduledPayments, type PlanningEnvelope, type ScheduledAmount, type ScheduledRepetition } from "./envelope-planning";
 
 export type ReminderStatus = "upcoming" | "overdue" | "partial" | "completed" | "postponed" | "omitted";
 export type ReminderKind = "contribution" | "payment" | "goal";
@@ -40,6 +40,12 @@ const validDate = (value?: string) => {
   try { temporalDistance(value, value); return true; } catch { return false; }
 };
 const monthOf = (date: string) => date.slice(0, 7);
+const repetitionLabels: Record<ScheduledRepetition["frequency"], string> = {
+  daily: "diario",
+  weekly: "semanal",
+  monthly: "mensual",
+  yearly: "anual",
+};
 
 function pendingStatus(date: string | undefined, today: string, postponed = false): ReminderStatus {
   if (date && date < today) return "overdue";
@@ -130,7 +136,7 @@ export function deriveReminderRecords(envelopes: ReminderEnvelope[], movements: 
         status: paidAmount>0&&item.deadline>=today ? "partial" : pendingStatus(item.deadline, today, Boolean(item.postponedFrom)), title: item.name,
         envelopeId: envelope.id, envelopeName: envelope.name, envelopeIcon: envelope.icon ?? "▣",
         amount: remaining, paidAmount, date: item.deadline,
-        detail: paidAmount>0 ? `Abonado ${formatMoney(paidAmount)} · pendiente ${formatMoney(remaining)}` : item.repetition ? `Pago programado · ${item.repetition.frequency}` : "Pago desde este sobre",
+        detail: paidAmount>0 ? `Abonado ${formatMoney(paidAmount)} · pendiente ${formatMoney(remaining)}` : item.repetition ? `Pago programado · ${repetitionLabels[item.repetition.frequency]}` : "Pago desde este sobre",
         frequency: item.repetition?.frequency, itemId: item.id,
         });
       }
