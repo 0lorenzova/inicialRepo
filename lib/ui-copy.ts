@@ -24,6 +24,7 @@ export const uiCopyEs = {
   },
   summary: {
     description: "Saldos actuales de cuentas, sobres y dinero disponible para asignar.",
+    viewUnassigned: "Ver dinero sin asignar",
   },
   unassignedIncomes: {
     totalAvailable: "Total disponible para asignar",

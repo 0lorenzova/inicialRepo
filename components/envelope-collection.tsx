@@ -17,6 +17,7 @@ import styles from "./envelope-collection.module.css";
 type EnvelopeItem = { id: string; name: string; icon: string; color: string; balance: number; recurrence?: Recurrence } & GoalSettings & EnvelopePlanning;
 type Drag = { id: string; ids: string[]; original: string[]; keyboard: boolean };
 type PendingPress = { x: number; y: number; pointerId: number; envelopeId: string; anchor: HTMLButtonElement; started: number; timer: ReturnType<typeof setTimeout> };
+type EnvelopeMenuMode = "quick" | "full";
 
 export function EnvelopeCollection({ envelopes, view, menuId, display, privateMode, today, onList, onGrid, onMenu, onPlanning, planningId, onCreate, onReorder, showProximity = true, showCreateAction = true, viewAnchor, infoAnchor, infoPanelSide = "end", infoBlinkShown, onInfoBlinkStart }: {
   viewAnchor?: HTMLDivElement | null;
@@ -34,7 +35,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
   today: string;
   onList: () => void;
   onGrid: () => void;
-  onMenu: (id: string, anchor: HTMLButtonElement) => void;
+  onMenu: (id: string, anchor: HTMLButtonElement, mode: EnvelopeMenuMode) => void;
   onPlanning: (id: string, anchor: HTMLButtonElement, filter?: ProximityFilter) => void;
   planningId?: string;
   onCreate: () => void;
@@ -153,7 +154,7 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
     finish(true);
     if(tap) {
       if(previous?.id===press.envelopeId&&stamp-previous.time<350&&Math.hypot(event.clientX-previous.x,event.clientY-previous.y)<24) {
-        lastTap.current=null; onMenu(press.envelopeId,press.anchor);
+        lastTap.current=null; onMenu(press.envelopeId,press.anchor,"quick");
       } else lastTap.current={id:press.envelopeId,time:stamp,x:event.clientX,y:event.clientY};
     } else lastTap.current=null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
@@ -215,14 +216,14 @@ export function EnvelopeCollection({ envelopes, view, menuId, display, privateMo
           const indicators = showProximity ? planningIndicatorGroups(plans.filter(item=>item.timingEnabled)) : [];
           return <div className={`${styles.card} ${preview?.id === envelope.id ? styles.dragging : ""}`} key={envelope.id} data-envelope-id={envelope.id} data-goal={showGoal}>
             <button type="button" className={`emoji ${envelope.color} ${styles.dragHandle}`} aria-label={`Ordenar ${envelope.name}`} aria-describedby={`${id}-sort-hint`} aria-pressed={preview?.id === envelope.id}
-              onDoubleClick={event => { event.stopPropagation(); if (pointerType.current === "touch") return; finish(false); onMenu(envelope.id,event.currentTarget); }}
+              onDoubleClick={event => { event.preventDefault(); event.stopPropagation(); if (pointerType.current === "touch") return; finish(false); onMenu(envelope.id,event.currentTarget,"quick"); }}
               onPointerDown={event => pointerDown(event, envelope.id)}
               onKeyDown={event => keyDown(event, envelope.id)} onBlur={() => { if (drag.current?.keyboard) finish(false); }} title="Doble clic o doble toque: menú del sobre. Mantén pulsado para ordenar"><span aria-hidden="true">{envelope.icon}</span></button>
             <span className={styles.name}>{envelopeLabel(envelope.name)}</span>
             <b className={styles.balance}><small className={styles.balanceLabel}>Saldo actual</small>{(privateMode || envelope.balanceHidden) ? "••••••" : display(envelope.balance)}</b>
             <div className={`envelope-actions ${styles.actions}`}><button type="button" aria-label={`Opciones de ${envelope.name}`} aria-haspopup="menu"
               aria-expanded={menuId === envelope.id} aria-controls={menuId === envelope.id ? "envelope-context-menu" : undefined}
-              onClick={event => onMenu(envelope.id, event.currentTarget)}>⋮</button></div>
+              onClick={event => onMenu(envelope.id, event.currentTarget,"full")}>⋮</button></div>
             {(envelope.recurrence || showGoal || indicators.length > 0) && <div className={styles.details}>
               {envelope.recurrence && <small>Próximo aporte: {privateMode ? "••••" : display(envelope.recurrence.amount)} · {new Date(`${envelope.recurrence.nextDate}T12:00:00`).toLocaleDateString("es-CR", { day: "numeric", month: "short", timeZone: "America/Costa_Rica" })}</small>}
               {showGoal && <span className={styles.progressLabel} aria-label={`Meta de ${envelope.name}: ${percentage} por ciento. ${goal.reached ? "Meta alcanzada." : ""}`}>{progressText}</span>}
