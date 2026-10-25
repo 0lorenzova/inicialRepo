@@ -1,0 +1,96 @@
+verify-app-navigation.mjs: exit 0
+verify-calendar-alerts.mjs: exit 0
+verify-calendar-futures.mjs: exit 0
+verify-calendar-goal-move.mjs: exit 0
+verify-calendar-indicator-groups.mjs: exit 0
+verify-context-accounts-planning.mjs: exit 0
+verify-contextual-expenses.mjs: exit 0
+verify-distribution-templates.mjs: exit 0
+verify-envelope-desktop.mjs: exit 0
+verify-envelope-goals.mjs: exit 0
+verify-envelope-history.mjs: exit 0
+verify-envelope-icons.mjs: exit 0
+verify-envelope-operation.mjs: exit 0
+verify-envelope-planning.mjs: exit 0
+verify-envelope-settings.mjs: exit 0
+verify-envelope-view.mjs: exit 0
+verify-expense-categories.mjs: exit 0
+verify-expense-details.mjs: exit 0
+verify-finance-history.mjs: exit 0
+verify-finance-ledger.mjs: exit 0
+verify-finance-notifications.mjs: exit 0
+verify-finance-products.mjs: exit 0
+verify-finance-recurrence.mjs: exit 0
+verify-finance-sync.mjs: exit 0
+verify-finance-transport.mjs: exit 0
+verify-goal-visibility.mjs: exit 0
+verify-income-correction.mjs: exit 0
+verify-income-distribution.mjs: exit 0
+verify-income-preferences.mjs: exit 0
+verify-incremental-ui.mjs: exit 0
+verify-iso-week-range.mjs: exit 0
+verify-movement-names.mjs: exit 0
+verify-notification-audio.mjs: exit 0
+verify-planned-payment.mjs: exit 0
+verify-planning-coverage.mjs: exit 0
+verify-planning-payments-trace.mjs: exit 0
+verify-product-comparison.mjs: exit 0
+verify-proximity-repetition-reset.mjs: exit 0
+verify-reminders.mjs: exit 0
+verify-report-details.mjs: exit 0
+verify-salary-adjustments.mjs: exit 0
+verify-salary-calendar.mjs: exit 0
+verify-salary-closing.mjs: exit 0
+verify-salary-cycle.mjs: exit 0
+verify-salary-entry.mjs: exit 0
+verify-salary-history.mjs: exit 0
+verify-salary-import.mjs: exit 0
+verify-salary-management.mjs: exit 0
+verify-salary-navigation.mjs: exit 0
+verify-salary-pay-rules.mjs: exit 0
+verify-salary-planning.mjs: exit 0
+verify-salary-quick-registration.mjs: exit 0
+verify-salary-receipt.mjs: exit 0
+verify-salary-states.mjs: exit 0
+verify-salary-temporal-labels.mjs: exit 0
+verify-salary-tracking.mjs: exit 0
+verify-salary-work-timing.mjs: exit 0
+verify-sql-bundle.mjs: exit 1
+node:url:1024
+  validateString(path, 'path');
+  ^
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received undefined
+    at pathToFileURL (node:url:1024:3)
+    at file:///C:/Users/0lore/Documents/app_finanzas/scripts/verify-sql-bundle.mjs:4:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+
+Node.js v24.21.0
+
+verify-sql-migrations.mjs: exit 1
+node:url:1024
+  validateString(path, 'path');
+  ^
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received undefined
+    at pathToFileURL (node:url:1024:3)
+    at file:///C:/Users/0lore/Documents/app_finanzas/scripts/verify-sql-migrations.mjs:4:29
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at async node:internal/modules/esm/loader:647:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+
+Node.js v24.21.0
+
+verify-theme-palettes.mjs: exit 0
+verify-unassigned-incomes.mjs: exit 0
+verify-sql-bundle.mjs con PGlite local: exit 0
+OK: coordinated migration transaction, exact protected backup, denied schema access, no document changes, repeat refuses without damage.
+
+verify-sql-migrations.mjs con PGlite local: exit 0
+OK: SQL runs in PostgreSQL/PGlite; exact timestamp CAS, stale write rejection, authenticated isolation, direct-write revocation, first-write race, salary guard, atomic rejection, idempotent migrations and invalid-history preflight rollback. No production database used.

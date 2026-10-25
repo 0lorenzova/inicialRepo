@@ -147,7 +147,7 @@ assert.match(component,/onSave=\{onSaveConfirmed\} onConfirmSave=\{onConfirmSave
 assert.match(component,/Fecha aproximada/);assert.match(component,/Fecha desconocida/);
 assert.match(component,/AccountSelector label="Cuenta donde recibiste el salario"/);
 assert.match(component,/<SalaryAdjustments ledger=\{ledger\} period=\{p\}/,'The rendered week continues to use its extra-concept editor');
-assert.match(receiptDialog,/¿Deseas distribuir el ingreso entre sobres\?/);
+assert.match(receiptDialog,/¿Distribuir ahora entre sobres o continuar sin asignar\?/);
 assert.match(receiptDialog,/Continuar sin asignar/);
 assert.match(component,/salaryPeriodWeekStatus\(sum\)/,'Week color and label derive from confirmed salary obligations');
 assert.match(css,/@media\(max-width:600px\)/);

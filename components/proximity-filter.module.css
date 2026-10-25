@@ -15,7 +15,8 @@
 .enable input { flex:none; width:18px; height:18px; margin:0; accent-color:var(--green); }
 .home { display:grid; grid-template-columns:max-content minmax(0,1fr); align-items:center; width:100%; gap:0 8px; justify-content:stretch; }
 .home>.enable { grid-column:1; grid-row:1; justify-self:start; white-space:nowrap; }
-.home>.allToggle { grid-column:1; grid-row:2; justify-self:start; white-space:nowrap; }
+.home>.allToggle { grid-column:1; grid-row:2; justify-self:start; white-space:nowrap; border-color:var(--line); background:var(--paper); color:var(--green-dark); font-weight:600; }
+.home>.allToggle[data-active="true"] { border-color:var(--green); background:var(--pale); }
 .home>.colors { grid-column:2; grid-row:1; width:100%; max-width:360px; justify-self:stretch; }
 .home>.colors>button { position:relative; padding-inline:2px; }
 

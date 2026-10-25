@@ -18,6 +18,8 @@ import { activateSalaryPeriod, postHistoricalSalaryPayment, salaryExpected, sala
 import { AccountSelector } from "@/components/account-selector";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { SalaryReceiptDialog } from "./salary-receipt-dialog";
+import { SalaryPaymentEntry } from "./salary-payment-entry";
+import {resolveSalaryReceiptPeriod} from "@/lib/salary-receipt-entry";
 import { incomeDefaults, incomeReceptionMethods, type IncomePreferences } from "@/lib/income-preferences";
 import { uiCopyEs } from "@/lib/ui-copy";
 import { SalaryPeriodCalendar } from "./salary-period-calendar";
@@ -26,7 +28,7 @@ import type { PlanningEnvelope } from "@/lib/envelope-planning";
 import styles from "./salary-receive-dialog.module.css";
 import statusStyles from "./salary-status.module.css";
 
-type Props = {
+export type SalaryReceiveDialogProps = {
   ledger: SalaryLedger;
   envelopes: (PlanningEnvelope & { icon: string })[];
   today: string;
@@ -34,6 +36,7 @@ type Props = {
   display: (amount: number) => string;
   initialConfigId?: string;
   initialPeriodId?: string;
+  initialDetailed?:boolean;
   initialApplications?: SalaryApplication[];
   initialReceiptPlan?: SalaryReceiptPlan|null;
   error?: string;
@@ -43,6 +46,7 @@ type Props = {
   onConfirmSave: () => Promise<void>;
   onSave: (operation: (current: SalaryLedger) => SalaryLedger) => boolean;
 };
+type Props=SalaryReceiveDialogProps;
 
 const localNow = () => {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Costa_Rica", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map(part => [part.type, part.value]));
@@ -51,7 +55,13 @@ const localNow = () => {
 const dayLabel = salaryDateLabel;
 const currentDateTime = (value: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value : `${value.slice(0, 10)}T12:00`;
 
-export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreferences, display, initialConfigId, initialPeriodId, initialApplications, initialReceiptPlan, error: externalError, onClose, onConfigure, onCreateAccount, onSave, onConfirmSave }: Props) {
+export function SalaryReceiveDialog(props:Props){
+  const [detailed,setDetailed]=useState(Boolean(props.initialDetailed||props.initialApplications?.length||props.initialReceiptPlan));
+  const [selection,setSelection]=useState<{initialConfigId?:string;initialPeriodId?:string}>({initialConfigId:props.initialConfigId,initialPeriodId:props.initialPeriodId});
+  return detailed?<DetailedSalaryReceiveDialog {...props} {...selection}/>:<SalaryPaymentEntry {...props} onDetailed={(configId,periodId)=>{setSelection({initialConfigId:configId,initialPeriodId:periodId});setDetailed(true);}}/>;
+}
+
+function DetailedSalaryReceiveDialog({ ledger, envelopes, today, incomePreferences, display, initialConfigId, initialPeriodId, initialApplications, initialReceiptPlan, error: externalError, onClose, onConfigure, onCreateAccount, onSave, onConfirmSave }: Props) {
   const [viewerDay,setViewerDay]=useState(()=>salaryViewerDay());
   useEffect(()=>{const update=()=>setViewerDay(salaryViewerDay());const timer=window.setInterval(update,60000);window.addEventListener("focus",update);return()=>{window.clearInterval(timer);window.removeEventListener("focus",update);};},[]);
   const state = salaryState(ledger);
@@ -59,7 +69,7 @@ export function SalaryReceiveDialog({ ledger, envelopes, today, incomePreference
   const startingConfigId = initialConfigId || startingPeriod?.configId || preferredSalaryConfigId(ledger);
   const startingConfig = state.configs.find(config => config.id === startingConfigId);
   let startingProjection: SalaryPeriod | null = null;
-  try { if (startingConfig) startingProjection = startingPeriod ?? salaryPeriodForDate(ledger, startingConfig.id, today); } catch { /* The configuration can start in the future. */ }
+  try { if (startingConfig) startingProjection = resolveSalaryReceiptPeriod(ledger,startingConfig.id,initialPeriodId,viewerDay); } catch { /* Keep the existing period-selection controls available. */ }
 
   const [configId, setConfigId] = useState(startingConfigId);
   const [periodDate, setPeriodDate] = useState(startingProjection?.start ?? today);

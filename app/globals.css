@@ -580,8 +580,8 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
   display: flex;
   align-items: center;
   min-width: 0;
-  min-height: 148px;
-  padding: 34px 16px 16px;
+  min-height: 132px;
+  padding: 30px 15px 12px;
   overflow: hidden;
   isolation: isolate;
   border: 1px solid var(--summary-edge);
@@ -603,61 +603,110 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
   --summary-edge: #79b99d;
   --summary-detail: #64a88b;
   --summary-ink: #164b39;
-  border-radius: 48% / 20%;
+  border-radius: 30px 30px 18px 18px / 19px 19px 14px 14px;
 }
 .finance-app .summary-panel .summary-card.summary-shape::before,
-.finance-app .summary-panel .summary-card.summary-shape::after {
+.finance-app .summary-panel .summary-card.summary-shape::after,
+.finance-app .summary-panel .summary-ornament::before,
+.finance-app .summary-panel .summary-ornament::after {
   position: absolute;
   z-index: 0;
   content: "";
   pointer-events: none;
 }
-.finance-app .summary-panel .summary-card.summary-shape-wallet::before {
-  top: 43%;
+.finance-app .summary-panel .summary-ornament {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.finance-app .summary-panel .summary-shape-wallet .summary-ornament::before {
+  top: 3px;
+  right: 8px;
+  left: 8px;
+  height: 8px;
+  border-top: 2px solid var(--summary-detail);
+  border-radius: 50% 50% 0 0;
+  opacity: .75;
+}
+.finance-app .summary-panel .summary-shape-wallet .summary-ornament::after {
+  top: 12px;
   right: 0;
-  width: 12px;
-  height: 28%;
+  left: 0;
+  border-top: 1px solid var(--summary-edge);
+  opacity: .7;
+}
+.finance-app .summary-panel .summary-card.summary-shape-wallet::before {
+  top: 42%;
+  right: 0;
+  width: clamp(15px, 8%, 26px);
+  height: 26%;
   border: 1px solid var(--summary-detail);
   border-right: 0;
-  border-radius: 7px 0 0 7px;
+  border-radius: 8px 0 0 8px;
   background: color-mix(in srgb, var(--summary-fill) 76%, var(--summary-detail));
 }
 .finance-app .summary-panel .summary-card.summary-shape-wallet::after {
-  top: 54%;
-  right: 3px;
-  width: 3px;
-  height: 3px;
+  top: 52%;
+  right: 5px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--summary-detail);
+  background: var(--summary-fill);
+  border: 1px solid var(--summary-detail);
 }
 .finance-app .summary-panel .summary-card.summary-shape-envelope::before {
   inset: 0 0 auto;
-  height: 31%;
-  clip-path: polygon(0 0, 100% 0, 50% 88%);
+  height: 34%;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
   background: color-mix(in srgb, var(--summary-fill) 67%, var(--summary-detail));
 }
 .finance-app .summary-panel .summary-card.summary-shape-envelope::after {
-  right: 12px;
-  bottom: 0;
-  left: 12px;
-  height: 27%;
+  inset: 29% 0 0;
   background:
-    linear-gradient(33deg, transparent 49.4%, var(--summary-detail) 50%, transparent 50.6%) left bottom / 50% 100% no-repeat,
-    linear-gradient(-33deg, transparent 49.4%, var(--summary-detail) 50%, transparent 50.6%) right bottom / 50% 100% no-repeat;
-  opacity: 0.48;
+    linear-gradient(126deg, transparent 48%, var(--summary-detail) 49%, transparent 50%) left top / 22% 72% no-repeat,
+    linear-gradient(-126deg, transparent 48%, var(--summary-detail) 49%, transparent 50%) right top / 22% 72% no-repeat;
+  opacity: 0.42;
 }
 .finance-app .summary-panel .summary-card.summary-shape-coins::before {
-  inset: 2px 6%;
-  border: 1px solid var(--summary-detail);
-  border-radius: 50% / 24%;
-  opacity: 0.62;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 27px;
+  border-bottom: 1px solid var(--summary-detail);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--summary-fill) 72%, white);
+  opacity: .8;
 }
 .finance-app .summary-panel .summary-card.summary-shape-coins::after {
-  inset: 19% 8% 16%;
+  top: 22px;
+  right: 0;
+  left: 0;
+  height: 20px;
   border-top: 1px solid var(--summary-detail);
   border-bottom: 1px solid var(--summary-detail);
-  border-radius: 50% / 18%;
-  opacity: 0.62;
+  border-radius: 50% / 35%;
+  opacity: .68;
+}
+.finance-app .summary-panel .summary-shape-coins .summary-ornament::before {
+  top: 48%;
+  left: 0;
+  width: clamp(6px, 4%, 12px);
+  height: 22%;
+  border-top: 1px solid var(--summary-detail);
+  border-bottom: 1px solid var(--summary-detail);
+  border-radius: 50% 0 0 50%;
+  opacity: .7;
+}
+.finance-app .summary-panel .summary-shape-coins .summary-ornament::after {
+  top: 48%;
+  right: 0;
+  width: clamp(6px, 4%, 12px);
+  height: 22%;
+  border-top: 1px solid var(--summary-detail);
+  border-bottom: 1px solid var(--summary-detail);
+  border-radius: 0 50% 50% 0;
+  opacity: .7;
 }
 .finance-app .summary-panel .summary-card.summary-shape .summary-copy {
   position: relative;
@@ -666,7 +715,7 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
   align-content: center;
   width: 100%;
   min-width: 0;
-  gap: 8px;
+  gap: 5px;
 }
 .finance-app .summary-panel .summary-card.summary-shape .summary-label {
   min-width: 0;
@@ -708,8 +757,8 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 .finance-app .summary-panel .summary-card.summary-shape .summary-privacy svg { width: 19px; height: 19px; }
 .finance-app .summary-panel .summary-card.summary-shape:hover { transform: none; box-shadow: none; }
 .finance-app .summary-panel .summary-action {
-  min-height: 56px;
-  margin-top: 12px;
+  min-height: 48px;
+  margin-top: 10px;
   border-color: color-mix(in srgb, var(--green) 38%, var(--line));
   border-radius: 14px;
   font-size: 16px;
@@ -743,34 +792,13 @@ html:not([data-interface-size="0"]) .flow-modal > header > button { width:var(--
 .dark-mode .finance-app .summary-panel .summary-action > svg:last-child { color: #a8c0ca; }
 
 @media(max-width:650px) {
-  .finance-app .summary-panel .summary-row { gap: 7px; }
-  .finance-app .summary-panel .summary-card.summary-shape { min-height: 136px; padding: 34px 10px 12px; }
-  .finance-app .summary-panel .summary-card.summary-shape .summary-copy { gap: 7px; }
-  .finance-app .summary-panel .summary-card.summary-shape .summary-label { font-size: clamp(10px, 3.1vw, 13px); line-height: 1.18; }
-  .finance-app .summary-panel .summary-card.summary-shape .summary-value { font-size: clamp(11px, 3.5vw, 15px); letter-spacing: -0.35px; }
-  .finance-app .summary-panel .summary-card.summary-shape .summary-privacy { top: 6px; right: 6px; width: 29px; min-width: 29px; height: 29px; min-height: 29px; }
-  .finance-app .summary-panel .summary-action { min-height: 50px; padding: 0 12px; gap: 9px; font-size: 14px; }
+  .finance-app .summary-panel .summary-row { gap: 6px; }
+  .finance-app .summary-panel .summary-card.summary-shape { min-height: 100px; padding: 32px 8px 8px; }
+  .finance-app .summary-panel .summary-card.summary-shape-wallet { padding-right: 15px; }
+  .finance-app .summary-panel .summary-card.summary-shape .summary-copy { gap: 4px; }
+  .finance-app .summary-panel .summary-card.summary-shape .summary-label { font-size: clamp(10px, calc(11px * var(--ui-scale, 1)), 14px); line-height: 1.13; }
+  .finance-app .summary-panel .summary-card.summary-shape .summary-value { font-size: clamp(12px, calc(13px * var(--ui-scale, 1)), 17px); line-height: 1.1; letter-spacing: -0.35px; }
+  .finance-app .summary-panel .summary-card.summary-shape .summary-privacy { top: 5px; right: 5px; width: 29px; min-width: 29px; height: 29px; min-height: 29px; }
+  .finance-app .summary-panel .summary-action { min-height: 44px; padding: 0 12px; gap: 9px; font-size: 13px; }
 }
-@media(max-width:319px) {
-
-  .finance-app .summary-panel.accordion-section .summary-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .finance-app .summary-panel .summary-card.summary-shape {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 88px;
-    padding: 12px 54px 12px 16px;
-    border-radius: 18px;
-  }
-  .finance-app .summary-panel .summary-card.summary-shape .summary-copy {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 8px;
-  }
-  .finance-app .summary-panel .summary-card.summary-shape .summary-label { grid-column: auto; grid-row: auto; font-size: 14px; }
-  .finance-app .summary-panel .summary-card.summary-shape .summary-value { grid-column: auto; grid-row: auto; font-size: clamp(14px, 4vw, 18px); }
-  .finance-app .summary-panel .summary-card.summary-shape .summary-privacy { top: 50%; right: 10px; transform: translateY(-50%); }
-  .finance-app .summary-panel .summary-card.summary-shape-wallet::before { right: 43px; }
-  .finance-app .summary-panel .summary-card.summary-shape-wallet::after { right: 46px; }
-}
-
 .page-content:has(.salary-tracking-root) > .page-title { display: none; }
