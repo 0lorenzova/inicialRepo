@@ -1,4 +1,5 @@
 "use client";
+import { SnoozeControl } from "./reminder-snooze";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Loan, LedgerMovement } from "@/lib/finance-ledger";
@@ -137,6 +138,7 @@ export function LoansScreen({ loans, movements, envelopes, today, display, focus
             <span><b>Fecha límite</b>{loan.dueDate ? dateLabel(loan.dueDate) : "Sin fecha límite"}</span>
           </div>
 
+          <SnoozeControl source={{kind:"loan",itemId:loan.id,date:loan.dueDate}}/>
           <div className={styles.cardFooter}>
             <details className={styles.historyDetails} open={expandedLoanId === loan.id} onToggle={event => setExpandedLoanId(current => event.currentTarget.open ? loan.id : current === loan.id ? null : current)}>
               <summary><span>Ver detalles e historial</span><small>{history.length} {history.length === 1 ? "movimiento" : "movimientos"}</small></summary>

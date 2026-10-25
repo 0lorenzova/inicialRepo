@@ -27,6 +27,6 @@ export function resetFinanceData<T extends ResettableData>(current: T, initial: 
     envelopes: copy.envelopes.map(envelope => ({ ...envelope, balance: 0,
       ...((envelope as EnvelopePlanning).scheduledAmounts ? { scheduledAmounts: resetPlanning((envelope as EnvelopePlanning).scheduledAmounts) } : {}),
     })),
-    notifications: { ...copy.notifications, initialized: false, readIds: [], dismissedIds: [], deliveredIds: [] },
+    notifications: { ...copy.notifications, initialized: false, readIds: [], dismissedIds: [], deliveredIds: [], snoozes: {} },
   };
 }

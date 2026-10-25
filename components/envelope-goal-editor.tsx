@@ -1,4 +1,5 @@
 "use client";
+import { SnoozeControl } from "./reminder-snooze";
 
 import { PlannedPaymentField } from "./planned-payment-field";
 import { envelopeLabel } from "@/lib/envelope-label";
@@ -97,6 +98,7 @@ export function EnvelopeGoalEditor({ envelope, today, onSave, onClose }: {
     <div className="flow-modal">
       <header><div><h2>Configurar meta</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div><button type="button" aria-label="Cerrar configuración de meta" onClick={onClose}>×</button></header>
       <form className={`flow-body ${styles.form}`} onSubmit={submit} noValidate onChange={() => setError("")}>
+        <SnoozeControl source={{kind:"contribution",envelopeId:envelope.id,date:envelope.recurrence?.nextDate}}/>
         <label className={`check-label ${styles.toggle}`}><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} />Activar meta</label>
         {enabled && <>
           <label htmlFor={`${id}-name`}>Nombre de la meta (opcional)</label>

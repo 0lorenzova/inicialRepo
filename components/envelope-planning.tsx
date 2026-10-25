@@ -1,4 +1,5 @@
 "use client";
+import { SnoozeControl } from "./reminder-snooze";
 
 import { calendarRelativeLabel } from "@/lib/planning-calendar";
 import { envelopeLabel } from "@/lib/envelope-label";
@@ -44,6 +45,7 @@ export function EnvelopePlanningMenu({ envelope, today, display, privateMode, on
       {filter && <button className="text-btn" onClick={onAll}>Ver todos</button>}
       <div className={styles.items}>{items.map(item=><article className={styles.planCard} key={`${item.kind}-${item.id}`}>
         <button type="button" className={styles.itemButton} onClick={()=>onSelect(item)}><PlanningItemSummary item={item} today={today} display={display} privateMode={privateMode}/></button>
+        <SnoozeControl source={{kind:item.kind,envelopeId:envelope.id,itemId:item.id,date:item.deadline}}/>
         {item.kind === "scheduled" && !item.payment && !item.omitted && <label className="check-label"><input type="checkbox" checked={false} onChange={()=>onSelect(item,true)}/>Pagar</label>}
       </article>)}</div>
       {!items.length && <p>{all.length ? "No hay elementos en este rango." : "No hay metas ni importes asignados a este sobre."}</p>}
@@ -75,6 +77,7 @@ export function EnvelopePlanningDetail({ envelope, itemId, kind, today, display,
     <div className="flow-body">{item ? <>
       <h3 className={styles.name}>{privateMode ? itemType(item) : item.name}</h3>
       <div className="review-box"><b>{display(item.amount)}</b>{item.recurrent&&<span>↻ Recurrente</span>}<span>Fecha límite: {dateLabel(item.deadline)}</span>{item.plannedPaymentDate&&<span>Pago previsto: {dateLabel(item.plannedPaymentDate)}{plannedPaymentDelay(item)>0?` · ${plannedPaymentDelayText(plannedPaymentDelay(item))}`:""}</span>}<span className={styles.heading}>{!item.payment&&!item.omitted&&item.timingEnabled&&<TemporalBadge tone={planningTone(item)} late={plannedPaymentDelay(item)>0} lateLabel={plannedPaymentDelayText(plannedPaymentDelay(item))} covered={privateMode||item.coverageHidden?undefined:item.covered} date={item.deadline} today={today} />}{stateText(item)}</span></div>
+      <SnoozeControl source={{kind,envelopeId:envelope.id,itemId,date:item.deadline}}/>
       {goal && <p className={styles.context}>{privateMode ? "Progreso oculto" : `${new Intl.NumberFormat("es-CR", { maximumFractionDigits: 1 }).format(goal.percentage)}% · ${envelope.balanceHidden ? "••••••" : display(envelope.balance)} de ${display(goal.amount)}`}</p>}
       {kind === "scheduled" && !item.payment && <p className={styles.context}>Al confirmar se registrará un gasto en este sobre y en la cuenta que elijas. Disponible en el sobre: {privateMode ? "••••••" : display(envelope.balance)}.</p>}
       {!item.payment && !item.omitted && <button className="primary wide" type="button" onClick={onEdit}>{kind === "goal" ? "Configurar meta" : "Modificar importe"}</button>}

@@ -5,12 +5,14 @@ import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
 import ExpandMoreOutlined from "@mui/icons-material/ExpandMoreOutlined";
 import MoreVertOutlined from "@mui/icons-material/MoreVertOutlined";
 import NotificationsOutlined from "@mui/icons-material/NotificationsOutlined";
+import { SnoozeControl, useReminderSnooze, reminderDateLabel } from "./reminder-snooze";
+import { isReminderSnoozed, reminderTargets } from "@/lib/reminder-snooze";
 import { FinanceDialog } from "@/components/finance-dialog";
 import { appViewActionLabel, uiCopyEs } from "@/lib/ui-copy";
 import { TemporalDot } from "./temporal-indicator";
 import { temporalDistance } from "@/lib/envelope-goals";
 import {
-  deriveFinanceNotifications, initializeNotifications, markNotifications, notificationDetail,
+  deriveFinanceNotifications, projectReminderNotifications, initializeNotifications, markNotifications, notificationDetail,
   notificationTones, pendingNotificationDelivery, saveNotificationUpdate, visibleNotifications,
   type FinanceNotification, type NotificationDestination, type NotificationEnvelope,
   type NotificationState, type NotificationTone, type NotificationUpdate,
@@ -76,6 +78,7 @@ type NotificationFilter = "pending" | "upcoming" | "all";
 
 function notificationStatus(event: FinanceNotification, today: string, dismissed: boolean) {
   if (dismissed) return { key: "dismissed", label: "Aviso descartado" };
+  if (event.snoozedUntil && event.snoozedUntil > today) return { key: "snoozed", label: `Pospuesto hasta: ${notificationDateLabel(event.snoozedUntil)}` };
   const date = event.date.slice(0, 10);
   if (date < today) return { key: "overdue", label: notificationTimeLabel(event, today) };
   if (date === today) return { key: "today", label: "Vence hoy" };
@@ -125,6 +128,7 @@ export function NotificationCard({ event, today, privateMode, showAmount, read =
     </div>
     {expanded && <div className={styles.expanded}>
       {copy.description && <p className={styles.description}>{copy.description}</p>}
+      {event.snoozedUntil && <small>{event.snoozedUntil > today ? "Pospuesto hasta" : "Aviso reactivado"}: {reminderDateLabel(event.snoozedUntil)}</small>}
       <div className={styles.dates}>
         <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Vence <time dateTime={event.date}>{notificationDateLabel(event.date)}</time></span>
         {hasDifferentPaymentDate && <span className={styles.date}><CalendarMonthOutlined aria-hidden="true"/>Pago previsto <time dateTime={event.plannedPaymentDate}>{notificationDateLabel(event.plannedPaymentDate!)}</time></span>}
@@ -134,6 +138,7 @@ export function NotificationCard({ event, today, privateMode, showAmount, read =
         <details className={styles.moreActions}>
           <summary aria-label="Más opciones" title="Más opciones"><MoreVertOutlined aria-hidden="true"/></summary>
           <div className={styles.moreMenu}>
+            <SnoozeControl reminderId={event.reminderKey} actionOnly/>
             <button type="button" onClick={() => onNavigate(event.destination)}>{appViewActionLabel(event.destination.page)}</button>
             {onToggleRead && <button type="button" onClick={() => onToggleRead(event)}>{read ? "Marcar como no leída" : "Marcar como leída"}</button>}
             {onDismiss && !dismissed && <button type="button" onClick={() => onDismiss(event)}>Descartar aviso</button>}
@@ -156,7 +161,7 @@ function subscribeCapabilities(listener: () => void) {
 const serverCapabilities = () => "unsupported|silent";
 
 export function FinanceNotifications({
-  state, onChange, movements, envelopes, loans, today, ready = true, privateMode = false,
+  state, onChange, movements, envelopes, loans, today: initialToday, ready = true, privateMode = false,
   onNavigate, open, onOpen, onClose, renderPayment,
 }: {
   renderPayment: (event: FinanceNotification) => ReactNode;
@@ -173,19 +178,23 @@ export function FinanceNotifications({
   onOpen: () => void;
   onClose: () => void;
 }) {
+  const snooze = useReminderSnooze();
+  const today = snooze?.today ?? initialToday;
+  const targets = useMemo(() => snooze?.targets ?? reminderTargets(envelopes, movements, loans, today), [snooze?.targets, envelopes, movements, loans, today]);
   const [deliveryMessage, setDeliveryMessage] = useState("");
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>("pending");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandAll, setExpandAll] = useState(false);
+  const [pageSize, setPageSize] = useState(5);
   const attempted = useRef(new Set<string>());
-  const activeNotices = useRef(new Set<Notification>());
-  const events = useMemo(() => deriveFinanceNotifications(movements, envelopes, today, loans), [movements, envelopes, today, loans]);
+  const activeNotices = useRef(new Map<Notification, string>());
+  const events = useMemo(() => projectReminderNotifications(deriveFinanceNotifications(movements, envelopes, today, loans), state, today, targets), [movements, envelopes, today, loans, state, targets]);
   const visible = useMemo(() => visibleNotifications(state, events), [state, events]);
   const read = useMemo(() => new Set(initializeNotifications(state, events).readIds), [state, events]);
   const dismissed = useMemo(() => new Set(state.dismissedIds), [state.dismissedIds]);
-  const pending = visible;
+  const pending = visible.filter(event => !isReminderSnoozed(state.snoozes, event.reminderKey, today));
   const unreadEvents = visible.filter(event => !read.has(event.id));
-  const upcoming = visible.filter(event => event.date.slice(0, 10) > today);
+  const upcoming = visible.filter(event => event.date.slice(0, 10) > today || isReminderSnoozed(state.snoozes, event.reminderKey, today));
   const allEvents = useMemo(() => [...events].sort((a, b) => {
     const aDismissed = dismissed.has(a.id), bDismissed = dismissed.has(b.id);
     if (aDismissed !== bDismissed) return aDismissed ? 1 : -1;
@@ -203,8 +212,13 @@ export function FinanceNotifications({
 
   useEffect(() => {
     const notices = activeNotices.current;
-    return () => { for (const notice of notices) notice.close(); notices.clear(); stopNotificationAudio(); };
+    return () => { for (const notice of notices.keys()) notice.close(); notices.clear(); stopNotificationAudio(); };
   }, []);
+
+  useEffect(() => {
+    const activeIds = new Set(events.filter(event=>!isReminderSnoozed(state.snoozes,event.reminderKey,today)).map(event=>event.id));
+    for (const [notice, id] of activeNotices.current) if (!activeIds.has(id)) { notice.close(); activeNotices.current.delete(notice); }
+  }, [events, state.snoozes, today]);
 
   useEffect(() => { if (!state.sound) stopNotificationAudio(); }, [state.sound]);
 
@@ -215,7 +229,7 @@ export function FinanceNotifications({
       if (error) window.setTimeout(() => setDeliveryMessage(error), 0);
       return;
     }
-    const pending = pendingNotificationDelivery(state, events).filter(event => !attempted.current.has(event.id));
+    const pending = pendingNotificationDelivery(state, events, today).filter(event => !attempted.current.has(event.id));
     if (!pending.length) return;
     // One delivery per event in this session, also before persistence completes.
     for (const event of pending) attempted.current.add(event.id);
@@ -230,7 +244,7 @@ export function FinanceNotifications({
         body: pending.length === 1 ? "Tienes una notificación nueva. Abre Finanzas para verla." : `Tienes ${pending.length} notificaciones nuevas. Abre Finanzas para verlas.`,
         tag: `finanzas:${latest.id}`, silent: true,
       });
-      activeNotices.current.add(notification);
+      activeNotices.current.set(notification, latest.id);
       notification.onclose = () => activeNotices.current.delete(notification);
       notification.onclick = () => {
         window.focus(); notification.close();
@@ -243,13 +257,13 @@ export function FinanceNotifications({
       // constructor. Internal notifications continue to work in that case.
       window.setTimeout(() => setDeliveryMessage("Este navegador no permite mostrar avisos del sistema en esta vista. Puedes consultar las notificaciones dentro de Finanzas."), 0);
     }
-  }, [events, state, ready, onChange, onNavigate]);
+  }, [events, state, today, ready, onChange, onNavigate]);
 
   function updateState(update: (current: NotificationState) => NotificationState) {
     const error = saveNotificationUpdate(onChange, update);
     if (error) setDeliveryMessage(error);
   }
-  function closeDialog() { setExpandedId(null); setExpandAll(false); onClose(); }
+  function closeDialog() { setExpandedId(null); setExpandAll(false); setPageSize(5); onClose(); }
 
   return <>
     <button type="button" className={`header-control ${styles.bell}`} onClick={onOpen} title="Notificaciones" aria-label={`Notificaciones${pendingCount ? `: ${pendingCount} pendientes` : ": ninguna pendiente"}`}>
@@ -262,7 +276,7 @@ export function FinanceNotifications({
         <div className={styles.body}>
           {!state.internal ? <p>Las notificaciones internas están desactivadas. Puedes activarlas en Configuración.</p> : <>
             <div className={styles.filters} role="group" aria-label="Filtrar notificaciones">
-              {filters.map(filter => <button key={filter.id} type="button" className={activeFilter === filter.id ? styles.filterActive : styles.filter} aria-pressed={activeFilter === filter.id} onClick={() => { setActiveFilter(filter.id); setExpandedId(null); setExpandAll(false); }}>
+              {filters.map(filter => <button key={filter.id} type="button" className={activeFilter === filter.id ? styles.filterActive : styles.filter} aria-pressed={activeFilter === filter.id} onClick={() => { setActiveFilter(filter.id); setPageSize(5); setExpandedId(null); setExpandAll(false); }}>
                 {filter.label}<span className={styles.filterCount}>{filterCounts[filter.id]}</span>
               </button>)}
             </div>
@@ -274,10 +288,11 @@ export function FinanceNotifications({
               {unreadEvents.length > 0 && <button className={styles.markAllRead} type="button" onClick={() => updateState(current => markNotifications(current, "readIds", unreadEvents.map(event => event.id)))}>Marcar avisos como leídos</button>}
             </div>}
             {!filtered.length && <p>{activeFilter === "pending" ? "No tienes compromisos pendientes." : activeFilter === "upcoming" ? "No tienes compromisos próximos." : "No hay avisos disponibles."}</p>}
-            <ul className={styles.list}>{filtered.slice(0, 5).map(event => {
+            <ul className={styles.list}>{filtered.slice(0, pageSize).map(event => {
               const isRead = read.has(event.id), isDismissed = dismissed.has(event.id);
               return <NotificationCard key={event.id} event={event} today={today} privateMode={privateMode} showAmount={state.showResponsibilityAmount === true} read={isRead} dismissed={isDismissed} expanded={expandAll || expandedId === event.id} onToggleExpanded={() => { if (expandAll) { setExpandAll(false); setExpandedId(null); } else setExpandedId(current => current === event.id ? null : event.id); }} onNavigate={destination => { closeDialog(); onNavigate(destination); }} onToggleRead={item => updateState(current => read.has(item.id) ? { ...current, readIds: current.readIds.filter(id => id !== item.id) } : markNotifications(current, "readIds", [item.id]))} onDismiss={item => updateState(current => markNotifications(current, "dismissedIds", [item.id]))} renderPayment={renderPayment}/>;
             })}</ul>
+            {filtered.length>pageSize&&<button type="button" className="text-btn" onClick={()=>setPageSize(value=>value+20)}>Mostrar más avisos</button>}
             <button className={styles.allNotices} type="button" onClick={() => { closeDialog(); onNavigate({ page: "Cronograma" }); }}><span><b>Ver todos los avisos</b><small>{uiCopyEs.calendarActions.openNamed}</small></span><span aria-hidden="true">›</span></button>
           </>}
           {deliveryMessage && <p role="status">{deliveryMessage}</p>}

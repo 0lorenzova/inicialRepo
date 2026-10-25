@@ -3,6 +3,7 @@ import { globalPlanningItems, plannedPaymentDelay, plannedPaymentDelayText, type
 import { getTemporalState, type GoalTemporalState } from "./envelope-goals";
 import type { LedgerMovement, Loan } from "./finance-ledger";
 import { isRecurrenceDue, recurrenceDueDate, type Recurrence } from "./finance-recurrence";
+import { reminderKey, normalizeReminderSnoozes, isReminderSnoozed, type ReminderSnoozes, type ReminderTarget } from "./reminder-snooze";
 
 export const notificationTones = ["Suave", "Campana", "Breve"] as const;
 export type NotificationTone = (typeof notificationTones)[number];
@@ -16,10 +17,13 @@ export type NotificationState = {
   readIds: string[];
   dismissedIds: string[];
   deliveredIds: string[];
+  snoozes?: ReminderSnoozes;
 };
 export type NotificationDestination = { page: "Movimientos" | "Recordatorios" | "Cronograma" | "Préstamos"; movementId?: string; envelopeId?: string; itemId?: string; itemKind?: PlanningItem["kind"] };
 export type FinanceNotification = {
   id: string;
+  reminderKey?: string;
+  snoozedUntil?: string;
   title: string;
   detail: string;
   concept?: string;
@@ -62,11 +66,12 @@ export function normalizeNotificationState(value?: Partial<NotificationState> | 
     readIds: ids(value?.readIds),
     dismissedIds: ids(value?.dismissedIds),
     deliveredIds: ids(value?.deliveredIds),
+    snoozes: normalizeReminderSnoozes(value?.snoozes),
   };
 }
 
 // Notification contents are projections of the ledger and due reminders. Only
-// read/dismiss/delivery preferences are persisted; no financial copy is created.
+// read/dismiss/delivery preferences and reminder dates are persisted; no financial copy is created.
 export function deriveFinanceNotifications(movements: LedgerMovement[], envelopes: NotificationEnvelope[], today: string, loans: Loan[] = []): FinanceNotification[] {
   const result = new Map<string, FinanceNotification>();
   // Ordinary activity belongs exclusively to Movimientos.
@@ -75,7 +80,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
     if (!item.temporal || !["red","purple","yellow"].includes(item.temporal.tone)) continue;
     const stage = item.deadline === today ? "today" : item.temporal.tone;
     const id = `attention:${encodeURIComponent(envelopeId)}:${item.kind}:${encodeURIComponent(item.id)}:${item.deadline}:${stage}`;
-    result.set(id,{id,title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,concept:item.name,context:envelopeLabel(envelopeName),description:item.temporal.explanation,actionKind:item.kind==="scheduled"?"payment":"goal",date:`${item.deadline}T00:00`,amount:item.remainingAmount??item.amount,kind:"attention",plannedPaymentDate:item.plannedPaymentDate,plannedLate:plannedPaymentDelay(item)>0,plannedLateLabel:plannedPaymentDelayText(plannedPaymentDelay(item)),tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
+    result.set(id,{id,reminderKey:reminderKey({kind:item.kind,envelopeId,itemId:item.id,date:item.deadline}),title:item.temporal.label,detail:`${item.name} · ${envelopeLabel(envelopeName)}. ${item.temporal.explanation}`,concept:item.name,context:envelopeLabel(envelopeName),description:item.temporal.explanation,actionKind:item.kind==="scheduled"?"payment":"goal",date:`${item.deadline}T00:00`,amount:item.remainingAmount??item.amount,kind:"attention",plannedPaymentDate:item.plannedPaymentDate,plannedLate:plannedPaymentDelay(item)>0,plannedLateLabel:plannedPaymentDelayText(plannedPaymentDelay(item)),tone:item.temporal.tone,covered:item.coverageHidden?undefined:item.covered,destination:{page:"Cronograma",envelopeId,itemId:item.id,itemKind:item.kind}});
   }
   for (const envelope of envelopes) {
     if (!envelope.recurrence) continue;
@@ -98,7 +103,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
       ? `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:${temporal.tone}`
       : `reminder:${encodeURIComponent(envelope.id)}:${dueDate}:upcoming`;
     result.set(id, {
-      id, title: due ? "Aporte pendiente" : "Aporte próximo", detail: `${envelopeLabel(envelope.name)}. ${temporal.explanation}`, concept: due ? "Aporte pendiente" : "Aporte próximo", context: envelopeLabel(envelope.name), description: temporal.explanation, actionKind: "contribution", tone: temporal.tone,
+      id, reminderKey:reminderKey({kind:"contribution",envelopeId:envelope.id,date:envelope.recurrence.nextDate}), title: due ? "Aporte pendiente" : "Aporte próximo", detail: `${envelopeLabel(envelope.name)}. ${temporal.explanation}`, concept: due ? "Aporte pendiente" : "Aporte próximo", context: envelopeLabel(envelope.name), description: temporal.explanation, actionKind: "contribution", tone: temporal.tone,
       amount: pendingAmount, date: `${dueDate}T00:00`, kind: "reminder",
       destination: { page: "Recordatorios", envelopeId: envelope.id },
     });
@@ -123,7 +128,7 @@ export function deriveFinanceNotifications(movements: LedgerMovement[], envelope
       ? `${loan.targetName} debe devolver a ${loan.sourceName}. La fecha límite pasó hace ${Math.abs(daysRemaining)} ${Math.abs(daysRemaining) === 1 ? "día" : "días"}.`
       : `${loan.targetName} debe devolver a ${loan.sourceName}. La fecha límite es hoy.`;
     result.set(id, {
-      id, title, detail, concept: "Devolución de préstamo", context: `${loan.targetName} → ${loan.sourceName}`, actionKind: "loan", date: `${loan.dueDate}T00:00`, amount: loan.outstanding, kind: "loan", tone: temporal.tone,
+      id, reminderKey:reminderKey({kind:"loan",itemId:loan.id,date:loan.dueDate}), title, detail, concept: "Devolución de préstamo", context: `${loan.targetName} → ${loan.sourceName}`, actionKind: "loan", date: `${loan.dueDate}T00:00`, amount: loan.outstanding, kind: "loan", tone: temporal.tone,
       destination: { page: "Préstamos" },
     });
   }
@@ -146,9 +151,33 @@ export function visibleNotifications(state: NotificationState, events: FinanceNo
   return events.filter(event => !dismissed.has(event.id));
 }
 
-export function pendingNotificationDelivery(state: NotificationState, events: FinanceNotification[]): FinanceNotification[] {
+export function pendingNotificationDelivery(state: NotificationState, events: FinanceNotification[], today?: string): FinanceNotification[] {
   const consumed = new Set([...state.deliveredIds, ...state.dismissedIds, ...state.readIds]);
-  return events.filter(event => !consumed.has(event.id));
+  return events.filter(event => !consumed.has(event.id) && (!today || !isReminderSnoozed(state.snoozes, event.reminderKey, today)));
+}
+
+export function projectReminderNotifications(events: FinanceNotification[], state: NotificationState, today: string, targets: ReminderTarget[]): FinanceNotification[] {
+  const active = new Set(targets.map(target => target.key));
+  const projected = events.filter(event => !event.reminderKey || active.has(event.reminderKey));
+  const represented = new Set(projected.map(event => event.reminderKey));
+  // An explicit reminder date can fall outside the normal proximity window.
+  for (const target of targets) {
+    if (!state.snoozes?.[target.key] || represented.has(target.key)) continue;
+    const planning = target.kind === "scheduled" || target.kind === "goal";
+    projected.push({ id: `reminder:${target.key}`, reminderKey: target.key, title: target.title, concept: target.title, context: target.context,
+      detail: "Recordatorio programado por ti.", description: "Recordatorio programado por ti.", date: `${target.originalDate}T00:00`, amount: target.amount,
+      kind: target.kind === "loan" ? "loan" : target.kind === "contribution" ? "reminder" : "attention",
+      actionKind: target.kind === "scheduled" ? "payment" : target.kind,
+      destination: planning ? { page: "Cronograma", envelopeId: target.envelopeId, itemId: target.itemId, itemKind: target.kind as "scheduled" | "goal" }
+        : target.kind === "loan" ? { page: "Préstamos" } : { page: "Recordatorios", envelopeId: target.envelopeId },
+    });
+  }
+  return projected.map(event => {
+    const snooze = event.reminderKey ? state.snoozes?.[event.reminderKey] : undefined;
+    if (!snooze) return event;
+    // A resumed occurrence has a stable delivery key, independent of changes in urgency.
+    return { ...event, snoozedUntil: snooze.until, id: snooze.until <= today ? `resumed:${event.reminderKey}:${snooze.until}` : event.id };
+  });
 }
 
 export function markNotifications(state: NotificationState, field: "readIds" | "dismissedIds" | "deliveredIds", eventIds: string[]): NotificationState {

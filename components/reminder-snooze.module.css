@@ -1,0 +1,15 @@
+.dialog { min-width: 0; }
+.dialog h2 { font-size: calc(18px * var(--ui-scale, 1)); }
+.options { margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 14px; min-width: 0; }
+.options > label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 44px; }
+.options small { display: block; margin-top: 4px; color: var(--muted); }
+.options input[type=radio] { flex: 0 0 auto; width: 20px; height: 20px; accent-color: var(--green); }
+.options .field { flex-wrap: wrap; padding-top: 0; }
+.field input { width: 100%; min-width: 0; box-sizing: border-box; min-height: 44px; }
+.actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.control { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
+.control button { min-height: 44px; overflow-wrap: anywhere; text-align: start; }
+.status { display: block; color: var(--muted); overflow-wrap: anywhere; flex-basis: 100%; }
+.error { position: fixed; bottom: 100px; inset-inline: 20px; padding: 12px; background: var(--paper); z-index: 1500; }
+
+.srOnly { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }

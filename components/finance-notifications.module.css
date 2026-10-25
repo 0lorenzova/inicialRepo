@@ -182,3 +182,6 @@
   .date { font-size:calc(9px * var(--ui-scale,1)); }
 }
 @media(prefers-reduced-motion:reduce) { .item,.chevronExpanded { transition:none; } .expanded { animation:none; } }
+
+.timeBadge[data-status="snoozed"] { border-color:var(--line); background:color-mix(in srgb,var(--green) 12%,var(--paper)); color:var(--ink); }
+.moreMenu { max-width: min(260px, calc(100vw - 60px)); }

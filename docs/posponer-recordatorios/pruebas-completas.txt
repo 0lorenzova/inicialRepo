@@ -1,0 +1,239 @@
+## verify-app-navigation.mjs (exit 0)
+Navegación: contexto, pasos, cierre a vista base, recarga segura y aislamiento entre usuarios correctos.
+Filtros de navegación: Atrás/Adelante, movimiento, sobre, recordatorio, cierre y aislamiento correctos.
+
+## verify-calendar-alerts.mjs (exit 0)
+OK: overdue filtering, date boundaries, realized payment and contribution history, omitted occurrences, private tooltips and non-mutating reminders.
+
+## verify-calendar-futures.mjs (exit 0)
+OK: bounded virtual recurrences, frequencies/leap dates/end dates/edited occurrences, shared month anchor, no financial writes, warning separation and 2000ms rotation phase.
+
+## verify-calendar-goal-move.mjs (exit 0)
+OK: calendar leap/year/week boundaries, shared schedules, snoozing; stable goal move, optional recurrence, no balance change or overwritten goals.
+OK: interface sizing levels, cycle and persisted normalization.
+
+## verify-calendar-indicator-groups.mjs (exit 0)
+OK: four responsibilities / one rotating representative, individual warning, cleared warning, deduplicated overdue echo.
+
+## verify-context-accounts-planning.mjs (exit 0)
+OK: zero-balance account creation; atomic planning move, recurrence, payment at destination, stale/paid/duplicate protection.
+
+## verify-contextual-expenses.mjs (exit 0)
+OK: category associations, explicit splits, invalid and duplicate amounts, one atomic expense, stable historical snapshots, persistence and contextual navigation.
+
+## verify-distribution-templates.mjs (exit 0)
+OK: templates preserve amounts and identity, reject duplicates/archived/excess, apply only to a draft and use atomic income confirmation.
+
+## verify-envelope-desktop.mjs (exit 0)
+PASS: responsive desktop density, 4/5/6/7/8+ columns, minimum card widths and preserved mobile preference.
+
+## verify-envelope-goals.mjs (exit 0)
+OK: metas compatibles, 25/100/110/200/700%, excedentes, umbrales independientes y límites de fechas.
+
+## verify-envelope-history.mjs (exit 0)
+OK: importes parciales, siete operaciones, signos, agrupación sin duplicados, historia ambigua e inmutabilidad.
+
+## verify-envelope-icons.mjs (exit 0)
+OK: cinco sugerencias locales por nombre, acentos, selección manual, validación española y emojis compuestos.
+
+## verify-envelope-operation.mjs (exit 0)
+PASS: contexto de sobres nuevos/predeterminados, asignar/desasignar/transferir/prestar/pedir, fecha límite opcional válida, preservación al reembolsar, rechazo de fechas inválidas, atomicidad y conservación de dinero.
+
+## verify-envelope-planning.mjs (exit 0)
+OK: planning priority, shared deadline states, independent money/progress, validation, non-destructive persistence, conflicts and contextual navigation.
+
+## verify-envelope-settings.mjs (exit 0)
+OK: edición de sobres conserva saldo vigente y aportes actualizados; detecta edición concurrente y archivado.
+
+## verify-envelope-view.mjs (exit 0)
+PASS: list, grid 2→3→2, legacy defaults, invalid preference and reload persistence.
+PASS: three-column width boundary, reorder preserves objects/balances/archived positions, duplicate and stale IDs.
+
+## verify-expense-categories.mjs (exit 0)
+OK: category defaults, normalized names, duplicates, stale edit, archive/restore, stable identity and unchanged historical snapshots.
+
+## verify-expense-details.mjs (exit 0)
+OK: expense details normalization, validation, persistence, search and financial atomicity.
+
+## verify-finance-history.mjs (exit 0)
+OK: fechas Costa Rica, limites inclusivos, rango invalido, busqueda sin acentos y por referencia, sobres nuevos, meses y reportes sin duplicar prestamos.
+
+## verify-finance-ledger.mjs (exit 0)
+OK: 18 escenarios del libro financiero verificados.
+OK: archivado y estado de cuentas validan el saldo vigente.
+
+## verify-finance-notifications.mjs (exit 0)
+OK: upcoming and overdue notifications, purple/today/critical transitions, recurrence, paid exclusion, stable IDs, read/dismiss and immutable financial data.
+OK: amounts hidden by default, preference persistence, global privacy precedence, obligation amount independent of coverage and unchanged notification IDs.
+OK: due-loan notices include due-today/overdue only, skip settled/undated/future/invalid loans, respect privacy and preserve immutable ledger data.
+
+## verify-finance-products.mjs (exit 0)
+OK: varios productos, limites por gasto/sobre, cantidades, seguimiento, historial, reporte mensual sin doble conteo y atomico.
+
+## verify-finance-recurrence.mjs (exit 0)
+OK: recurrencia verificada en memoria: confirmación atómica, duplicados, fondos, fechas, posposición y reapertura.
+
+## verify-finance-sync.mjs (exit 0)
+OK: creación diferida y cambios idénticos sin escritura
+OK: dos dispositivos: una escritura gana y la otra conserva su conflicto
+OK: ediciones durante guardado se serializan con la nueva revisión
+OK: lectura inicial fallida nunca habilita escrituras
+OK: las cachés pertenecen al usuario y no se importa la copia global
+OK: refresh limpio carga cambios remotos sin escribir
+OK: pendientes al reabrir conservan su base o detectan conflicto
+OK: limpiar caché conserva datos y nube sin recrearla en refresh
+OK: respuesta perdida tras commit se reconoce sin duplicar escritura
+OK: cambiar sesión invalida respuestas de lectura y escritura antiguas
+OK: cargar nube respalda pendientes y una lectura fallida no los descarta
+OK: dos pestañas preservan borradores independientes ante conflicto
+OK: refresh durante guardado espera toda la cola de cambios
+OK: ack compara contenido aunque jsonb cambie orden de claves
+OK: guardar y refrescar la misma revisión no restablece preferencias de apertura
+OK: el acuse de una versión anterior no elimina el borrador más reciente
+OK: un fallo al escribir conserva pendiente y termina sin reintentos infinitos
+OK: reapertura y pestaña duplicada usan nuevos borradores sin pisar el anterior
+OK: recuperaciones sucesivas conservan los respaldos anteriores
+OK: 19 escenarios de sincronización verificados.
+
+## verify-finance-transport.mjs (exit 0)
+OK: transporte Supabase simulado: CAS exacto, creación única, conflictos y errores; sin conexión a datos reales.
+OK: RPC preserves cache timestamps; fallback only for absent RPC; conflicts, permissions, validation and network errors cannot bypass it.
+
+## verify-goal-visibility.mjs (exit 0)
+Visibilidad de meta: barra independiente, compatibilidad, persistencia y saldo conservados.
+
+## verify-income-correction.mjs (exit 0)
+OK: corrección atómica, ingreso inmutable, trazabilidad, múltiples lotes, duplicados, concurrencia, fechas, fondos gastados, archivados, persistencia y conservación.
+
+## verify-income-distribution.mjs (exit 0)
+OK: selección compartida, cinco estados, provisión sin escrituras, montos, confirmación atómica, duplicados, cambios concurrentes, fondos sin pagar, historial y persistencia.
+
+## verify-income-preferences.mjs (exit 0)
+OK: optional/editable defaults, blank values, inactive account fallback, invalid values, receipt method persistence and conservation.
+
+## verify-incremental-ui.mjs (exit 0)
+OK: ISO year boundaries, Costa Rica, no empty white, white explanation and urgency order.
+
+## verify-iso-week-range.mjs (exit 0)
+OK: rango ISO, lunes/domingo, cambio de año, Costa Rica, febrero e incompletos.
+
+## verify-movement-names.mjs (exit 0)
+OK: independent naming, legacy order, reordering, separators, Costa Rica/ISO dates, manual confirmation, persistence and immutable historical names.
+
+## verify-notification-audio.mjs (exit 0)
+Audio: compatible con SSR, bloqueo de autoplay, gesto explícito y tres tonos correctos.
+
+## verify-planned-payment.mjs (exit 0)
+OK: planned date persistence, delay, independent proximity/coverage, correction/cancellation/payment, recurrence, moves, conflicts, multiple product selection and unchanged financial invariants.
+
+## verify-planning-coverage.mjs (exit 0)
+OK: cumulative coverage, partial funds, deficits, paid/archived items, stable tie order, shared calendar/distribution/notifications, draft isolation, confirmed funding without payment.
+
+## verify-planning-payments-trace.mjs (exit 0)
+OK: chronological counts, paid atomicity and duplicate protection, privacy persistence, partial income provenance, mixed origins and ledger equality.
+
+## verify-product-comparison.mjs (exit 0)
+OK: six-month comparison, Costa Rica boundaries, year transition, zeros, stable identity, envelope isolation, unique purchases and immutable history.
+
+## verify-proximity-repetition-reset.mjs (exit 0)
+OK A-Q: five states, compact distance, counts, five global filters + all, recurrence calendar/leap years, atomic payment and duplicates, both reset modes and preservation.
+
+## verify-reminder-snooze.mjs (exit 0)
+OK: fechas, recurrencias, cancelación, reactivación, entrega única, finalización anticipada, integridad financiera, persistencia, sincronización y recuperación sin conexión (datos aislados).
+
+## verify-reminders.mjs (exit 0)
+OK: resumen real, vencimientos, progreso de metas, pagos parciales completos, idempotencia, posponer/omitir ocurrencias y cadencia de recurrencias sin movimientos automáticos.
+
+## verify-report-details.mjs (exit 0)
+OK: períodos, tipos y asignaciones de reporte; exclusión de movimientos internos; desglose por categoría/sobre; período, vista y paneles restaurados desde la URL; datos inmutables.
+
+## verify-salary-adjustments.mjs (exit 0)
+OK: neutral unknown history without historical estimates, catalogue and independent signed adjustments, confirmed versus expected, stale/duplicate rejection, payments and deductions, historical preservation, multiple sources and dated terms, projection ranges, year boundary, no query writes.
+OK: hourly and daily estimates use configured usual workdays, without crediting actual work.
+OK: recurring concepts use future period-start versions; older projections, saved periods and benefits remain protected.
+OK: current empty week does not imply debt; adjustment-only weeks stay independent.
+
+## verify-salary-calendar.mjs (exit 0)
+OK: unbounded historical/future navigation, monthly anchors/leap years, date bounds, shortened period navigation, shared colors, advance fully covered vs earned, corrections/annulment refresh, duplicate normalization, persisted receipt defaults and money invariant.
+
+## verify-salary-closing.mjs (exit 0)
+OK: current-period reuse, pure period navigation, weekly/quincenal/monthly/custom windows, expected-pay timing, early/on-time/late receipts, partial/full labels, real movement counts, scheduled config preference, earned-date guard, imports, corrections and money invariant.
+
+## verify-salary-cycle.mjs (exit 0)
+OK: salary cycle defaults, fully contained confirmed periods, boundary exclusions, unconfirmed exclusions, period-applied receipts, pending totals, range validation and JSON round-trip.
+
+## verify-salary-entry.mjs (exit 0)
+OK 1: ISO current week and unsaved previous/future links resolve without writes
+OK 2: complete receipt creates one income, one payment, and the correct account balance
+OK 3: salary plus Moto records exactly 138500 with separate concept identity
+OK 4: partial salary with an extra does not attribute the extra to the ordinary salary
+OK 5: multiple payments settle the period without overwriting the first payment
+OK 6: multiple additions sum to one deposit
+OK 7: deductions reduce the deposited net and remain in the receipt history
+OK 8: an extra-only receipt does not invent a confirmed ordinary wage debt
+OK 9: partial receipt of an unconfirmed projection keeps pending confirmed at zero
+OK 10: future advance remains neutral
+OK 11: a saved historical reference keeps its original concepts when receiving a partial payment
+OK 12: historical partial receipt requires an explicit historical expected amount
+OK 13: paid ordinary salary with a confirmed outstanding holiday remains red
+OK 14: pay an existing adjustment without duplicating its obligation
+OK 15: duplicate ID, repeated concept names and duplicate new adjustments are rejected atomically
+OK 16: stale edits and invalid account/date/amounts do not persist any drafts
+OK 17: post-save distribution uses the existing income and preserves total money
+OK 18: JSON persistence retains receipt concepts and deductions
+OK 19: historical corrections keep the original breakdown in audit and do not display stale totals
+OK 20: net calculation is consistent with every persisted receipt
+Verified 20 isolated salary-entry scenarios; no network or production data used.
+
+## verify-salary-history.mjs (exit 0)
+OK: automatic payment without period creation/closure, partial/full, duplicates, pure distant consultation, reversible stable sorting, preference persistence and unchanged finances.
+
+## verify-salary-import.mjs (exit 0)
+OK: historical payments without bank changes, mixed reconciliation, annulment/audit, persistence, duplicate guards; preview preserves blanks/formulas, dates, discrepancies, explicit confirmation, atomic linking without new money, duplicate protection and bounded XLSX decompression.
+
+## verify-salary-management.mjs (exit 0)
+OK: suggestions, ISO year, partial/full/multi-period, advances without devengo, atomic corrections, safe deletion, historical correction, duplicates/stale edits, custom recurrence/templates, view persistence, ordinary income, financial invariant.
+
+## verify-salary-navigation.mjs (exit 0)
+OK: 110 weeks each direction, calendar/arrow identity, zero receipts, no writes, ISO year change, weekday labels, planned workdays and custom-history backward regression.
+OK: pending-period shortcut excludes unsaved historical gaps and retains explicitly confirmed obligations.
+OK: week card touch/mouse gestures navigate weeks and months in the requested directions.
+
+## verify-salary-pay-rules.mjs (exit 0)
+OK: seven weekdays, Saturday default, end/before-end rules, independent employers, historical terms preserved, employment boundaries, ISO year rollover, neutral unrecorded weeks, idempotent activation without money, relative period labels.
+
+## verify-salary-planning.mjs (exit 0)
+OK: optional projection preview/cancel without writes; dates, concepts and workdays; explicit save without money; duplicate/overlap guards; later receipt reuses projection; corrections; all frequencies.
+
+## verify-salary-quick-registration.mjs (exit 0)
+OK: standard past/current/future receipts, actual dates, account defaults and missing-account fallback, approximate/unknown history, duplicate prevention, confirmed extras, partial/ambiguous reconciliation, independent/shared multi-week deposits, one-time envelope distribution, paid-state/actions, and mobile/desktop layout hooks.
+
+## verify-salary-receipt.mjs (exit 0)
+OK: single salary receipt, independent per-source account/method defaults with legacy fallback, JSON persistence, grouped batch eligibility and applications, date ranges, unvalidated adjustment/partial exclusion, full/partial linked allocation, cancel/close no mutations, duplicate rejection, atomic failures and financial totals.
+
+## verify-salary-states.mjs (exit 0)
+OK: four shared states, due date and late days, partial/full/corrected/void payments, ISO years, workdays, future-only config, legacy preservation, JSON persistence, money invariant, restrained status colors and reduced-motion styles.
+
+## verify-salary-temporal-labels.mjs (exit 0)
+OK: local-zone orientation, current/past/future periods, December/January, monthly anchors, quincenal/custom labels and no writes.
+
+## verify-salary-tracking.mjs (exit 0)
+OK: salary projections, earned concepts, partial/multiple payments, old debt, atomic distribution, linking without duplicates, corrections, config snapshots, reset, month anchors and JSON persistence.
+OK: Entry integration, normalized config duplicates, period duplicates, partial application, exact-reference retry, legitimate repeated weekly salary and different payment dates.
+
+## verify-salary-work-timing.mjs (exit 0)
+OK: work schedule snapshots, Friday/Saturday distinction, advance versus due date, full advance without earned work, legacy fallback, future neutral, shared palette and no consultation writes.
+OK: advance filter includes labor advances on the expected payment date and excludes periods without receipts.
+OK: earned guard follows saved last workday; legacy and Sunday schedules remain protected.
+
+## verify-sql-bundle.mjs (exit 0)
+OK: coordinated migration transaction, exact protected backup, denied schema access, no document changes, repeat refuses without damage.
+
+## verify-sql-migrations.mjs (exit 0)
+OK: SQL runs in PostgreSQL/PGlite; exact timestamp CAS, stale write rejection, authenticated isolation, direct-write revocation, first-write race, salary guard, atomic rejection, idempotent migrations and invalid-history preflight rollback. No production database used.
+
+## verify-theme-palettes.mjs (exit 0)
+OK: seven distinct palettes, WCAG AA text/actions, defined control borders, shared CSS tokens and precise grouped lateness.
+
+## verify-unassigned-incomes.mjs (exit 0)
+OK: selected-income assignment, FIFO compatibility, unknown funds, partial/exhausted income, invalid/stale/duplicate rejection, atomicity, persistence, navigation and ledger equality.

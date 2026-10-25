@@ -1,0 +1,47 @@
+scripts/verify-finance-notifications.mjs: exit 0
+OK: upcoming and overdue notifications, purple/today/critical transitions, recurrence, paid exclusion, stable IDs, read/dismiss and immutable financial data.
+OK: amounts hidden by default, preference persistence, global privacy precedence, obligation amount independent of coverage and unchanged notification IDs.
+OK: due-loan notices include due-today/overdue only, skip settled/undated/future/invalid loans, respect privacy and preserve immutable ledger data.
+
+scripts/verify-notification-audio.mjs: exit 0
+Audio: compatible con SSR, bloqueo de autoplay, gesto explícito y tres tonos correctos.
+
+scripts/verify-reminders.mjs: exit 0
+OK: resumen real, vencimientos, progreso de metas, pagos parciales completos, idempotencia, posponer/omitir ocurrencias y cadencia de recurrencias sin movimientos automáticos.
+
+scripts/verify-finance-recurrence.mjs: exit 0
+OK: recurrencia verificada en memoria: confirmación atómica, duplicados, fondos, fechas, posposición y reapertura.
+
+scripts/verify-envelope-planning.mjs: exit 0
+OK: planning priority, shared deadline states, independent money/progress, validation, non-destructive persistence, conflicts and contextual navigation.
+
+scripts/verify-planning-payments-trace.mjs: exit 0
+OK: chronological counts, paid atomicity and duplicate protection, privacy persistence, partial income provenance, mixed origins and ledger equality.
+
+scripts/verify-planning-coverage.mjs: exit 0
+OK: cumulative coverage, partial funds, deficits, paid/archived items, stable tie order, shared calendar/distribution/notifications, draft isolation, confirmed funding without payment.
+
+scripts/verify-context-accounts-planning.mjs: exit 0
+OK: zero-balance account creation; atomic planning move, recurrence, payment at destination, stale/paid/duplicate protection.
+
+scripts/verify-finance-sync.mjs: exit 0
+OK: creación diferida y cambios idénticos sin escritura
+OK: dos dispositivos: una escritura gana y la otra conserva su conflicto
+OK: ediciones durante guardado se serializan con la nueva revisión
+OK: lectura inicial fallida nunca habilita escrituras
+OK: las cachés pertenecen al usuario y no se importa la copia global
+OK: refresh limpio carga cambios remotos sin escribir
+OK: pendientes al reabrir conservan su base o detectan conflicto
+OK: limpiar caché conserva datos y nube sin recrearla en refresh
+OK: respuesta perdida tras commit se reconoce sin duplicar escritura
+OK: cambiar sesión invalida respuestas de lectura y escritura antiguas
+OK: cargar nube respalda pendientes y una lectura fallida no los descarta
+OK: dos pestañas preservan borradores independientes ante conflicto
+OK: refresh durante guardado espera toda la cola de cambios
+OK: ack compara contenido aunque jsonb cambie orden de claves
+OK: guardar y refrescar la misma revisión no restablece preferencias de apertura
+OK: el acuse de una versión anterior no elimina el borrador más reciente
+OK: un fallo al escribir conserva pendiente y termina sin reintentos infinitos
+OK: reapertura y pestaña duplicada usan nuevos borradores sin pisar el anterior
+OK: recuperaciones sucesivas conservan los respaldos anteriores
+OK: 19 escenarios de sincronización verificados.

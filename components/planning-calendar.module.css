@@ -83,3 +83,5 @@ button.entry:hover { border-color:var(--green); background:var(--pale); }
 @media (prefers-reduced-motion: reduce) { .navigation:not([hidden]) { animation:none; } }
 
 .relativePeriod{margin:0 0 8px;text-align:center;color:var(--muted);font-size:calc(13px * var(--ui-scale,1))}
+
+.entryAction { display:grid; gap:7px; width:100%; min-width:0; min-height:44px; padding:0; border:0; background:transparent; color:inherit; text-align:left; }

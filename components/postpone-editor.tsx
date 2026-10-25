@@ -47,15 +47,15 @@ export function PostponeEditor({ envelope, today, onSave, onClose }: {
     }
   }
 
-  return <FinanceDialog label={`Posponer aporte de ${envelope.name}`} onClose={onClose}>
+  return <FinanceDialog label={`Cambiar fecha programada de ${envelope.name}`} onClose={onClose}>
     <div className="flow-modal">
-      <header><div><h2>Posponer aporte</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div><button type="button" aria-label="Cerrar posposición" onClick={onClose}>×</button></header>
+      <header><div><h2>Cambiar fecha programada</h2><p className={styles.context}>{envelopeLabel(envelope.name)}</p></div><button type="button" aria-label="Cerrar posposición" onClick={onClose}>×</button></header>
       <form className={`flow-body ${styles.form}`} onSubmit={submit} noValidate>
         <p className={styles.hint}>El plazo se cuenta desde {referenceDate === today ? "hoy" : "la fecha programada"}: {dateLabel(referenceDate)}.</p>
         <fieldset className={styles.choices}><legend>¿Cuánto tiempo quieres posponerlo?</legend>{choices.map(choice => <button type="button" key={choice.key} aria-pressed={selected === choice.key} onClick={() => { setSelected(choice.key); setError(""); }}>{choice.label}</button>)}</fieldset>
         {selected === "custom" && <><label htmlFor={`${id}-days`}>Cantidad de días a partir de hoy</label><input id={`${id}-days`} type="number" inputMode="numeric" min="1" step="1" value={days} onChange={event => { setDays(event.target.value); setError(""); }} autoFocus /></>}
         <div className={styles.preview} aria-live="polite"><strong>Nueva fecha del aporte</strong><span>{preview ? dateLabel(preview) : "Ingresa una cantidad válida de días para ver la fecha."}</span></div>
-        <p className={styles.hint}>Solo cambia el recordatorio; el aporte seguirá necesitando tu confirmación.</p>
+        <p className={styles.hint}>Cambia la fecha de atención de este aporte. La serie futura conserva sus fechas. Para cambiar únicamente el aviso, usa «Posponer recordatorio».</p>
         {error && <p className={styles.error} role="alert">{error}</p>}
         <div className={styles.actions}><button className="primary" type="submit">Confirmar nueva fecha</button><button className="secondary" type="button" onClick={onClose}>Cancelar</button></div>
       </form>

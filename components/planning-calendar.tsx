@@ -1,4 +1,5 @@
 "use client";
+import { SnoozeControl } from "./reminder-snooze";
 import { isoWeek } from "@/lib/iso-week";
 import { envelopeLabel } from "@/lib/envelope-label";
 import { useEffect, useId, useMemo, useState } from "react";
@@ -64,7 +65,7 @@ export function PlanningCalendar({envelopes,movements=[],includeHistory=false,to
       const className=styles.entry;
       if(entry.virtual)return <article key={entry.key} className={className}>{content}<small>Previsión de consulta. No es un pago ni una asignación registrada.</small></article>;
       if(selection)return <article key={entry.key} className={className}><label className="check-label"><input type="checkbox" checked={selection.isSelected(entry)} onChange={()=>selection.onToggle(entry)} aria-label={`Asignar para ${privateMode?"esta obligación":`${entry.name} · ${entry.envelopeName}`}`}/>Seleccionar para distribuir</label>{content}</article>;
-      return onSelect?<button key={entry.key} type="button" className={className} data-status={entry.status} onClick={()=>onSelect(entry)}>{content}</button>:<article key={entry.key} className={className} data-status={entry.status}>{content}</article>;
+      return <article key={entry.key} className={className} data-status={entry.status}>{onSelect?<button type="button" className={styles.entryAction} onClick={()=>onSelect(entry)}>{content}</button>:content}{!entry.status&&<SnoozeControl source={{kind:entry.item?.kind??"contribution",envelopeId:entry.envelopeId,itemId:entry.item?.id,date:entry.item?.deadline}}/>}</article>;
     })}</div>;
   }
   return <section className={`${embedded?"":"section page-panel"} ${styles.calendar}`} data-today-phase={todayPhase}>
